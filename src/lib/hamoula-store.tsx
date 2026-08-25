@@ -1,0 +1,976 @@
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import type { Offer, VoiceNote } from "./hamoula-data";
+import { mockOffers, offerVoiceNotes } from "./hamoula-data";
+import { defaultDestination, defaultPickup, roadDistanceKm, type LatLng } from "./hamoula-geo";
+import { counterOfferPrice } from "./hamoula-pricing";
+import { demoLoads } from "./hamoula-demo-loads";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  clearDraft,
+  fetchBoard,
+  fetchDraft,
+  isRealBid,
+  isRealLoad,
+  removeBid,
+  saveBid,
+  saveBidStatus,
+  saveDraft,
+  saveLoad,
+  saveLoadStatus,
+} from "./hamoula-sync";
+import { fetchAccount, migrateLocalAccounts, saveAccount } from "./hamoula-accounts";
+
+
+export type RoleId = "shipper" | "driver";
+
+export type Profile = {
+  id: string;
+  name: string;
+  role: RoleId;
+  roleLabel: string;
+  company: string;
+  phone: string;
+  rating: number;
+  initials: string;
+};
+
+export const profiles: Profile[] = [
+  {
+    id: "p-shipper",
+    name: "سعيد المرابط",
+    role: "shipper",
+    roleLabel: "صاحب بضاعة",
+    company: "شركة الأطلس للتجارة",
+    phone: "0661 22 44 88",
+    rating: 4.8,
+    initials: "س م",
+  },
+  {
+    id: "p-driver",
+    name: "يوسف العلمي",
+    role: "driver",
+    roleLabel: "صاحب شاحنة",
+    company: "شاحنة متوسطة · 12345 - أ - 20",
+    phone: "0670 11 33 55",
+    rating: 4.9,
+    initials: "ي ع",
+  },
+];
+
+export type TripStatus =
+  | "draft"
+  | "searching"
+  | "matched"
+  | "enroute"
+  | "loaded"
+  | "delivered"
+  | "cancelled";
+
+export type TripRequest = {
+  pickup: string;
+  destination: string;
+  /** Free-text cargo description written (or dictated) by the shipper. */
+  cargo: string;
+  pickupPoint: LatLng;
+  destinationPoint: LatLng;
+  truck: string;
+  /** Selected capacity chip label, e.g. "3.5 طن". */
+  capacity?: string;
+  price: number;
+  status: TripStatus;
+  acceptedOffer: Offer | null;
+  voiceNote: VoiceNote | null;
+  updatedAt: number;
+  /** Id of the published request this trip belongs to (null while a draft). */
+  loadId?: string | null;
+};
+
+/** A cargo request published by a shipper — visible in the driver feed. */
+export type Load = {
+  id: string;
+  shipper: string;
+  /** Contact number of the shipper (call / WhatsApp from the driver dashboard). */
+  shipperPhone?: string | undefined;
+  pickup: string;
+  destination: string;
+  cargo: string;
+  pickupPoint: LatLng;
+  destinationPoint: LatLng;
+  truck: string;
+  capacity?: string | undefined;
+  price: number;
+  voiceNote: VoiceNote | null;
+  createdAt: number;
+  status: "open" | "assigned";
+  /** Lifecycle of the transport itself, persisted in the shared backend. */
+  tripStatus?: TripStatus;
+  acceptedOffer?: Offer | null;
+};
+
+/** A driver answer to a load: either the suggested price or a counter-offer. */
+export type Bid = {
+  id: string;
+  loadId: string;
+  driverId: string;
+  driver: string;
+  driverPhone?: string | undefined;
+  truck: string;
+  plate: string;
+  rating: number;
+  trips: number;
+  price: number;
+  etaMin: number;
+  kind: "accepted-price" | "counter";
+  voiceNote: VoiceNote | null;
+  shipperReply: VoiceNote | null;
+  status: "pending" | "accepted" | "declined";
+  createdAt: number;
+};
+
+
+const defaultRequest: TripRequest = {
+  pickup: "",
+  destination: "",
+  cargo: "",
+  pickupPoint: defaultPickup,
+  destinationPoint: defaultDestination,
+  truck: "medium",
+  capacity: "",
+  price: 1200,
+  status: "draft",
+  acceptedOffer: null,
+  voiceNote: null,
+  updatedAt: 0,
+};
+
+export function bidToOffer(b: Bid): Offer {
+  return {
+    id: b.id,
+    driver: b.driver,
+    truck: b.truck,
+    rating: b.rating,
+    trips: b.trips,
+    price: b.price,
+    eta: `${b.etaMin} دقيقة`,
+    plate: b.plate,
+  };
+}
+
+type Board = { loads: Load[]; bids: Bid[]; request: TripRequest };
+
+/** Prototype account: phone is the credential, email is optional. */
+export type Account = {
+  name: string;
+  phone: string;
+  email?: string;
+  role: RoleId;
+  /** Driver only: capacity in tons, e.g. "3.5". */
+  truckTons?: string;
+  /** Driver only: vehicle kind label. */
+  truckType?: string;
+  /** Driver only: availability (متوفر / غير متوفر). */
+  available?: boolean;
+};
+
+/** Digits-only key used to look an account up by phone. */
+export function phoneKey(phone: string) {
+  const d = phone.replace(/\D/g, "");
+  if (d.startsWith("00212")) return `0${d.slice(5)}`;
+  if (d.startsWith("212")) return `0${d.slice(3)}`;
+  return d;
+}
+
+type Ctx = {
+  profile: Profile;
+  switchProfile: (id: string) => void;
+  account: Account | null;
+  /** True once localStorage has been read on the client. */
+  ready: boolean;
+  signIn: (account: Account) => void;
+  signOut: () => void;
+  /** Look an existing account up by phone number in the shared database. */
+  findAccount: (phone: string) => Promise<Account | null>;
+  /** Edit the signed-in account (name, role, truck…). */
+  updateAccount: (patch: Partial<Account>) => void;
+
+  request: TripRequest;
+  updateRequest: (patch: Partial<TripRequest>) => void;
+  resetRequest: () => void;
+  /** When true the active trip advances on its own (demo live feed). */
+  tripLive: boolean;
+  setTripLive: (v: boolean) => void;
+  loads: Load[];
+  bids: Bid[];
+  activeLoad: Load | null;
+  publishLoad: (patch: Partial<TripRequest>) => Load;
+  addBid: (input: {
+    loadId: string;
+    price: number;
+    kind: Bid["kind"];
+    voiceNote?: VoiceNote | null;
+  }) => Bid;
+  acceptBid: (bidId: string) => Bid | null;
+  declineBid: (bidId: string) => void;
+  /** Driver pulls back a pending bid. */
+  withdrawBid: (bidId: string) => void;
+  /** Driver edits the price of a pending bid (counter-offer from history). */
+  updateBidPrice: (bidId: string, price: number) => void;
+  replyToBid: (bidId: string, note: VoiceNote) => void;
+  myBidFor: (loadId: string) => Bid | null;
+  /** Requests published by the signed-in shipper ("طلباتي"), newest first. */
+  myLoads: Load[];
+  /** Transports the signed-in driver won ("رحلاتي"), newest first. */
+  myTrips: Load[];
+  /** Offers sent by the signed-in driver ("عروضي"). */
+  myBids: Bid[];
+  /** Cancel a request (ملغى) — it stays in the history. */
+  cancelRequest: (loadId?: string) => void;
+  /** Unfinished request restored from the backend, if any. */
+  pendingDraft: Partial<TripRequest> | null;
+  /** Keep the unfinished request (متابعة الطلب غير المكتمل). */
+  resumeDraft: () => Partial<TripRequest> | null;
+  /** Throw the unfinished request away. */
+  discardDraft: () => void;
+  /** Live driver GPS position (null until granted). */
+  myLocation: LatLng | null;
+  geoStatus: GeoStatus;
+  requestLocation: () => void;
+
+};
+
+export type GeoStatus = "idle" | "locating" | "granted" | "denied" | "unsupported";
+
+const HamoulaContext = createContext<Ctx | null>(null);
+
+const STORAGE_KEY = "hamoula-profile";
+const BOARD_KEY = "hamoula-board";
+const ACCOUNT_KEY = "hamoula-account";
+const ACCOUNTS_KEY = "hamoula-accounts";
+const ACCOUNTS_MIGRATED_KEY = "hamoula-accounts-migrated";
+
+const GEO_KEY = "hamoula-location";
+
+const shipperName = profiles[0]!.name;
+
+/** Ordered live-trip progression used by the global trip engine. */
+export const tripFlow: Partial<Record<TripStatus, TripStatus>> = {
+  matched: "enroute",
+  enroute: "loaded",
+  loaded: "delivered",
+};
+
+export const tripOrder: TripStatus[] = ["matched", "enroute", "loaded", "delivered"];
+
+export function HamoulaProvider({ children }: { children: ReactNode }) {
+  const [profileId, setProfileId] = useState(profiles[0]!.id);
+  const [board, setBoard] = useState<Board>({ loads: [], bids: [], request: defaultRequest });
+  const [account, setAccount] = useState<Account | null>(null);
+  const [ready, setReady] = useState(false);
+  const [myLocation, setMyLocation] = useState<LatLng | null>(null);
+  const [geoStatus, setGeoStatus] = useState<GeoStatus>("idle");
+  const watchId = useRef<number | null>(null);
+  const hydrated = useRef(false);
+
+  const requestLocation = useCallback(() => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setGeoStatus("unsupported");
+      return;
+    }
+    setGeoStatus((s) => (s === "granted" ? s : "locating"));
+    const onOk = (pos: GeolocationPosition) => {
+      const p = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      setMyLocation(p);
+      setGeoStatus("granted");
+      localStorage.setItem(GEO_KEY, JSON.stringify(p));
+    };
+    const onErr = () => setGeoStatus("denied");
+    navigator.geolocation.getCurrentPosition(onOk, onErr, {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 30000,
+    });
+    if (watchId.current === null) {
+      watchId.current = navigator.geolocation.watchPosition(onOk, onErr, {
+        enableHighAccuracy: true,
+        maximumAge: 15000,
+      });
+    }
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (watchId.current !== null && typeof navigator !== "undefined" && navigator.geolocation) {
+        navigator.geolocation.clearWatch(watchId.current);
+        watchId.current = null;
+      }
+    },
+    [],
+  );
+
+  // The signed-in account's stored role is authoritative: never infer it from the
+  // current screen or from a locally switched demo profile.
+  const baseProfile = account
+    ? (profiles.find((p) => p.role === account.role) ?? profiles[0]!)
+    : (profiles.find((p) => p.id === profileId) ?? profiles[0]!);
+  const profile: Profile = useMemo(
+    () =>
+      account
+        ? {
+            ...baseProfile,
+            name: account.name,
+            phone: account.phone,
+            initials: account.name
+              .trim()
+              .split(/\s+/)
+              .slice(0, 2)
+              .map((w) => w[0])
+              .join(" "),
+          }
+        : baseProfile,
+    [account, baseProfile],
+  );
+
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved && profiles.some((p) => p.id === saved)) setProfileId(saved);
+    const raw = localStorage.getItem(BOARD_KEY);
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw) as Board;
+        setBoard(
+          parsed.loads.length === 0 ? { ...parsed, loads: demoLoads() } : parsed,
+        );
+      } catch {
+        setBoard((b) => ({ ...b, loads: demoLoads() }));
+      }
+    } else {
+      setBoard((b) => ({ ...b, loads: demoLoads() }));
+    }
+    const rawGeo = localStorage.getItem(GEO_KEY);
+    if (rawGeo) {
+      try {
+        setMyLocation(JSON.parse(rawGeo) as LatLng);
+      } catch {
+        /* ignore corrupt location */
+      }
+    }
+
+    const rawAccount = localStorage.getItem(ACCOUNT_KEY);
+    if (rawAccount) {
+      try {
+        const local = JSON.parse(rawAccount) as Account;
+        setAccount(local);
+        // The shared database is authoritative for name/role/truck details.
+        void fetchAccount(local.phone).then((remote) => {
+          if (remote) {
+            setAccount(remote);
+            localStorage.setItem(ACCOUNT_KEY, JSON.stringify(remote));
+          } else {
+            void saveAccount(local);
+          }
+        });
+      } catch {
+        /* ignore corrupt account */
+      }
+    }
+
+    // One-time lift of device-only accounts into the shared database.
+    if (!localStorage.getItem(ACCOUNTS_MIGRATED_KEY)) {
+      try {
+        const all = JSON.parse(localStorage.getItem(ACCOUNTS_KEY) ?? "[]") as Account[];
+        if (all.length) void migrateLocalAccounts(all);
+      } catch {
+        /* ignore corrupt registry */
+      }
+      localStorage.setItem(ACCOUNTS_MIGRATED_KEY, "1");
+    }
+    hydrated.current = true;
+    setReady(true);
+
+    // A verified phone-OTP session restores the account even if local storage was
+    // cleared; without one, the old phone-only login is gone and OTP is required.
+    void supabase.auth.getSession().then(async ({ data }) => {
+      const sessionPhone = data.session?.user?.phone;
+      if (sessionPhone) {
+        const remote = await fetchAccount(sessionPhone);
+        if (remote) {
+          setAccount(remote);
+          localStorage.setItem(ACCOUNT_KEY, JSON.stringify(remote));
+        }
+        return;
+      }
+      // No verified session — only sign out when online (an offline device may just
+      // fail the token refresh while its session is still valid).
+      if (typeof navigator === "undefined" || navigator.onLine) {
+        setAccount((cur) => {
+          if (cur) localStorage.removeItem(ACCOUNT_KEY);
+          return cur ? null : cur;
+        });
+      }
+    });
+
+    // If the auth session ends (sign-out elsewhere, revoked token), drop the account.
+    const { data: authSub } = supabase.auth.onAuthStateChange((event) => {
+      if (event !== "SIGNED_OUT") return;
+      setAccount(null);
+      localStorage.removeItem(ACCOUNT_KEY);
+    });
+
+    // Keep the other role's tab in sync — same board, two users.
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === BOARD_KEY && e.newValue) {
+        try {
+          setBoard(JSON.parse(e.newValue) as Board);
+        } catch {
+          /* ignore */
+        }
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      authSub.subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated.current) return;
+    localStorage.setItem(BOARD_KEY, JSON.stringify(board));
+  }, [board]);
+
+  const switchProfile = useCallback((id: string) => {
+    setProfileId(id);
+    localStorage.setItem(STORAGE_KEY, id);
+  }, []);
+
+  /** Local "accounts database": every registered phone number on this device. */
+  const saveToRegistry = useCallback((next: Account) => {
+    let all: Account[] = [];
+    try {
+      all = JSON.parse(localStorage.getItem(ACCOUNTS_KEY) ?? "[]") as Account[];
+    } catch {
+      all = [];
+    }
+    const key = phoneKey(next.phone);
+    const merged = [next, ...all.filter((a) => phoneKey(a.phone) !== key)];
+    localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(merged));
+  }, []);
+
+  /** Shared database lookup, with the on-device registry as offline fallback. */
+  const findAccount = useCallback(async (phone: string): Promise<Account | null> => {
+    const key = phoneKey(phone);
+    if (!key) return null;
+    const remote = await fetchAccount(key);
+    if (remote) {
+      saveToRegistry(remote);
+      return remote;
+    }
+    if (typeof localStorage === "undefined") return null;
+    try {
+      const all = JSON.parse(localStorage.getItem(ACCOUNTS_KEY) ?? "[]") as Account[];
+      const local = all.find((a) => phoneKey(a.phone) === key) ?? null;
+      // Heal the shared database with an account that only existed locally.
+      if (local) void saveAccount(local);
+      return local;
+    } catch {
+      return null;
+    }
+  }, [saveToRegistry]);
+
+  const signIn = useCallback(
+    (next: Account) => {
+      setAccount(next);
+      localStorage.setItem(ACCOUNT_KEY, JSON.stringify(next));
+      saveToRegistry(next);
+      void saveAccount(next);
+      const target = profiles.find((p) => p.role === next.role) ?? profiles[0]!;
+      setProfileId(target.id);
+      localStorage.setItem(STORAGE_KEY, target.id);
+    },
+    [saveToRegistry],
+  );
+
+  const updateAccount = useCallback(
+    (patch: Partial<Account>) => {
+      setAccount((cur) => {
+        if (!cur) return cur;
+        const next = { ...cur, ...patch };
+        localStorage.setItem(ACCOUNT_KEY, JSON.stringify(next));
+        saveToRegistry(next);
+        void saveAccount(next);
+        return next;
+      });
+    },
+    [saveToRegistry],
+  );
+
+  const signOut = useCallback(() => {
+    setAccount(null);
+    localStorage.removeItem(ACCOUNT_KEY);
+    // End the verified phone session too — the account row stays in the database.
+    void supabase.auth.signOut();
+  }, []);
+
+
+  const updateRequest = useCallback((patch: Partial<TripRequest>) => {
+    setBoard((b) => ({ ...b, request: { ...b.request, ...patch, updatedAt: Date.now() } }));
+  }, []);
+
+  const resetRequest = useCallback(() => setBoard((b) => ({ ...b, request: defaultRequest })), []);
+
+  // ---- Shared backend sync -------------------------------------------------
+  const accountPhone = account ? phoneKey(account.phone) : "";
+  const driverKey = account?.role === "driver" ? `d-${accountPhone}` : profiles[1]!.id;
+
+  /** Pull requests + offers from the shared database (keeps demo/mock rows). */
+  const refreshFromDb = useCallback(async () => {
+    const remote = await fetchBoard();
+    setBoard((b) => ({
+      ...b,
+      loads: [...remote.loads, ...b.loads.filter((l) => !isRealLoad(l.id))],
+      bids: [...remote.bids, ...b.bids.filter((x) => !isRealBid(x.driverId))],
+    }));
+  }, []);
+
+  useEffect(() => {
+    if (!ready) return;
+    void refreshFromDb();
+    const channel = supabase
+      .channel("hamoula-board")
+      .on("postgres_changes", { event: "*", schema: "public", table: "loads" }, () => {
+        void refreshFromDb();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "bids" }, () => {
+        void refreshFromDb();
+      })
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [ready, refreshFromDb]);
+
+  // ---- Unfinished request draft (survives closing the app) -----------------
+  const [pendingDraft, setPendingDraft] = useState<Partial<TripRequest> | null>(null);
+
+  useEffect(() => {
+    if (!ready || !accountPhone || account?.role !== "shipper") return;
+    let stale = false;
+    void fetchDraft(accountPhone).then((d) => {
+      if (stale || !d) return;
+      if (d.pickup || d.destination || d.cargo) setPendingDraft(d);
+    });
+    return () => {
+      stale = true;
+    };
+  }, [ready, accountPhone, account?.role]);
+
+  const currentRequest = board.request;
+  useEffect(() => {
+    if (!ready || !accountPhone || account?.role !== "shipper") return;
+    if (currentRequest.status !== "draft") return;
+    const hasContent = Boolean(
+      currentRequest.pickup || currentRequest.destination || currentRequest.cargo,
+    );
+    const t = setTimeout(() => {
+      if (hasContent) void saveDraft(accountPhone, currentRequest);
+      else void clearDraft(accountPhone);
+    }, 700);
+    return () => clearTimeout(t);
+  }, [ready, accountPhone, account?.role, currentRequest]);
+
+  const resumeDraft = useCallback(() => {
+    const d = pendingDraft;
+    if (d) updateRequest({ ...d, status: "draft" });
+    setPendingDraft(null);
+    return d;
+  }, [pendingDraft, updateRequest]);
+
+  const discardDraft = useCallback(() => {
+    setPendingDraft(null);
+    if (accountPhone) void clearDraft(accountPhone);
+  }, [accountPhone]);
+
+  // ---- Global trip engine: the active trip advances wherever the user is ----
+  const [tripLive, setTripLive] = useState(true);
+  const tripStatus = board.request.status;
+  const currentLoadId = board.request.loadId ?? null;
+
+  useEffect(() => {
+    if (!ready || !tripLive) return;
+    const next = tripFlow[tripStatus as keyof typeof tripFlow];
+    if (!next) return;
+    const t = setTimeout(() => updateRequest({ status: next }), 9000);
+    return () => clearTimeout(t);
+  }, [ready, tripLive, tripStatus, updateRequest]);
+
+  // Persist every lifecycle change of the active trip.
+  useEffect(() => {
+    if (!ready || !currentLoadId || tripStatus === "draft") return;
+    void saveLoadStatus(currentLoadId, { tripStatus });
+    setBoard((b) => ({
+      ...b,
+      loads: b.loads.map((l) => (l.id === currentLoadId ? { ...l, tripStatus } : l)),
+    }));
+  }, [ready, currentLoadId, tripStatus]);
+
+  const publishLoad = useCallback(
+    (patch: Partial<TripRequest>) => {
+      const id = `L-${Date.now()}`;
+      let created!: Load;
+      setBoard((b) => {
+        const req: TripRequest = {
+          ...b.request,
+          ...patch,
+          status: "searching",
+          acceptedOffer: null,
+          loadId: id,
+          updatedAt: Date.now(),
+        };
+        created = {
+          id,
+          shipper: account?.role === "shipper" ? account.name : shipperName,
+          shipperPhone: account?.role === "shipper" ? account.phone : undefined,
+          pickup: req.pickup,
+          destination: req.destination,
+          cargo: req.cargo ?? "",
+          pickupPoint: req.pickupPoint,
+          destinationPoint: req.destinationPoint,
+          truck: req.truck,
+          capacity: req.capacity,
+          price: req.price,
+          voiceNote: req.voiceNote,
+          createdAt: Date.now(),
+          status: "open",
+          tripStatus: "searching",
+          acceptedOffer: null,
+        };
+        return { request: req, loads: [created, ...b.loads], bids: b.bids };
+      });
+      // Permanent copy under "طلباتي" + the unfinished draft is done.
+      void saveLoad(created);
+      if (accountPhone) void clearDraft(accountPhone);
+      setPendingDraft(null);
+      return created;
+    },
+    [account, accountPhone],
+  );
+
+  const addBid = useCallback<Ctx["addBid"]>(
+    ({ loadId, price, kind, voiceNote = null }) => {
+      const bid: Bid = {
+        id: `B-${Date.now()}`,
+        loadId,
+        driverId: driverKey,
+        driver: account?.role === "driver" ? account.name : profiles[1]!.name,
+        driverPhone: account?.role === "driver" ? account.phone : undefined,
+        truck:
+          account?.role === "driver" && account.truckType ? account.truckType : "شاحنة متوسطة",
+        plate: "12345 - أ - 20",
+        rating: profiles[1]!.rating,
+        trips: 214,
+        price,
+        etaMin: 20,
+        kind,
+        voiceNote,
+        shipperReply: null,
+        status: "pending",
+        createdAt: Date.now(),
+      };
+      setBoard((b) => ({
+        ...b,
+        bids: [...b.bids.filter((x) => !(x.loadId === loadId && x.driverId === bid.driverId)), bid],
+      }));
+      void saveBid(bid);
+      return bid;
+    },
+    [account, driverKey],
+  );
+
+  const acceptBid = useCallback((bidId: string) => {
+    let accepted: Bid | null = null;
+    setBoard((b) => {
+      const bid = b.bids.find((x) => x.id === bidId);
+      if (!bid) return b;
+      accepted = { ...bid, status: "accepted" };
+      const offer = bidToOffer(bid);
+      // Persist: request becomes "تم قبول سائق", the winning offer is saved.
+      void saveLoadStatus(bid.loadId, {
+        tripStatus: "matched",
+        status: "assigned",
+        acceptedOffer: offer,
+        price: bid.price,
+      });
+      void saveBidStatus(bidId, { status: "accepted" });
+      b.bids
+        .filter((x) => x.loadId === bid.loadId && x.id !== bidId)
+        .forEach((x) => void saveBidStatus(x.id, { status: "declined" }));
+      return {
+        loads: b.loads.map((l) =>
+          l.id === bid.loadId
+            ? { ...l, status: "assigned" as const, tripStatus: "matched" as const, acceptedOffer: offer }
+            : l,
+        ),
+        bids: b.bids.map((x) =>
+          x.id === bidId
+            ? { ...x, status: "accepted" as const }
+            : x.loadId === bid.loadId
+              ? { ...x, status: "declined" as const }
+              : x,
+        ),
+        request: {
+          ...b.request,
+          loadId: bid.loadId,
+          status: "matched",
+          price: bid.price,
+          acceptedOffer: offer,
+          updatedAt: Date.now(),
+        },
+      };
+    });
+    return accepted;
+  }, []);
+
+  const declineBid = useCallback((bidId: string) => {
+    void saveBidStatus(bidId, { status: "declined" });
+    setBoard((b) => ({
+      ...b,
+      bids: b.bids.map((x) => (x.id === bidId ? { ...x, status: "declined" as const } : x)),
+    }));
+  }, []);
+
+  const withdrawBid = useCallback((bidId: string) => {
+    void removeBid(bidId);
+    setBoard((b) => ({ ...b, bids: b.bids.filter((x) => x.id !== bidId) }));
+  }, []);
+
+  /** Cancel a request without deleting it — it stays visible as "ملغى". */
+  const cancelRequest = useCallback(
+    (loadId?: string) => {
+      const id = loadId ?? board.request.loadId ?? null;
+      if (id) void saveLoadStatus(id, { tripStatus: "cancelled", status: "assigned" });
+      setBoard((b) => ({
+        ...b,
+        loads: id
+          ? b.loads.map((l) => (l.id === id ? { ...l, tripStatus: "cancelled" as const } : l))
+          : b.loads,
+        request:
+          !loadId || loadId === b.request.loadId
+            ? { ...b.request, status: "cancelled", updatedAt: Date.now() }
+            : b.request,
+      }));
+    },
+    [board.request.loadId],
+  );
+
+
+  const updateBidPrice = useCallback((bidId: string, price: number) => {
+    void saveBidStatus(bidId, { price, status: "pending" });
+    setBoard((b) => ({
+      ...b,
+      bids: b.bids.map((x) =>
+        x.id === bidId
+          ? { ...x, price, kind: "counter" as const, status: "pending" as const, createdAt: Date.now() }
+          : x,
+      ),
+    }));
+  }, []);
+
+
+  const replyToBid = useCallback((bidId: string, note: VoiceNote) => {
+    setBoard((b) => ({
+      ...b,
+      bids: b.bids.map((x) => (x.id === bidId ? { ...x, shipperReply: note } : x)),
+    }));
+  }, []);
+
+  const activeLoad = board.loads.find((l) => l.status === "open") ?? board.loads[0] ?? null;
+
+  // Simulated competing drivers bidding on the freshest open load.
+  const activeLoadId = activeLoad?.id ?? null;
+  const activeLoadStatus = activeLoad?.status ?? null;
+  const activeLoadPrice = activeLoad?.price ?? 0;
+  const activeLoadTruck = activeLoad?.truck;
+  const routeKm = activeLoad
+    ? roadDistanceKm(activeLoad.pickupPoint, activeLoad.destinationPoint)
+    : 0;
+  useEffect(() => {
+    if (!activeLoadId || activeLoadStatus !== "open") return;
+    const pool = mockOffers.filter((o) => o.driver !== profiles[1]!.name);
+    let i = 0;
+    const t = setInterval(() => {
+      const next = pool[i];
+      i += 1;
+      if (!next) {
+        clearInterval(t);
+        return;
+      }
+      setBoard((b) => {
+        if (b.bids.some((x) => x.loadId === activeLoadId && x.driverId === `mock-${next.id}`)) {
+          return b;
+        }
+        // Deterministic per-driver spread so prices stay stable across renders.
+        const variance = ((Number(next.id) * 37) % 100) / 100;
+        const price = counterOfferPrice(routeKm, activeLoadTruck, activeLoadPrice, variance);
+        const etaMin = Math.max(8, Math.round(10 + i * 8));
+        const bid: Bid = {
+          id: `B-${next.id}-${activeLoadId}`,
+          loadId: activeLoadId,
+          driverId: `mock-${next.id}`,
+          driver: next.driver,
+          truck: next.truck,
+          plate: next.plate,
+          rating: next.rating,
+          trips: next.trips,
+          price,
+          etaMin,
+          kind: price === activeLoadPrice ? "accepted-price" : "counter",
+          voiceNote: offerVoiceNotes[next.id] ?? null,
+          shipperReply: null,
+          status: "pending",
+          createdAt: Date.now(),
+        };
+        return { ...b, bids: [...b.bids, bid] };
+      });
+    }, 4000);
+    return () => clearInterval(t);
+  }, [activeLoadId, activeLoadStatus, activeLoadPrice, activeLoadTruck, routeKm]);
+
+
+  const myBidFor = useCallback(
+    (loadId: string) =>
+      board.bids.find((x) => x.loadId === loadId && x.driverId === driverKey) ?? null,
+    [board.bids, driverKey],
+  );
+
+  /** "طلباتي" — every request this shipper published, newest first. */
+  const myLoads = useMemo(() => {
+    if (account?.role !== "shipper") return [];
+    const key = accountPhone;
+    return board.loads
+      .filter((l) => isRealLoad(l.id) && (!key || phoneKey(l.shipperPhone ?? "") === key))
+      .sort((a, b) => b.createdAt - a.createdAt);
+  }, [board.loads, account?.role, accountPhone]);
+
+  /** "عروضي" — every offer this driver sent. */
+  const myBids = useMemo(
+    () => board.bids.filter((x) => x.driverId === driverKey).sort((a, b) => b.createdAt - a.createdAt),
+    [board.bids, driverKey],
+  );
+
+  /** "رحلاتي" — transports won by this driver (active + history). */
+  const myTrips = useMemo(() => {
+    const wonLoadIds = new Set(
+      board.bids.filter((x) => x.driverId === driverKey && x.status === "accepted").map((x) => x.loadId),
+    );
+    return board.loads.filter((l) => wonLoadIds.has(l.id)).sort((a, b) => b.createdAt - a.createdAt);
+  }, [board.loads, board.bids, driverKey]);
+
+  // Drivers get their position automatically once signed in.
+  useEffect(() => {
+    if (!ready || profile.role !== "driver") return;
+    requestLocation();
+  }, [ready, profile.role, requestLocation]);
+
+  const value = useMemo(
+    () => ({
+      profile,
+      switchProfile,
+      account,
+      ready,
+      signIn,
+      signOut,
+      findAccount,
+      updateAccount,
+
+      request: board.request,
+      updateRequest,
+      resetRequest,
+      tripLive,
+      setTripLive,
+      loads: board.loads,
+      bids: board.bids,
+      activeLoad,
+      publishLoad,
+      addBid,
+      acceptBid,
+      declineBid,
+      withdrawBid,
+      updateBidPrice,
+      replyToBid,
+      myBidFor,
+      myLoads,
+      myTrips,
+      myBids,
+      cancelRequest,
+      pendingDraft,
+      resumeDraft,
+      discardDraft,
+      myLocation,
+      geoStatus,
+      requestLocation,
+    }),
+    [
+      profile,
+      switchProfile,
+      account,
+      ready,
+      signIn,
+      signOut,
+      findAccount,
+      updateAccount,
+
+      board,
+      activeLoad,
+      updateRequest,
+      resetRequest,
+      tripLive,
+      publishLoad,
+      addBid,
+      acceptBid,
+      declineBid,
+      withdrawBid,
+      updateBidPrice,
+      replyToBid,
+      myBidFor,
+      myLoads,
+      myTrips,
+      myBids,
+      cancelRequest,
+      pendingDraft,
+      resumeDraft,
+      discardDraft,
+      myLocation,
+      geoStatus,
+      requestLocation,
+    ],
+  );
+
+
+  return <HamoulaContext.Provider value={value}>{children}</HamoulaContext.Provider>;
+}
+
+export function useHamoula() {
+  const ctx = useContext(HamoulaContext);
+  if (!ctx) throw new Error("useHamoula must be used inside HamoulaProvider");
+  return ctx;
+}
+
+export const statusLabels: Record<TripStatus, string> = {
+  draft: "مسودة",
+  searching: "منشور / كنقلبو على سائق",
+  matched: "تم قبول سائق",
+  enroute: "في الطريق",
+  loaded: "تم تحميل البضاعة",
+  delivered: "تم التسليم",
+  cancelled: "ملغى",
+};
+
