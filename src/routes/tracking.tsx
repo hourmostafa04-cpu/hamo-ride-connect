@@ -10,7 +10,8 @@ import { Mic } from "lucide-react";
 import { VoiceBanner, VoiceNotePlayer, VoiceRecorderSheet } from "@/components/hamoula/Voice";
 import { tripSteps, mockChat, driverVoiceReplies } from "@/lib/hamoula-data";
 import { useHamoula, type TripStatus } from "@/lib/hamoula-store";
-import { lerp, distanceKm } from "@/lib/hamoula-geo";
+import { type LatLng } from "@/lib/hamoula-geo";
+import { useLiveLocation, FIX_INTERVAL_MS } from "@/lib/hamoula-live-location";
 
 const TripMap = lazy(() => import("@/components/hamoula/TripMap"));
 
@@ -85,23 +86,32 @@ function TrackingPage() {
   const mins = Math.floor(eta / 60);
   const secs = String(eta % 60).padStart(2, "0");
 
-  // Simulated GPS feed: the truck advances along the route.
-  const [progress, setProgress] = useState(0);
-  useEffect(() => {
-    if (done) {
-      setProgress(1);
-      return;
-    }
-    if (!live) return;
-    const t = setInterval(() => setProgress((p) => Math.min(1, p + 0.01)), 1200);
-    return () => clearInterval(t);
-  }, [live, done]);
-
-  const driverPoint = useMemo(
-    () => lerp(request.pickupPoint, request.destinationPoint, progress),
-    [request.pickupPoint, request.destinationPoint, progress],
+  // Live GPS feed: periodic fixes + frame-by-frame smoothing.
+  const pickupPoint = useMemo<LatLng>(
+    () => request.pickupPoint,
+    [request.pickupPoint.lat, request.pickupPoint.lng],
   );
-  const remainingKm = distanceKm(driverPoint, request.destinationPoint);
+  const destinationPoint = useMemo<LatLng>(
+    () => request.destinationPoint,
+    [request.destinationPoint.lat, request.destinationPoint.lng],
+  );
+  const {
+    position: driverPoint,
+    bearing,
+    speedKmh,
+    remainingKm,
+    etaMinutes,
+    lastFixAt,
+  } = useLiveLocation(pickupPoint, destinationPoint, { active: live, done });
+
+  // Seconds since the last received location update.
+  const [sinceFix, setSinceFix] = useState(0);
+  useEffect(() => {
+    setSinceFix(0);
+    if (!live || done) return;
+    const t = setInterval(() => setSinceFix(Math.round((Date.now() - lastFixAt) / 1000)), 1000);
+    return () => clearInterval(t);
+  }, [lastFixAt, live, done]);
 
   const send = () => {
     if (!draft.trim()) return;
@@ -152,12 +162,21 @@ function TrackingPage() {
             <h2 className="font-bold">تتبع الشاحنة على الخريطة</h2>
             {!done && <LiveBadge label={`باقي ${remainingKm.toFixed(0)} كلم`} />}
           </div>
+          {!done && (
+            <p className="px-2 pb-2 text-[11px] text-muted-foreground">
+              {live
+                ? `آخر تحديث للموقع قبل ${sinceFix} ثانية · السرعة ${speedKmh} كلم/س · الوصول بعد ${etaMinutes} د (كل ${FIX_INTERVAL_MS / 1000} ثوان)`
+                : "التتبع المباشر متوقف — شغّله باش تشوف الشاحنة كتمشي فالوقت الحقيقي"}
+            </p>
+          )}
           <ClientOnly fallback={<MapSkeleton />}>
             <Suspense fallback={<MapSkeleton />}>
               <TripMap
                 pickup={request.pickupPoint}
                 destination={request.destinationPoint}
                 driver={driverPoint}
+                bearing={bearing}
+                follow={live && !done}
               />
             </Suspense>
           </ClientOnly>
