@@ -19,7 +19,6 @@ import { Route as MyBidsRouteImport } from './routes/my-bids'
 import { Route as MyRequestsRouteImport } from './routes/my-requests'
 import { Route as MyTripsRouteImport } from './routes/my-trips'
 import { Route as OffersRouteImport } from './routes/offers'
-import { Route as OtpTestRouteImport } from './routes/otp-test'
 import { Route as RequestRouteImport } from './routes/request'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as TrackingRouteImport } from './routes/tracking'
@@ -75,11 +74,6 @@ const OffersRoute = OffersRouteImport.update({
   path: '/offers',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OtpTestRoute = OtpTestRouteImport.update({
-  id: '/otp-test',
-  path: '/otp-test',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const RequestRoute = RequestRouteImport.update({
   id: '/request',
   path: '/request',
@@ -112,7 +106,6 @@ export interface FileRoutesByFullPath {
   '/my-requests': typeof MyRequestsRoute
   '/my-trips': typeof MyTripsRoute
   '/offers': typeof OffersRoute
-  '/otp-test': typeof OtpTestRoute
   '/request': typeof RequestRoute
   '/settings': typeof SettingsRoute
   '/tracking': typeof TrackingRoute
@@ -129,7 +122,6 @@ export interface FileRoutesByTo {
   '/my-requests': typeof MyRequestsRoute
   '/my-trips': typeof MyTripsRoute
   '/offers': typeof OffersRoute
-  '/otp-test': typeof OtpTestRoute
   '/request': typeof RequestRoute
   '/settings': typeof SettingsRoute
   '/tracking': typeof TrackingRoute
@@ -147,7 +139,6 @@ export interface FileRoutesById {
   '/my-requests': typeof MyRequestsRoute
   '/my-trips': typeof MyTripsRoute
   '/offers': typeof OffersRoute
-  '/otp-test': typeof OtpTestRoute
   '/request': typeof RequestRoute
   '/settings': typeof SettingsRoute
   '/tracking': typeof TrackingRoute
@@ -166,7 +157,6 @@ export interface FileRouteTypes {
     | '/my-requests'
     | '/my-trips'
     | '/offers'
-    | '/otp-test'
     | '/request'
     | '/settings'
     | '/tracking'
@@ -183,7 +173,6 @@ export interface FileRouteTypes {
     | '/my-requests'
     | '/my-trips'
     | '/offers'
-    | '/otp-test'
     | '/request'
     | '/settings'
     | '/tracking'
@@ -200,7 +189,6 @@ export interface FileRouteTypes {
     | '/my-requests'
     | '/my-trips'
     | '/offers'
-    | '/otp-test'
     | '/request'
     | '/settings'
     | '/tracking'
@@ -218,7 +206,6 @@ export interface RootRouteChildren {
   MyRequestsRoute: typeof MyRequestsRoute
   MyTripsRoute: typeof MyTripsRoute
   OffersRoute: typeof OffersRoute
-  OtpTestRoute: typeof OtpTestRoute
   RequestRoute: typeof RequestRoute
   SettingsRoute: typeof SettingsRoute
   TrackingRoute: typeof TrackingRoute
@@ -297,13 +284,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OffersRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/otp-test': {
-      id: '/otp-test'
-      path: '/otp-test'
-      fullPath: '/otp-test'
-      preLoaderRoute: typeof OtpTestRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/request': {
       id: '/request'
       path: '/request'
@@ -346,7 +326,6 @@ const rootRouteChildren: RootRouteChildren = {
   MyRequestsRoute: MyRequestsRoute,
   MyTripsRoute: MyTripsRoute,
   OffersRoute: OffersRoute,
-  OtpTestRoute: OtpTestRoute,
   RequestRoute: RequestRoute,
   SettingsRoute: SettingsRoute,
   TrackingRoute: TrackingRoute,
