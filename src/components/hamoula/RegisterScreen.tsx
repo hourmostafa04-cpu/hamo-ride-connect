@@ -343,7 +343,20 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
     return () => window.clearTimeout(t);
   }, [resendIn]);
 
+  /** وضع الاختبار: دخول الحساب التجريبي الوحيد بدون SMS (ما كيمسّش OTP الحقيقي). */
+  const demoSignIn = (demoRole: RoleId) => {
+    if (!DEMO_LOGIN_ENABLED) return;
+    const acc = demoAccount(demoRole);
+    signIn(acc);
+    playSfx("success");
+    toast.success("دخلتي بالحساب التجريبي", {
+      description: demoRole === "driver" ? "صاحب شاحنة" : "صاحب بضاعة",
+    });
+    onDone(demoRole);
+  };
+
   const submit = () => {
+
     const normalized = normalizePhone(phone);
     if (!name.trim()) {
       setError("كتب الاسم والنسب ديالك");
