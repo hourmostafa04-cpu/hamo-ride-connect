@@ -517,7 +517,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
           </p>
         )}
         <p className="mt-1 text-xs text-muted-foreground">
-          كنقبلو 06 / 07 ولا 212+ — الميكرو كيتحبس بوحدو من بعد 4.5 ثواني باش تحبسو
+          كنقبلو 06 / 07 ولا 212+ — الميكرو كيتحبس بوحدو من بعد 2 ثواني باش تحبسو
         </p>
         </>
         )}
