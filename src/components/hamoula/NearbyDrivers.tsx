@@ -116,13 +116,13 @@ export function NearbyDrivers({ pickup, truckId }: { pickup: LatLng; truckId?: s
               </div>
               <div
                 className={`inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-bold ${
-                  isSameCity(d.km, d.city, pickupCity)
+                  isSameCity(d.km, d.city, baseCity)
                     ? "bg-primary text-primary-foreground"
                     : "bg-primary-soft text-accent-foreground"
                 }`}
               >
                 <MapPin className="size-3.5 shrink-0" />
-                {pickupProximityLabel(d.km, d.city, pickupCity)}
+                {pickupProximityLabel(d.km, d.city, baseCity)}
               </div>
               <ContactActions seed={d.id} phone={d.phone} name={d.name} compact />
             </li>
