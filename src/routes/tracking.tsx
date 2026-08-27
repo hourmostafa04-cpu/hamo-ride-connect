@@ -53,6 +53,7 @@ function nowTime() {
 function TrackingPage() {
   const navigate = useNavigate();
   const { profile, request, updateRequest, tripLive, setTripLive } = useHamoula();
+  const homePath = useHomePath();
   const driver = request.acceptedOffer;
   // Status lives in the store so the trip keeps advancing from any screen.
   const current = Math.max(0, statusByStep.indexOf(request.status));
