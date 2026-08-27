@@ -114,6 +114,17 @@ function TrackingPage() {
     return () => clearInterval(t);
   }, [lastFixAt, live, done]);
 
+  const endTrip = () => {
+    // Stop the live GPS feed and freeze the marker at its current fix.
+    setTripLive(false);
+    // Finalize the trip: all steps complete, ETA collapses to zero.
+    setEta(0);
+    updateRequest({ status: "delivered" });
+    playSfx("success");
+    toast.success("تسالات الرحلة، الله يسهل عليكم");
+    navigate({ to: "/trip-details" });
+  };
+
   const send = () => {
     if (!draft.trim()) return;
     setMessages((m) => [...m, { id: Date.now(), from: "me", text: draft.trim(), time: nowTime() }]);
@@ -225,21 +236,29 @@ function TrackingPage() {
           </ol>
 
           {!done && (
-            <div className="mt-5 flex gap-3">
+            <div className="mt-5 space-y-3">
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    const next = current + 1;
+                    updateRequest({ status: statusByStep[next]! });
+                  }}
+                  className="flex-1 rounded-xl border-2 border-primary py-3 text-sm font-bold text-primary"
+                >
+                  تحديث الحالة الآن
+                </button>
+                <button
+                  onClick={() => setLive((l) => !l)}
+                  className="rounded-xl border-2 border-border px-4 py-3 text-sm font-bold text-muted-foreground"
+                >
+                  {live ? "إيقاف التتبع" : "تشغيل التتبع"}
+                </button>
+              </div>
               <button
-                onClick={() => {
-                  const next = current + 1;
-                  updateRequest({ status: statusByStep[next]! });
-                }}
-                className="flex-1 rounded-xl border-2 border-primary py-3 text-sm font-bold text-primary"
+                onClick={endTrip}
+                className="w-full rounded-xl bg-primary py-3 text-sm font-extrabold text-primary-foreground active:scale-95"
               >
-                تحديث الحالة الآن
-              </button>
-              <button
-                onClick={() => setLive((l) => !l)}
-                className="rounded-xl border-2 border-border px-4 py-3 text-sm font-bold text-muted-foreground"
-              >
-                {live ? "إيقاف التتبع" : "تشغيل التتبع"}
+                إنهاء الرحلة
               </button>
             </div>
           )}
