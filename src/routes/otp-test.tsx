@@ -31,6 +31,12 @@ function toE164(raw: string): string | null {
 }
 
 function OtpTest() {
+  // صفحة تطوير فقط: في النسخة المنشورة (Production) نحوّل للرئيسية فوراً.
+  if (!import.meta.env.DEV) return <Navigate to="/" replace />;
+  return <OtpTestInner />;
+}
+
+function OtpTestInner() {
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
   const [sent, setSent] = useState(false);
