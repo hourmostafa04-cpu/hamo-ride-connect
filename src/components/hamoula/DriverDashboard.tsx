@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { PhoneFrame, AppHeader, LiveBadge, useHomePath } from "@/components/hamoula/PhoneFrame";
+import { ResumeWhereYouLeft } from "@/components/hamoula/ResumeWhereYouLeft";
 import { VoiceBanner, VoiceNotePlayer, VoiceRecorderSheet } from "@/components/hamoula/Voice";
 import { findTruck, driverVoiceReplies } from "@/lib/hamoula-data";
 import { useHamoula, type Load } from "@/lib/hamoula-store";
@@ -115,6 +116,7 @@ export function DriverDashboard() {
       <AppHeader title="لوحة صاحب الشاحنة" subtitle={profile.name} showBack backTo="/driver">
         <GpsChip />
       </AppHeader>
+      <ResumeWhereYouLeft />
       <div className="flex-1 space-y-4 px-5 py-5">
         <section className="space-y-3 rounded-3xl border-2 border-border bg-card p-4 shadow-soft">
           <button

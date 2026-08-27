@@ -22,6 +22,7 @@ const TRUCK_ICONS = { Car, Bus, Truck, Container, Tractor, Snowflake } as const;
 import { toast } from "sonner";
 import { playSfx } from "@/lib/sfx";
 import { PhoneFrame, AppHeader, StickyActions } from "@/components/hamoula/PhoneFrame";
+import { ResumeWhereYouLeft } from "@/components/hamoula/ResumeWhereYouLeft";
 import { VoiceNotePlayer } from "@/components/hamoula/Voice";
 import { Mic, Loader2 } from "lucide-react";
 import { useAiDictation } from "@/hooks/use-ai-dictation";
@@ -237,6 +238,7 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
         backTo="/"
       >
       </AppHeader>
+      <ResumeWhereYouLeft />
 
       <div className="px-5 pt-5">
         {pendingDraft && (
