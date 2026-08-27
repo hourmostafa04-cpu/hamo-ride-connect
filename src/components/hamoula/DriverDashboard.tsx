@@ -48,8 +48,19 @@ function truckSize(id: string): TruckSize {
   return "large";
 }
 export function DriverDashboard() {
-  const { loads, bids, addBid, myBidFor, updateRequest, myLocation, geoStatus, profile, account, updateAccount } =
-    useHamoula();
+  const {
+    loads,
+    bids,
+    addBid,
+    myBidFor,
+    updateRequest,
+    myLocation,
+    geoStatus,
+    requestLocation,
+    profile,
+    account,
+    updateAccount,
+  } = useHamoula();
   const navigate = useNavigate();
   const [filter, setFilter] = useState<string>("all");
   const [refreshing, setRefreshing] = useState(false);
