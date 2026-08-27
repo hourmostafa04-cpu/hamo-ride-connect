@@ -1,26 +1,25 @@
-import { createFileRoute, Navigate } from "@tanstack/react-router";
+// DEV-ONLY page: imported lazily from src/router.tsx only when import.meta.env.DEV.
+// Never statically imported, so signInWithOtp/verifyOtp test code stays out of
+// the production bundle entirely.
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PhoneFrame } from "@/components/hamoula/PhoneFrame";
 
-export const Route = createFileRoute("/otp-test")({
-  head: () => ({
-    meta: [
-      { title: "حمولة | اختبار رمز SMS" },
-      {
-        name: "description",
-        content: "صفحة اختبار: صيفط رمز التحقق 6 أرقام لرقم مغربي وتحقق منو عبر مزود SMS.",
-      },
-      { property: "og:title", content: "حمولة | اختبار رمز SMS" },
-      {
-        property: "og:description",
-        content: "صفحة اختبار: صيفط رمز التحقق 6 أرقام لرقم مغربي وتحقق منو عبر مزود SMS.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-  }),
-  component: OtpTest,
+export const otpTestHead = () => ({
+  meta: [
+    { title: "حمولة | اختبار رمز SMS" },
+    {
+      name: "description",
+      content: "صفحة اختبار: صيفط رمز التحقق 6 أرقام لرقم مغربي وتحقق منو عبر مزود SMS.",
+    },
+    { property: "og:title", content: "حمولة | اختبار رمز SMS" },
+    {
+      property: "og:description",
+      content: "صفحة اختبار: صيفط رمز التحقق 6 أرقام لرقم مغربي وتحقق منو عبر مزود SMS.",
+    },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary_large_image" },
+  ],
 });
 
 /** E.164 for Morocco: 06XXXXXXXX -> +2126XXXXXXXX */
@@ -30,13 +29,7 @@ function toE164(raw: string): string | null {
   return /^[5-7]\d{8}$/.test(local) ? `+212${local}` : null;
 }
 
-function OtpTest() {
-  // صفحة تطوير فقط: في النسخة المنشورة (Production) نحوّل للرئيسية فوراً.
-  if (!import.meta.env.DEV) return <Navigate to="/" replace />;
-  return <OtpTestInner />;
-}
-
-function OtpTestInner() {
+export function OtpTestPage() {
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
   const [sent, setSent] = useState(false);
