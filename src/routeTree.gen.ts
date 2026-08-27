@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as ChatRouteImport } from './routes/chat'
 import { Route as DriverRouteImport } from './routes/driver'
 import { Route as LoadsRouteImport } from './routes/loads'
 import { Route as MyBidsRouteImport } from './routes/my-bids'
@@ -37,6 +38,11 @@ const AccountRoute = AccountRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChatRoute = ChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DriverRoute = DriverRouteImport.update({
@@ -99,6 +105,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
   '/auth': typeof AuthRoute
+  '/chat': typeof ChatRoute
   '/driver': typeof DriverRoute
   '/loads': typeof LoadsRoute
   '/my-bids': typeof MyBidsRoute
@@ -115,6 +122,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
   '/auth': typeof AuthRoute
+  '/chat': typeof ChatRoute
   '/driver': typeof DriverRoute
   '/loads': typeof LoadsRoute
   '/my-bids': typeof MyBidsRoute
@@ -132,6 +140,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
   '/auth': typeof AuthRoute
+  '/chat': typeof ChatRoute
   '/driver': typeof DriverRoute
   '/loads': typeof LoadsRoute
   '/my-bids': typeof MyBidsRoute
@@ -150,6 +159,7 @@ export interface FileRouteTypes {
     | '/'
     | '/account'
     | '/auth'
+    | '/chat'
     | '/driver'
     | '/loads'
     | '/my-bids'
@@ -166,6 +176,7 @@ export interface FileRouteTypes {
     | '/'
     | '/account'
     | '/auth'
+    | '/chat'
     | '/driver'
     | '/loads'
     | '/my-bids'
@@ -182,6 +193,7 @@ export interface FileRouteTypes {
     | '/'
     | '/account'
     | '/auth'
+    | '/chat'
     | '/driver'
     | '/loads'
     | '/my-bids'
@@ -199,6 +211,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccountRoute: typeof AccountRoute
   AuthRoute: typeof AuthRoute
+  ChatRoute: typeof ChatRoute
   DriverRoute: typeof DriverRoute
   LoadsRoute: typeof LoadsRoute
   MyBidsRoute: typeof MyBidsRoute
@@ -233,6 +246,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chat': {
+      id: '/chat'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof ChatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/driver': {
@@ -319,6 +339,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountRoute: AccountRoute,
   AuthRoute: AuthRoute,
+  ChatRoute: ChatRoute,
   DriverRoute: DriverRoute,
   LoadsRoute: LoadsRoute,
   MyBidsRoute: MyBidsRoute,

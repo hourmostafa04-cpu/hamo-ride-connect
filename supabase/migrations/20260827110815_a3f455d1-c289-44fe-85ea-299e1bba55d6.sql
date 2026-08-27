@@ -1,0 +1,2 @@
+CREATE POLICY chat_voice_read ON storage.objects FOR SELECT TO anon, authenticated USING (bucket_id = 'chat-voice');
+CREATE POLICY chat_voice_insert ON storage.objects FOR INSERT TO anon, authenticated WITH CHECK (bucket_id = 'chat-voice');

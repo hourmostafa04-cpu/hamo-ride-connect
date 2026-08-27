@@ -118,6 +118,45 @@ export type Database = {
           },
         ]
       }
+      chat_messages: {
+        Row: {
+          body: string
+          created_at: string
+          driver_phone: string
+          id: string
+          load_id: string
+          sender_name: string
+          sender_phone: string
+          sender_role: string
+          shipper_phone: string
+          voice: Json | null
+        }
+        Insert: {
+          body?: string
+          created_at?: string
+          driver_phone?: string
+          id?: string
+          load_id: string
+          sender_name?: string
+          sender_phone: string
+          sender_role?: string
+          shipper_phone?: string
+          voice?: Json | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          driver_phone?: string
+          id?: string
+          load_id?: string
+          sender_name?: string
+          sender_phone?: string
+          sender_role?: string
+          shipper_phone?: string
+          voice?: Json | null
+        }
+        Relationships: []
+      }
       drafts: {
         Row: {
           data: Json
