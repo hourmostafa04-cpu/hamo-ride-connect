@@ -158,7 +158,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
   const [applying, setApplying] = useState(false);
 
   const dictation = useAiDictation({
-    silenceMs: 4500,
+    silenceMs: 2000,
     mode: () => (fieldRef.current === "phone" ? "phone" : "general"),
     onText: (text, raw) => {
       setListening(null);

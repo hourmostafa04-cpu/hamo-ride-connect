@@ -62,7 +62,7 @@ export function useAiDictation(opts: {
     | "cargo"
     | (() => "general" | "phone" | "city" | "cargo");
 }) {
-  const { onText, onError, silenceMs = 2500, mode = "general" } = opts;
+  const { onText, onError, silenceMs = 2000, mode = "general" } = opts;
 
   const [state, setState] = useState<DictationState>("idle");
   const [level, setLevel] = useState(0);
