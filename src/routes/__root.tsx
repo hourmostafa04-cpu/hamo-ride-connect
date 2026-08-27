@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { HamoulaProvider } from "@/lib/hamoula-store";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthGate } from "@/components/hamoula/AuthGate";
+import { LastRouteTracker } from "@/components/hamoula/ResumeWhereYouLeft";
 import { attachGlobalTapSound } from "@/lib/sfx";
 import { loadPrefs } from "@/lib/notif-prefs";
 
@@ -156,6 +157,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <HamoulaProvider>
+        <LastRouteTracker />
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <AuthGate>
           <Outlet />
