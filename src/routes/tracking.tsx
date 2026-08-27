@@ -1,4 +1,4 @@
-import { createFileRoute, Link, ClientOnly } from "@tanstack/react-router";
+import { createFileRoute, Link, ClientOnly, useNavigate } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { playSfx } from "@/lib/sfx";
@@ -51,6 +51,7 @@ function nowTime() {
 }
 
 function TrackingPage() {
+  const navigate = useNavigate();
   const { profile, request, updateRequest, tripLive, setTripLive } = useHamoula();
   const driver = request.acceptedOffer;
   // Status lives in the store so the trip keeps advancing from any screen.
