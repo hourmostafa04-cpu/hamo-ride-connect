@@ -2,7 +2,7 @@ import { lazy, Suspense, useMemo, useState } from "react";
 import { Truck, Star, MapPin, Map as MapIcon, List } from "lucide-react";
 import { activeDrivers } from "@/lib/hamoula-drivers";
 import { distanceKm, type LatLng } from "@/lib/hamoula-geo";
-import { isSameCity, nearestCityName, pickupProximityLabel } from "@/lib/hamoula-location";
+import { isSameCity, kmText, nearestCityName, pickupProximityLabel } from "@/lib/hamoula-location";
 import { ContactActions } from "./ContactActions";
 
 const NearbyDriversMap = lazy(() => import("./NearbyDriversMap"));
@@ -91,11 +91,13 @@ export function NearbyDrivers({ pickup, truckId }: { pickup: LatLng; truckId?: s
                   </div>
                 </div>
                 <div className="text-left">
+                  <div className="text-base font-extrabold text-primary">{kmText(d.km)} كم</div>
                   <div className="flex items-center justify-end gap-1 text-xs font-bold text-muted-foreground">
                     <Star className="size-3.5 fill-current text-primary" />
                     {d.rating}
                   </div>
                 </div>
+
               </div>
               <div
                 className={`inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-bold ${

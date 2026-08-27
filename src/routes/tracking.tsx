@@ -139,7 +139,7 @@ function TrackingPage() {
 
   return (
     <PhoneFrame>
-      <AppHeader title="تتبع الرحلة" subtitle="رقم الطلب #HM-20841">
+      <AppHeader title="تتبع الرحلة" subtitle="رقم الطلب #HM-20841" showBack backTo="/">
         <ShareTrip compact />
       </AppHeader>
 
