@@ -1,8 +1,9 @@
-import { lazy, Suspense, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Truck, Star, MapPin, Map as MapIcon, List } from "lucide-react";
 import { activeDrivers } from "@/lib/hamoula-drivers";
 import { distanceKm, type LatLng } from "@/lib/hamoula-geo";
 import { isSameCity, kmText, nearestCityName, pickupProximityLabel } from "@/lib/hamoula-location";
+import { useHamoula } from "@/lib/hamoula-store";
 import { ContactActions } from "./ContactActions";
 
 const NearbyDriversMap = lazy(() => import("./NearbyDriversMap"));
@@ -20,15 +21,26 @@ export function NearbyDrivers({ pickup, truckId }: { pickup: LatLng; truckId?: s
   const [view, setView] = useState<"list" | "map">("list");
   const [mode, setMode] = useState<Mode>(truckId ? "type" : "all");
 
-  const pickupCity = useMemo(() => nearestCityName(pickup), [pickup]);
+  const { myLocation, geoStatus, requestLocation } = useHamoula();
+
+  // Keep the GPS watch alive so the list re-sorts on every new fix.
+  useEffect(() => {
+    if (geoStatus === "idle") requestLocation();
+  }, [geoStatus, requestLocation]);
+
+  // Sort around the live GPS position; without it, fall back to the pickup point.
+  const base = myLocation ?? pickup;
+  const baseCity = useMemo(() => nearestCityName(base), [base.lat, base.lng]);
+  const pickupCity = useMemo(() => nearestCityName(pickup), [pickup.lat, pickup.lng]);
 
   const drivers = useMemo(() => {
     const list = activeDrivers
       .filter((d) => (mode === "type" && truckId ? d.truckId === truckId : true))
-      .map((d) => ({ ...d, km: distanceKm(pickup, d.point) }))
-      .sort((a, b) => a.km - b.km);
+      .map((d) => ({ ...d, km: distanceKm(base, d.point) }))
+      // Stable tie-break by id so the order never shuffles without a real GPS change.
+      .sort((a, b) => a.km - b.km || a.id.localeCompare(b.id));
     return mode === "all" ? list : list.slice(0, 6);
-  }, [pickup, truckId, mode]);
+  }, [base.lat, base.lng, truckId, mode]);
 
   return (
     <section className="space-y-3 rounded-3xl border-2 border-border bg-card p-4">
@@ -64,7 +76,10 @@ export function NearbyDrivers({ pickup, truckId }: { pickup: LatLng; truckId?: s
       </div>
 
       <p className="text-[11px] font-bold text-muted-foreground">
-        {drivers.length} شاحنة · مرتبة حسب القرب من نقطة التحميل ({pickupCity})
+        {drivers.length} شاحنة ·{" "}
+        {myLocation
+          ? `مرتبة حسب القرب من موقعك الحالي (${baseCity}) — كتحين أوتوماتيكياً`
+          : `مرتبة حسب القرب من نقطة التحميل (${pickupCity})`}
       </p>
 
 
@@ -101,13 +116,13 @@ export function NearbyDrivers({ pickup, truckId }: { pickup: LatLng; truckId?: s
               </div>
               <div
                 className={`inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-bold ${
-                  isSameCity(d.km, d.city, pickupCity)
+                  isSameCity(d.km, d.city, baseCity)
                     ? "bg-primary text-primary-foreground"
                     : "bg-primary-soft text-accent-foreground"
                 }`}
               >
                 <MapPin className="size-3.5 shrink-0" />
-                {pickupProximityLabel(d.km, d.city, pickupCity)}
+                {pickupProximityLabel(d.km, d.city, baseCity)}
               </div>
               <ContactActions seed={d.id} phone={d.phone} name={d.name} compact />
             </li>
