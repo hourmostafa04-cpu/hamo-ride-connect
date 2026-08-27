@@ -151,6 +151,7 @@ function TripDetailsPage() {
             <ContactActions
               seed={driver?.id ?? "hamoula-driver"}
               name={profile.role === "driver" ? "مول السلعة" : (driver?.driver ?? "السائق")}
+              {...(request.loadId ? { chatLoadId: request.loadId } : {})}
             />
           </div>
         </section>

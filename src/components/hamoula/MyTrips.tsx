@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Boxes, MapPin, Navigation } from "lucide-react";
 import { PhoneFrame, AppHeader } from "@/components/hamoula/PhoneFrame";
 import { statusLabels, useHamoula, type Load, type TripStatus } from "@/lib/hamoula-store";
+import { ChatButton } from "@/components/hamoula/ChatButton";
 
 const ACTIVE: TripStatus[] = ["matched", "enroute", "loaded"];
 
@@ -39,14 +40,17 @@ function TripCard({ load }: { load: Load }) {
           </p>
         )}
       </div>
-      <div className="mt-3 flex items-center justify-between">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
         {ACTIVE.includes(status) ? (
-          <Link
-            to="/tracking"
-            className="rounded-xl bg-primary px-3 py-2 text-sm font-extrabold text-primary-foreground"
-          >
-            تتبع الرحلة
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/tracking"
+              className="rounded-xl bg-primary px-3 py-2 text-sm font-extrabold text-primary-foreground"
+            >
+              تتبع الرحلة
+            </Link>
+            <ChatButton loadId={load.id} />
+          </div>
         ) : (
           <span />
         )}

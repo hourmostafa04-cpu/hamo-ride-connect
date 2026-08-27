@@ -2,6 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Phone, MessageCircle, Copy, Check, Link as LinkIcon } from "lucide-react";
 import { driverPhone, formatPhone, openDialer, openExternal, telHref, whatsappHref } from "@/lib/hamoula-contact";
+import { ChatButton } from "@/components/hamoula/ChatButton";
 
 /** Call + WhatsApp + copy actions for a driver's number (always visible, never empty). */
 export function ContactActions({
@@ -9,12 +10,15 @@ export function ContactActions({
   phone,
   name,
   compact = false,
+  chatLoadId,
 }: {
   /** Stable id used to derive the mock number when no real phone exists. */
   seed: string;
   phone?: string;
   name?: string;
   compact?: boolean;
+  /** When set, shows the in-app chat button for that request. */
+  chatLoadId?: string;
 }) {
   const number = driverPhone(seed, phone);
   const pretty = formatPhone(number);
@@ -62,9 +66,12 @@ export function ContactActions({
         </button>
       </div>
 
+      {chatLoadId ? <ChatButton loadId={chatLoadId} className="w-full justify-center py-3" /> : null}
+
       <div className="flex gap-2">
         <a
           href={telHref(number)}
+
           onClick={(e) => {
             e.preventDefault();
             openDialer(number);

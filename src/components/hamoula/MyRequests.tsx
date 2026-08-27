@@ -3,6 +3,7 @@ import { Boxes, MapPin, Navigation, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { PhoneFrame, AppHeader } from "@/components/hamoula/PhoneFrame";
 import { statusLabels, useHamoula, type Load, type TripStatus } from "@/lib/hamoula-store";
+import { ChatButton } from "@/components/hamoula/ChatButton";
 
 const ACTIVE: TripStatus[] = ["searching", "matched", "enroute", "loaded"];
 
@@ -39,7 +40,7 @@ function RequestCard({ load, onCancel }: { load: Load; onCancel: (id: string) =>
           </p>
         )}
       </div>
-      <div className="mt-3 flex items-center gap-2">
+      <div className="mt-3 flex flex-wrap items-center gap-2">
         {active && (
           <>
             <Link
@@ -48,6 +49,7 @@ function RequestCard({ load, onCancel }: { load: Load; onCancel: (id: string) =>
             >
               تتبع الطلب
             </Link>
+            {load.status === "assigned" && <ChatButton loadId={load.id} />}
             <button
               type="button"
               onClick={() => onCancel(load.id)}
