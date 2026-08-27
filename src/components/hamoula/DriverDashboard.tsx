@@ -51,7 +51,7 @@ function truckSize(id: string): TruckSize {
 export function DriverDashboard() {
   const {
     loads,
-    bids,
+    myBids,
     addBid,
     myBidFor,
     updateRequest,
