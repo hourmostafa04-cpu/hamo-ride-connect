@@ -62,11 +62,17 @@ export function BackButton({ fallback = "/" }: { fallback?: string }) {
 
 }
 
+/** Home route for the signed-in role: drivers can't open the shipper home. */
+export function useHomePath(): "/driver" | "/" {
+  const { account, profile } = useHamoula();
+  const role = account?.role ?? profile.role;
+  return role === "driver" ? "/driver" : "/";
+}
+
 /** Home button — goes to the dashboard of the signed-in role, never deletes data. */
 export function HomeButton() {
   const router = useRouter();
-  const { profile } = useHamoula();
-  const to = profile.role === "driver" ? "/driver" : "/";
+  const to = useHomePath();
   return (
     <button
       type="button"
