@@ -28,6 +28,7 @@ import {
   saveLoadStatus,
 } from "./hamoula-sync";
 import { fetchAccount, migrateLocalAccounts, saveAccount } from "./hamoula-accounts";
+import { notifyEvent } from "./push-client";
 
 
 export type RoleId = "shipper" | "driver";
@@ -659,7 +660,7 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
         return { request: req, loads: [created, ...b.loads], bids: b.bids };
       });
       // Permanent copy under "طلباتي" + the unfinished draft is done.
-      void saveLoad(created);
+      void saveLoad(created).then(() => notifyEvent("new-load"));
       if (accountPhone) void clearDraft(accountPhone);
       setPendingDraft(null);
       return created;
@@ -692,7 +693,7 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
         ...b,
         bids: [...b.bids.filter((x) => !(x.loadId === loadId && x.driverId === bid.driverId)), bid],
       }));
-      void saveBid(bid);
+      void saveBid(bid).then(() => notifyEvent("new-bid", { loadId }));
       return bid;
     },
     [account, driverKey],
@@ -712,10 +713,17 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
         acceptedOffer: offer,
         price: bid.price,
       });
-      void saveBidStatus(bidId, { status: "accepted" });
+      void saveBidStatus(bidId, { status: "accepted" }).then(() =>
+        notifyEvent("bid-answer", { bidId }),
+      );
       b.bids
         .filter((x) => x.loadId === bid.loadId && x.id !== bidId)
-        .forEach((x) => void saveBidStatus(x.id, { status: "declined" }));
+        .forEach(
+          (x) =>
+            void saveBidStatus(x.id, { status: "declined" }).then(() =>
+              notifyEvent("bid-answer", { bidId: x.id }),
+            ),
+        );
       return {
         loads: b.loads.map((l) =>
           l.id === bid.loadId
@@ -743,7 +751,9 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const declineBid = useCallback((bidId: string) => {
-    void saveBidStatus(bidId, { status: "declined" });
+    void saveBidStatus(bidId, { status: "declined" }).then(() =>
+      notifyEvent("bid-answer", { bidId }),
+    );
     setBoard((b) => ({
       ...b,
       bids: b.bids.map((x) => (x.id === bidId ? { ...x, status: "declined" as const } : x)),
