@@ -399,7 +399,8 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
     // A verified phone-OTP session restores the account even if local storage was
     // cleared; without one, the old phone-only login is gone and OTP is required.
     void supabase.auth.getSession().then(async ({ data }) => {
-      const sessionPhone = data.session?.user?.phone;
+      const session = data.session;
+      const sessionPhone = session?.user?.phone;
       if (sessionPhone) {
         const remote = await fetchAccount(sessionPhone);
         if (remote) {
@@ -408,6 +409,8 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
         }
         return;
       }
+      // جلسة بلا هاتف (المستخدم التجريبي) = جلسة صحيحة، كنخليو الحساب.
+      if (session) return;
       // No verified session — only sign out when online (an offline device may just
       // fail the token refresh while its session is still valid).
       if (typeof navigator === "undefined" || navigator.onLine) {

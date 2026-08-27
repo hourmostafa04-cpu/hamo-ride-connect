@@ -26,6 +26,7 @@ import {
 import { extractTonnage, extractTruckKind, tonChipFor } from "@/lib/voice-order";
 import { smartParse } from "@/lib/smart-parse";
 import { DEMO_LOGIN_ENABLED, DEMO_PHONE, demoAccount } from "@/lib/demo-login";
+import { ensureDemoAuthUser } from "@/lib/demo-auth.functions";
 
 
 type VoiceField = "name" | "phone";
@@ -346,8 +347,26 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
   }, [resendIn]);
 
   /** وضع الاختبار: دخول الحساب التجريبي الوحيد بدون SMS (ما كيمسّش OTP الحقيقي). */
-  const demoSignIn = (demoRole: RoleId) => {
+  const demoSignIn = async (demoRole: RoleId) => {
     if (!DEMO_LOGIN_ENABLED) return;
+    setOtpBusy(true);
+    try {
+      // الدخول التجريبي دابا كيمر من Auth حقيقي: مستخدم Test عندو auth.uid().
+      const creds = await ensureDemoAuthUser();
+      const { error } = await supabase.auth.signInWithPassword({
+        email: creds.email,
+        password: creds.password,
+      });
+      if (error) {
+        setError("تعذر الدخول التجريبي — عاود المحاولة");
+        return;
+      }
+    } catch {
+      setError("تعذر الدخول التجريبي — عاود المحاولة");
+      return;
+    } finally {
+      setOtpBusy(false);
+    }
     const acc = demoAccount(demoRole);
     signIn(acc);
     playSfx("success");
@@ -729,13 +748,13 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
                   </p>
                   <div className="mt-2 grid grid-cols-2 gap-2">
                     <button
-                      onClick={() => demoSignIn("shipper")}
+                      onClick={() => void demoSignIn("shipper")}
                       className="min-h-12 rounded-xl bg-primary/90 py-3 text-sm font-extrabold text-primary-foreground"
                     >
                       دخول تجريبي · بضاعة
                     </button>
                     <button
-                      onClick={() => demoSignIn("driver")}
+                      onClick={() => void demoSignIn("driver")}
                       className="min-h-12 rounded-xl bg-primary/90 py-3 text-sm font-extrabold text-primary-foreground"
                     >
                       دخول تجريبي · شاحنة

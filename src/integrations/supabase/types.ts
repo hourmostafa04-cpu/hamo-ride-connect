@@ -25,6 +25,7 @@ export type Database = {
           truck_tons: string | null
           truck_type: string | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           available?: boolean
@@ -36,6 +37,7 @@ export type Database = {
           truck_tons?: string | null
           truck_type?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           available?: boolean
@@ -47,6 +49,7 @@ export type Database = {
           truck_tons?: string | null
           truck_type?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -68,6 +71,7 @@ export type Database = {
           trips: number
           truck: string
           updated_at: string
+          user_id: string | null
           voice_note: Json | null
         }
         Insert: {
@@ -87,6 +91,7 @@ export type Database = {
           trips?: number
           truck?: string
           updated_at?: string
+          user_id?: string | null
           voice_note?: Json | null
         }
         Update: {
@@ -106,6 +111,7 @@ export type Database = {
           trips?: number
           truck?: string
           updated_at?: string
+          user_id?: string | null
           voice_note?: Json | null
         }
         Relationships: [
@@ -129,6 +135,7 @@ export type Database = {
           sender_phone: string
           sender_role: string
           shipper_phone: string
+          user_id: string | null
           voice: Json | null
         }
         Insert: {
@@ -141,6 +148,7 @@ export type Database = {
           sender_phone: string
           sender_role?: string
           shipper_phone?: string
+          user_id?: string | null
           voice?: Json | null
         }
         Update: {
@@ -153,6 +161,7 @@ export type Database = {
           sender_phone?: string
           sender_role?: string
           shipper_phone?: string
+          user_id?: string | null
           voice?: Json | null
         }
         Relationships: []
@@ -162,16 +171,19 @@ export type Database = {
           data: Json
           phone: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           data?: Json
           phone: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           data?: Json
           phone?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -193,6 +205,7 @@ export type Database = {
           trip_status: string
           truck: string
           updated_at: string
+          user_id: string | null
           voice_note: Json | null
         }
         Insert: {
@@ -212,6 +225,7 @@ export type Database = {
           trip_status?: string
           truck?: string
           updated_at?: string
+          user_id?: string | null
           voice_note?: Json | null
         }
         Update: {
@@ -231,6 +245,7 @@ export type Database = {
           trip_status?: string
           truck?: string
           updated_at?: string
+          user_id?: string | null
           voice_note?: Json | null
         }
         Relationships: []
@@ -240,7 +255,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_bid_on_load: { Args: { _load_id: string }; Returns: boolean }
+      owns_load: { Args: { _load_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

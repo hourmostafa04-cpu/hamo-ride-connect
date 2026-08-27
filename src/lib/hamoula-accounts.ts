@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { phoneKey, type Account } from "./hamoula-store";
+import { currentUserId } from "./hamoula-auth";
 
 /**
  * Shared-backend persistence for user accounts (phone-based login).
@@ -47,9 +48,12 @@ export async function fetchAccount(phone: string): Promise<Account | null> {
 export async function saveAccount(account: Account): Promise<void> {
   const key = phoneKey(account.phone);
   if (!key) return;
+  const userId = await currentUserId();
+  if (!userId) return;
   await supabase.from("app_users").upsert(
     {
       phone: key,
+      user_id: userId,
       name: account.name,
       role: account.role,
       truck_tons: account.truckTons ?? null,

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { currentUserId } from "./hamoula-auth";
 
 /**
  * Private one-to-one chat between the shipper of a request and the driver who
@@ -67,7 +68,10 @@ export async function sendMessage(input: {
   body?: string;
   voice?: ChatVoice | null;
 }) {
+  const userId = await currentUserId();
+  if (!userId) throw new Error("خاصك تكون داخل بحسابك باش تصيفط رسالة");
   const { error } = await db.from("chat_messages").insert({
+    user_id: userId,
     load_id: input.loadId,
     shipper_phone: input.shipperPhone,
     driver_phone: input.driverPhone,

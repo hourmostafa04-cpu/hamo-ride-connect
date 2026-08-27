@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Bid, Load, TripRequest, TripStatus } from "./hamoula-store";
 import type { LatLng } from "./hamoula-geo";
 import type { Offer, VoiceNote } from "./hamoula-data";
+import { currentUserId } from "./hamoula-auth";
 
 /**
  * Shared-backend persistence for requests (loads), driver offers (bids) and
@@ -105,8 +106,11 @@ export async function fetchBoard(): Promise<{ loads: Load[]; bids: Bid[] }> {
 
 export async function saveLoad(load: Load) {
   if (!isRealLoad(load.id)) return;
+  const userId = await currentUserId();
+  if (!userId) return;
   await supabase.from("loads").upsert({
     id: load.id,
+    user_id: userId,
     shipper: load.shipper,
     shipper_phone: load.shipperPhone ?? null,
     pickup: load.pickup,
@@ -141,8 +145,11 @@ export async function saveLoadStatus(
 
 export async function saveBid(bid: Bid) {
   if (!isRealBid(bid.driverId) || !isRealLoad(bid.loadId)) return;
+  const userId = await currentUserId();
+  if (!userId) return;
   await supabase.from("bids").upsert({
     id: bid.id,
+    user_id: userId,
     load_id: bid.loadId,
     driver_id: bid.driverId,
     driver: bid.driver,
@@ -175,9 +182,11 @@ export async function removeBid(bidId: string) {
 /** The unfinished request form of one phone number — survives app restarts. */
 export async function saveDraft(phone: string, data: Partial<TripRequest>) {
   if (!phone) return;
+  const userId = await currentUserId();
+  if (!userId) return;
   await supabase
     .from("drafts")
-    .upsert({ phone, data: data as never, updated_at: new Date().toISOString() } as never);
+    .upsert({ phone, user_id: userId, data: data as never, updated_at: new Date().toISOString() } as never);
 }
 
 export async function fetchDraft(phone: string): Promise<Partial<TripRequest> | null> {
