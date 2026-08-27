@@ -5,8 +5,6 @@ import { playSfx } from "@/lib/sfx";
 import { useHamoula, type Bid } from "@/lib/hamoula-store";
 import { buzz, useNotifPrefs } from "@/lib/notif-prefs";
 
-const MY_DRIVER_ID = "p-driver";
-
 /** Fingerprint of what the shipper answered on one of my bids. */
 function stamp(b: Bid) {
   return `${b.status}|${b.shipperReply ? b.shipperReply.duration : "-"}`;
@@ -18,14 +16,14 @@ function stamp(b: Bid) {
  * the live trip screen.
  */
 export function BidNotifications() {
-  const { bids, profile, ready } = useHamoula();
+  const { myBids, profile, ready } = useHamoula();
   const navigate = useNavigate();
   const seen = useRef<Map<string, string> | null>(null);
   const prefs = useNotifPrefs();
 
   useEffect(() => {
     if (!ready) return;
-    const mine = bids.filter((b) => b.driverId === MY_DRIVER_ID);
+    const mine = myBids;
 
     // First pass after hydration: remember state without shouting about it.
     if (seen.current === null) {
@@ -67,7 +65,7 @@ export function BidNotifications() {
         });
       }
     }
-  }, [bids, profile.role, ready, navigate, prefs.bidAnswers, prefs.voiceReplies]);
+  }, [myBids, profile.role, ready, navigate, prefs.bidAnswers, prefs.voiceReplies]);
 
   return null;
 }
