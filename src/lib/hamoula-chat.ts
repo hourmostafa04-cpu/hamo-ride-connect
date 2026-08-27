@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { currentUserId } from "./hamoula-auth";
+import { notifyEvent } from "./push-client";
 
 /**
  * Private one-to-one chat between the shipper of a request and the driver who
@@ -82,6 +83,7 @@ export async function sendMessage(input: {
     voice: input.voice ?? null,
   });
   if (error) throw error;
+  notifyEvent("chat", { loadId: input.loadId });
 }
 
 /** Live updates for one conversation — no refresh needed. */

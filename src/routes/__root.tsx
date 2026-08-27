@@ -17,6 +17,7 @@ import { AuthGate } from "@/components/hamoula/AuthGate";
 import { LastRouteTracker } from "@/components/hamoula/ResumeWhereYouLeft";
 import { attachGlobalTapSound } from "@/lib/sfx";
 import { loadPrefs } from "@/lib/notif-prefs";
+import { PushPrompt } from "@/components/hamoula/PushPrompt";
 
 function NotFoundComponent() {
   return (
@@ -123,6 +124,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: "https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap",
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "manifest", href: "/manifest.webmanifest" },
     ],
   }),
 
@@ -158,6 +160,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <HamoulaProvider>
         <LastRouteTracker />
+        <PushPrompt />
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <AuthGate>
           <Outlet />
