@@ -1,5 +1,5 @@
 import { Link, useNavigate, ClientOnly } from "@tanstack/react-router";
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
   MapPin,
