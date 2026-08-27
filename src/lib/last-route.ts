@@ -16,6 +16,18 @@ export const HOME_PATHS = ["/", "/driver"];
 
 export type LastRoute = { path: string; at: number };
 
+/** Screens that belong to one role only — the other role must never resume there. */
+const SHIPPER_ONLY = ["/", "/request", "/offers", "/my-requests"];
+const DRIVER_ONLY = ["/driver", "/loads", "/my-bids", "/my-trips"];
+
+export type AppRole = "shipper" | "driver";
+
+/** True when this screen is allowed for the signed-in role. */
+export function isPathForRole(path: string, role: AppRole) {
+  if (role === "driver") return !SHIPPER_ONLY.includes(path);
+  return !DRIVER_ONLY.includes(path);
+}
+
 export function isResumablePath(path: string) {
   if (!path) return false;
   if (EXCLUDED.some((p) => path === p || path.startsWith(`${p}/`))) return false;
@@ -33,13 +45,14 @@ export function saveLastRoute(path: string) {
   }
 }
 
-export function readLastRoute(): LastRoute | null {
+export function readLastRoute(role?: AppRole): LastRoute | null {
   if (typeof localStorage === "undefined") return null;
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as LastRoute;
     if (!parsed || typeof parsed.path !== "string" || !isResumablePath(parsed.path)) return null;
+    if (role && !isPathForRole(parsed.path, role)) return null;
     return parsed;
   } catch {
     return null;

@@ -51,7 +51,7 @@ function truckSize(id: string): TruckSize {
 export function DriverDashboard() {
   const {
     loads,
-    bids,
+    myBids,
     addBid,
     myBidFor,
     updateRequest,
@@ -108,7 +108,7 @@ export function DriverDashboard() {
       (truckFilter === "all" || truckSize(x.load.truck) === truckFilter) &&
       (q === "" || `${x.load.cargo} ${x.load.pickup} ${x.load.destination}`.includes(q)),
   );
-  const myOpenBids = bids.filter((b) => b.driverId === "p-driver").length;
+  const myOpenBids = myBids.length;
 
 
   return (

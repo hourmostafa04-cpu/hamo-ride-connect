@@ -22,8 +22,6 @@ import { useHamoula, type Bid, type Load } from "@/lib/hamoula-store";
 import { playSfx } from "@/lib/sfx";
 import { buildRows, downloadCsv, printPdf } from "@/lib/bids-export";
 
-const MY_DRIVER_ID = "p-driver";
-
 type TabId = "all" | "pending" | "accepted" | "declined";
 
 type SortId = "newest" | "oldest" | "price-high" | "price-low";
@@ -61,14 +59,14 @@ function formatDate(ts: number) {
 }
 
 export function MyBids() {
-  const { bids, loads, profile } = useHamoula();
+  const { myBids, loads, profile } = useHamoula();
   const [tab, setTab] = useState<TabId>("all");
   const [sort, setSort] = useState<SortId>("newest");
   const [query, setQuery] = useState("");
 
   const mine = useMemo(
-    () => bids.filter((b) => b.driverId === MY_DRIVER_ID).sort((a, b) => b.createdAt - a.createdAt),
-    [bids],
+    () => [...myBids].sort((a, b) => b.createdAt - a.createdAt),
+    [myBids],
   );
   const counts = useMemo(
     () => ({

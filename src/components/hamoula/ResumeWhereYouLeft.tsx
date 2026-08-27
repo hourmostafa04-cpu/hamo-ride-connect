@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useRouterState } from "@tanstack/react-router";
 import { PlayCircle, X } from "lucide-react";
 
+import { useHamoula } from "@/lib/hamoula-store";
 import {
   clearLastRoute,
   HOME_PATHS,
@@ -35,12 +36,14 @@ export function LastRouteTracker() {
 export function ResumeWhereYouLeft() {
   const router = useRouter();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { account, profile } = useHamoula();
+  const role = (account?.role ?? profile.role) === "driver" ? "driver" : "shipper";
   const [saved, setSaved] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    setSaved(readLastRoute()?.path ?? null);
-  }, [pathname]);
+    setSaved(readLastRoute(role)?.path ?? null);
+  }, [pathname, role]);
 
   if (!HOME_PATHS.includes(pathname)) return null;
   if (!saved || saved === pathname || dismissed) return null;

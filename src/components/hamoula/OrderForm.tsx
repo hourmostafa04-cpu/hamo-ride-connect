@@ -1,5 +1,5 @@
 import { Link, useNavigate, ClientOnly } from "@tanstack/react-router";
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
   MapPin,
@@ -57,7 +57,7 @@ function MapSkeleton() {
 
 export function OrderForm({ isHome = false }: { isHome?: boolean }) {
   const navigate = useNavigate();
-  const { request, updateRequest, publishLoad, pendingDraft, resumeDraft, discardDraft } =
+  const { request, updateRequest, publishLoad, pendingDraft, resumeDraft, discardDraft, ready } =
     useHamoula();
 
   /** A published request must not leak into the next one — only a live draft is restored. */
@@ -78,11 +78,36 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
   const roadKm = Math.round(roadDistanceKm(pickupPoint, destinationPoint));
   const estimated = estimatePrice(roadKm, truck);
 
+  /**
+   * The stored draft is read from localStorage after the first render, so the
+   * form fills itself once the store is hydrated (reload / reopen keeps
+   * everything the shipper typed).
+   */
+  const hydrated = useRef(false);
+  useEffect(() => {
+    if (!ready || hydrated.current) return;
+    hydrated.current = true;
+    const stored = orderFormFromRequest(request);
+    if (!stored.pickup && !stored.destination && !stored.cargo) return;
+    setPickup(stored.pickup);
+    setDestination(stored.destination);
+    setCargo(stored.cargo);
+    setCapacity(stored.capacity);
+    setTruck(stored.truck);
+    if (stored.price) {
+      setPrice(stored.price);
+      setPriceLocked(true);
+    }
+    setPickupPoint(stored.pickupPoint);
+    setDestinationPoint(stored.destinationPoint);
+  }, [ready, request]);
+
   // Auto-estimate follows distance + truck tier, but never overrides a locked price.
   useEffect(() => {
     if (priceLocked) return;
     setPrice(bothPicked ? String(estimated) : "");
   }, [estimated, priceLocked, bothPicked]);
+
 
   /** Fresh empty request: clears the form, the map route and the stored draft. */
   const resetForm = () => {
