@@ -1,8 +1,9 @@
-import { lazy, Suspense, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Truck, Star, MapPin, Map as MapIcon, List } from "lucide-react";
 import { activeDrivers } from "@/lib/hamoula-drivers";
 import { distanceKm, type LatLng } from "@/lib/hamoula-geo";
 import { isSameCity, kmText, nearestCityName, pickupProximityLabel } from "@/lib/hamoula-location";
+import { useHamoula } from "@/lib/hamoula-store";
 import { ContactActions } from "./ContactActions";
 
 const NearbyDriversMap = lazy(() => import("./NearbyDriversMap"));
