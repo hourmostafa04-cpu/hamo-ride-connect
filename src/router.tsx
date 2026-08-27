@@ -9,6 +9,13 @@ import { routeTree } from "./routeTree.gen";
 // through to the 404 page without running any OTP code.
 const tree = import.meta.env.DEV
   ? routeTree.addChildren([
+      // Keep every generated route ("/", "/request", "/driver", ...) intact:
+      // addChildren REPLACES the children list, so we must re-include them.
+      ...(Object.values(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (routeTree as any).children ?? {},
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ) as any[]),
       createRoute({
         getParentRoute: () => routeTree,
         path: "/otp-test",
