@@ -98,7 +98,7 @@ export function AppHeader({
   children?: ReactNode;
 }) {
   return (
-    <header className="gradient-primary px-5 pb-7 pt-6 text-primary-foreground">
+    <header className="gradient-primary sticky top-0 z-30 px-5 pb-7 pt-6 text-primary-foreground">
       {(showBack || showProfile || showHome) && (
         <div className="mb-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
