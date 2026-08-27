@@ -21,15 +21,26 @@ export function NearbyDrivers({ pickup, truckId }: { pickup: LatLng; truckId?: s
   const [view, setView] = useState<"list" | "map">("list");
   const [mode, setMode] = useState<Mode>(truckId ? "type" : "all");
 
-  const pickupCity = useMemo(() => nearestCityName(pickup), [pickup]);
+  const { myLocation, geoStatus, requestLocation } = useHamoula();
+
+  // Keep the GPS watch alive so the list re-sorts on every new fix.
+  useEffect(() => {
+    if (geoStatus === "idle") requestLocation();
+  }, [geoStatus, requestLocation]);
+
+  // Sort around the live GPS position; without it, fall back to the pickup point.
+  const base = myLocation ?? pickup;
+  const baseCity = useMemo(() => nearestCityName(base), [base.lat, base.lng]);
+  const pickupCity = useMemo(() => nearestCityName(pickup), [pickup.lat, pickup.lng]);
 
   const drivers = useMemo(() => {
     const list = activeDrivers
       .filter((d) => (mode === "type" && truckId ? d.truckId === truckId : true))
-      .map((d) => ({ ...d, km: distanceKm(pickup, d.point) }))
-      .sort((a, b) => a.km - b.km);
+      .map((d) => ({ ...d, km: distanceKm(base, d.point) }))
+      // Stable tie-break by id so the order never shuffles without a real GPS change.
+      .sort((a, b) => a.km - b.km || a.id.localeCompare(b.id));
     return mode === "all" ? list : list.slice(0, 6);
-  }, [pickup, truckId, mode]);
+  }, [base.lat, base.lng, truckId, mode]);
 
   return (
     <section className="space-y-3 rounded-3xl border-2 border-border bg-card p-4">
