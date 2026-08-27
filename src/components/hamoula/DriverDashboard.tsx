@@ -75,16 +75,29 @@ export function DriverDashboard() {
     setCity(localStorage.getItem(CITY_KEY) ?? "");
   }, []);
 
+  // Start (and keep) the GPS watch so the list re-sorts whenever the position changes.
+  useEffect(() => {
+    if (geoStatus === "idle") requestLocation();
+  }, [geoStatus, requestLocation]);
+
   const cityPoint = useMemo(
     () => HUB_CHIPS.find((c) => c.label === city)?.point ?? null,
     [city],
   );
   const base: LatLng | null = cityPoint ?? myLocation;
 
-  const open = loads.filter((l) => l.status === "open");
-  const withDistance = open
-    .map((l) => ({ load: l, km: base ? distanceKm(base, l.pickupPoint) : null }))
-    .sort((a, b) => (a.km ?? Infinity) - (b.km ?? Infinity));
+  // Re-sorts automatically on every new GPS fix; falls back to a stable
+  // newest-first order when no location is available.
+  const withDistance = useMemo(() => {
+    const open = loads.filter((l) => l.status === "open");
+    return open
+      .map((l) => ({ load: l, km: base ? distanceKm(base, l.pickupPoint) : null }))
+      .sort((a, b) =>
+        a.km === null || b.km === null
+          ? b.load.createdAt - a.load.createdAt
+          : a.km - b.km || b.load.createdAt - a.load.createdAt,
+      );
+  }, [loads, base?.lat, base?.lng]);
   const max = distanceFilters.find((f) => f.id === filter)?.max ?? Infinity;
   const q = cargoQuery.trim();
   const visible = withDistance.filter(
