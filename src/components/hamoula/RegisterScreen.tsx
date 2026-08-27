@@ -693,18 +693,44 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
 
         <StickyActions>
           {step === "phone" && (
-            <button
-              onClick={() => {
-                setPhoneTouched(true);
-                void continueWithPhone();
-              }}
-              disabled={!phoneValid || otpBusy}
-              className="flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl bg-primary py-5 text-lg font-extrabold text-primary-foreground shadow-soft transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {otpBusy ? <Loader2 className="size-6 animate-spin" /> : <LogIn className="size-6" />}
-              صيفط ليا رمز التحقق
-            </button>
+            <>
+              <button
+                onClick={() => {
+                  setPhoneTouched(true);
+                  void continueWithPhone();
+                }}
+                disabled={!phoneValid || otpBusy}
+                className="flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl bg-primary py-5 text-lg font-extrabold text-primary-foreground shadow-soft transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {otpBusy ? <Loader2 className="size-6 animate-spin" /> : <LogIn className="size-6" />}
+                صيفط ليا رمز التحقق
+              </button>
+
+              {/* وضع الاختبار فقط — كيختفي ملي VITE_DEMO_LOGIN=false */}
+              {DEMO_LOGIN_ENABLED && (
+                <div className="w-full rounded-2xl border-2 border-dashed border-primary/50 bg-primary-soft/50 p-3">
+                  <p className="text-center text-xs font-bold text-primary">
+                    دخول تجريبي (وضع التطوير) — {DEMO_PHONE}
+                  </p>
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => demoSignIn("shipper")}
+                      className="min-h-12 rounded-xl bg-primary/90 py-3 text-sm font-extrabold text-primary-foreground"
+                    >
+                      دخول تجريبي · بضاعة
+                    </button>
+                    <button
+                      onClick={() => demoSignIn("driver")}
+                      className="min-h-12 rounded-xl bg-primary/90 py-3 text-sm font-extrabold text-primary-foreground"
+                    >
+                      دخول تجريبي · شاحنة
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
+
           {step === "otp" && (
             <>
               <button
