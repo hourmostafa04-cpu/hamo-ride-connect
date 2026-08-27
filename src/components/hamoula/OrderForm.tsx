@@ -492,7 +492,7 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
 function CargoField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const dictation = useAiDictation({
     mode: "cargo",
-    silenceMs: 1200,
+    silenceMs: 2000,
     onText: (text) => {
       const spoken = text.replace(/[.،,!؟?]/g, " ").replace(/\s+/g, " ").trim();
       if (!spoken) {

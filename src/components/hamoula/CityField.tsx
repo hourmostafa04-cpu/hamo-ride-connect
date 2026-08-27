@@ -125,7 +125,7 @@ export default function CityField({
   // Place-name mic: the spoken text feeds the same autocomplete — no auto-guessing.
   const dictation = useAiDictation({
     mode: "city",
-    silenceMs: 1200,
+    silenceMs: 2000,
     onText: (text) => {
       const spoken = text.replace(/[.،,!؟?]/g, " ").trim();
       if (!spoken) return;

@@ -373,7 +373,7 @@ export function VoiceRecorderSheet({
 
     try {
       handleRef.current = await startRecording({
-        silenceMs: 2500,
+        silenceMs: 2000,
         onLevel: pushLevel,
         onSpeech: () => setSilenceSoon(false),
         onSilence: () => {

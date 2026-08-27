@@ -15,7 +15,7 @@ import {
   Weight,
   X,
 } from "lucide-react";
-import { PhoneFrame, AppHeader, LiveBadge } from "@/components/hamoula/PhoneFrame";
+import { PhoneFrame, AppHeader, LiveBadge, useHomePath } from "@/components/hamoula/PhoneFrame";
 import { VoiceBanner, VoiceNotePlayer, VoiceRecorderSheet } from "@/components/hamoula/Voice";
 import { findTruck, driverVoiceReplies } from "@/lib/hamoula-data";
 import { useHamoula, type Load } from "@/lib/hamoula-store";
@@ -61,6 +61,7 @@ export function DriverDashboard() {
     account,
     updateAccount,
   } = useHamoula();
+  const homePath = useHomePath();
   const navigate = useNavigate();
   const [filter, setFilter] = useState<string>("all");
   const [refreshing, setRefreshing] = useState(false);
@@ -288,7 +289,7 @@ export function DriverDashboard() {
             </p>
             <div className="mt-5 flex flex-col gap-3">
               <Link
-                to="/"
+                to={homePath}
                 className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-base font-bold text-primary-foreground transition-opacity hover:opacity-90 active:scale-95"
               >
                 <ArrowRight className="size-5" />
@@ -333,7 +334,7 @@ export function DriverDashboard() {
         ))}
 
         <Link
-          to="/"
+          to={homePath}
           className="flex items-center justify-center gap-2 py-2 text-sm font-semibold text-muted-foreground"
         >
           <ArrowRight className="size-4" />

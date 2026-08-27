@@ -3,7 +3,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { playSfx } from "@/lib/sfx";
 import { MessageCircle, Truck, Check, MapPin, Navigation, Send } from "lucide-react";
-import { PhoneFrame, AppHeader, LiveBadge } from "@/components/hamoula/PhoneFrame";
+import { PhoneFrame, AppHeader, LiveBadge, useHomePath } from "@/components/hamoula/PhoneFrame";
 import { ContactActions } from "@/components/hamoula/ContactActions";
 import { ShareTrip } from "@/components/hamoula/ShareTrip";
 import { Mic } from "lucide-react";
@@ -53,6 +53,7 @@ function nowTime() {
 function TrackingPage() {
   const navigate = useNavigate();
   const { profile, request, updateRequest, tripLive, setTripLive } = useHamoula();
+  const homePath = useHomePath();
   const driver = request.acceptedOffer;
   // Status lives in the store so the trip keeps advancing from any screen.
   const current = Math.max(0, statusByStep.indexOf(request.status));
@@ -379,7 +380,7 @@ function TrackingPage() {
           />
         </section>
 
-        <Link to="/" className="block py-2 text-center text-sm font-semibold text-muted-foreground">
+        <Link to={homePath} className="block py-2 text-center text-sm font-semibold text-muted-foreground">
           إنهاء والرجوع للرئيسية
         </Link>
       </div>

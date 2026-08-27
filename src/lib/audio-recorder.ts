@@ -100,7 +100,7 @@ export function micErrorMessage(e: unknown): string {
 
 /** Start capturing mic audio; resolves once the stream is live. */
 export async function startRecording(options: RecorderOptions = {}): Promise<RecorderHandle> {
-  const { onLevel, onSilence, onSpeech, onPcm, silenceMs = 2500 } = options;
+  const { onLevel, onSilence, onSpeech, onPcm, silenceMs = 2000 } = options;
   if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
     throw new MicError("unsupported");
   }
