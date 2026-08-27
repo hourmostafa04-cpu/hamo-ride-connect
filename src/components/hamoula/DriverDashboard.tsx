@@ -112,7 +112,7 @@ export function DriverDashboard() {
 
   return (
     <PhoneFrame>
-      <AppHeader title="لوحة صاحب الشاحنة" subtitle={profile.name}>
+      <AppHeader title="لوحة صاحب الشاحنة" subtitle={profile.name} showBack backTo="/driver">
         <GpsChip />
       </AppHeader>
       <div className="flex-1 space-y-4 px-5 py-5">
