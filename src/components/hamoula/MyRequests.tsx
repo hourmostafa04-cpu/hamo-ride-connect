@@ -130,13 +130,24 @@ function RequestCard({
 
 
 export function MyRequests() {
-  const { myLoads, cancelRequest } = useHamoula();
+  const { myLoads, bids, cancelRequest, acceptBid, declineBid } = useHamoula();
   const active = myLoads.filter((l) => ACTIVE.includes((l.tripStatus ?? "searching") as TripStatus));
   const history = myLoads.filter((l) => !ACTIVE.includes((l.tripStatus ?? "searching") as TripStatus));
+  const bidsFor = (id: string) => bids.filter((b) => b.loadId === id).sort((a, b) => a.price - b.price);
 
   const onCancel = (id: string) => {
     cancelRequest(id);
     toast.success("تلغى الطلب", { description: "بقا محفوظ فالسجل" });
+  };
+
+  const onAccept = (b: Bid) => {
+    acceptBid(b.id);
+    toast.success("تقبل السائق ✅", { description: `${b.driver || "سائق"} · ${b.price} درهم` });
+  };
+
+  const onDecline = (b: Bid) => {
+    declineBid(b.id);
+    toast("تفض العرض", { description: `${b.driver || "سائق"} · ${b.price} درهم` });
   };
 
   return (
@@ -150,7 +161,16 @@ export function MyRequests() {
               ما عندك حتى طلب نشيط دابا.
             </p>
           ) : (
-            active.map((l) => <RequestCard key={l.id} load={l} onCancel={onCancel} />)
+            active.map((l) => (
+              <RequestCard
+                key={l.id}
+                load={l}
+                bids={bidsFor(l.id)}
+                onCancel={onCancel}
+                onAccept={onAccept}
+                onDecline={onDecline}
+              />
+            ))
           )}
         </section>
 
@@ -161,10 +181,20 @@ export function MyRequests() {
               السجل خاوي.
             </p>
           ) : (
-            history.map((l) => <RequestCard key={l.id} load={l} onCancel={onCancel} />)
+            history.map((l) => (
+              <RequestCard
+                key={l.id}
+                load={l}
+                bids={bidsFor(l.id)}
+                onCancel={onCancel}
+                onAccept={onAccept}
+                onDecline={onDecline}
+              />
+            ))
           )}
         </section>
       </div>
     </PhoneFrame>
   );
 }
+
