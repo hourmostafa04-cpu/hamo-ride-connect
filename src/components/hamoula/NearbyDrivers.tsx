@@ -2,7 +2,7 @@ import { lazy, Suspense, useMemo, useState } from "react";
 import { Truck, Star, MapPin, Map as MapIcon, List } from "lucide-react";
 import { activeDrivers } from "@/lib/hamoula-drivers";
 import { distanceKm, type LatLng } from "@/lib/hamoula-geo";
-import { isSameCity, nearestCityName, pickupProximityLabel } from "@/lib/hamoula-location";
+import { isSameCity, kmText, nearestCityName, pickupProximityLabel } from "@/lib/hamoula-location";
 import { ContactActions } from "./ContactActions";
 
 const NearbyDriversMap = lazy(() => import("./NearbyDriversMap"));
