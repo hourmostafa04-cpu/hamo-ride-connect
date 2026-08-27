@@ -25,6 +25,8 @@ import {
 } from "@/lib/hamoula-data";
 import { extractTonnage, extractTruckKind, tonChipFor } from "@/lib/voice-order";
 import { smartParse } from "@/lib/smart-parse";
+import { DEMO_LOGIN_ENABLED, DEMO_PHONE, demoAccount } from "@/lib/demo-login";
+
 
 type VoiceField = "name" | "phone";
 const FIELD_PROMPT: Record<VoiceField, string> = {
