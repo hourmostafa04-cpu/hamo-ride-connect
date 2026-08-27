@@ -76,7 +76,10 @@ export function NearbyDrivers({ pickup, truckId }: { pickup: LatLng; truckId?: s
       </div>
 
       <p className="text-[11px] font-bold text-muted-foreground">
-        {drivers.length} شاحنة · مرتبة حسب القرب من نقطة التحميل ({pickupCity})
+        {drivers.length} شاحنة ·{" "}
+        {myLocation
+          ? `مرتبة حسب القرب من موقعك الحالي (${baseCity}) — كتحين أوتوماتيكياً`
+          : `مرتبة حسب القرب من نقطة التحميل (${pickupCity})`}
       </p>
 
 
