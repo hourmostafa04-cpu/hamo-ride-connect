@@ -121,9 +121,13 @@ function RequestCard({
           {new Date(load.createdAt).toLocaleString("ar-MA")}
         </span>
       </div>
+      {active && load.status !== "assigned" && (
+        <LoadOffers bids={bids} onAccept={onAccept} onDecline={onDecline} />
+      )}
     </div>
   );
 }
+
 
 export function MyRequests() {
   const { myLoads, cancelRequest } = useHamoula();
