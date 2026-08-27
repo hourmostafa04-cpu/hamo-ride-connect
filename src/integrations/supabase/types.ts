@@ -288,6 +288,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_chat_load: { Args: { _load_id: string }; Returns: boolean }
       has_bid_on_load: { Args: { _load_id: string }; Returns: boolean }
       owns_load: { Args: { _load_id: string }; Returns: boolean }
     }
