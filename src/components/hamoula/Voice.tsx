@@ -110,7 +110,7 @@ export function Waveform({
 }
 
 export const WELCOME_MESSAGE =
-  "مرحبا بك في تطبيق مول طرانسبور، حدد مكان التحميل والوجهة أو سجل طلبك بالصوت";
+  "مرحبا بك في تطبيق حمولة، حدد مكان التحميل والوجهة أو سجل طلبك بالصوت";
 
 /** Voice banner with a big speaker icon and a play button for audio guidance. */
 export function VoiceBanner({ message = WELCOME_MESSAGE }: { message?: string }) {
