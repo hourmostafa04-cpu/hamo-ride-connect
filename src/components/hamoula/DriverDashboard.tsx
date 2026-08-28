@@ -157,7 +157,7 @@ export function DriverDashboard() {
 
           <div>
             <div className="mb-2 text-sm font-bold">المدينة ديالك دابا</div>
-            <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+            <div className="scroll-row -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
               <CityChip
                 label="موقعي (GPS)"
                 active={city === ""}
@@ -194,7 +194,7 @@ export function DriverDashboard() {
           </div>
         )}
 
-        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+        <div className="scroll-row -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
           {distanceFilters.map((f) => (
             <button
               key={f.id}
@@ -210,7 +210,7 @@ export function DriverDashboard() {
           ))}
         </div>
 
-        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+        <div className="scroll-row -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
           {truckSizeChips.map((t) => (
             <button
               key={t.id}
@@ -246,7 +246,7 @@ export function DriverDashboard() {
               </button>
             )}
           </div>
-          <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+          <div className="scroll-row -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
             {cargoChips.map((c) => (
               <button
                 key={c}

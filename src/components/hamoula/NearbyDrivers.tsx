@@ -57,7 +57,7 @@ export function NearbyDrivers({ pickup, truckId }: { pickup: LatLng; truckId?: s
         </button>
       </div>
 
-      <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+      <div className="scroll-row -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
         {MODES.filter((m) => m.id !== "type" || truckId).map((m) => (
           <button
             key={m.id}

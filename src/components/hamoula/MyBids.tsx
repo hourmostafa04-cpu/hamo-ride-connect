@@ -111,7 +111,7 @@ export function MyBids() {
           <Stat label="مرفوضة" value={counts.declined} tone="muted" />
         </div>
 
-        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+        <div className="scroll-row -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
           {tabs.map((t) => (
             <button
               key={t.id}
@@ -181,7 +181,7 @@ export function MyBids() {
           )}
         </div>
 
-        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+        <div className="scroll-row -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
           {sortOptions.map((s) => (
             <button
               key={s.id}

@@ -197,3 +197,12 @@
   --accent-foreground: oklch(0.45 0.13 62);
   --ring: oklch(0.72 0.18 62);
 }
+
+/* Horizontal chip rows: no visible scrollbar, smooth snap on phones. */
+@utility scroll-row {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
