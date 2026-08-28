@@ -1000,7 +1000,6 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
       account,
       sessionState,
       ready,
-      ready,
       signIn,
       signOut,
       findAccount,
