@@ -397,8 +397,8 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
     hydrated.current = true;
     setReady(true);
 
-    // A verified phone-OTP session restores the account even if local storage was
-    // cleared; without one, the old phone-only login is gone and OTP is required.
+    // الجلسة كتبقى محفوظة على الجهاز: OTP كيتطلب غير فأول تسجيل.
+    // إلا المستخدم ضغط «خروج من الحساب» كنمسحو كلشي، وإلا كنخليو الحساب محفوظ.
     void supabase.auth.getSession().then(async ({ data }) => {
       const session = data.session;
       const sessionPhone = session?.user?.phone;
@@ -408,26 +408,19 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
           setAccount(remote);
           localStorage.setItem(ACCOUNT_KEY, JSON.stringify(remote));
         }
-        return;
       }
-      // جلسة بلا هاتف (المستخدم التجريبي) = جلسة صحيحة، كنخليو الحساب.
-      if (session) return;
-      // No verified session — only sign out when online (an offline device may just
-      // fail the token refresh while its session is still valid).
-      if (typeof navigator === "undefined" || navigator.onLine) {
-        setAccount((cur) => {
-          if (cur) localStorage.removeItem(ACCOUNT_KEY);
-          return cur ? null : cur;
-        });
-      }
+      // بلا جلسة صالحة: ما كنمسحوش الحساب المحفوظ — المستخدم كيدخل نيشان
+      // بلا SMS جديد. الخروج الصريح وحدو هو اللي كيمسح الحساب.
     });
 
-    // If the auth session ends (sign-out elsewhere, revoked token), drop the account.
+    // كنمسحو الحساب غير إلا كان الخروج صريح من طرف المستخدم.
     const { data: authSub } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_OUT") return;
+      if (localStorage.getItem(SIGNED_OUT_KEY) !== "1") return;
       setAccount(null);
       localStorage.removeItem(ACCOUNT_KEY);
     });
+
 
     // Keep the other role's tab in sync — same board, two users.
     const onStorage = (e: StorageEvent) => {
