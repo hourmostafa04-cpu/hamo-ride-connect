@@ -730,7 +730,7 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
       setPendingDraft(null);
       return created;
     },
-    [account, accountPhone],
+    [account, accountPhone, sessionState],
   );
 
   const addBid = useCallback<Ctx["addBid"]>(
