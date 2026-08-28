@@ -195,3 +195,16 @@ export const defaultTonsFor = (kind: string): string => {
   const byKind = [0, 1, 2, 3, 2, 3, 4, 4];
   return driverTonOptions[byKind[i] ?? 1]!;
 };
+
+/**
+ * Converts a capacity chip label ("500 كلغ" / "3.5 طن" / "30 طن+") to kilograms.
+ * Returns null when the label is empty or unparsable.
+ */
+export function capacityKg(label?: string | null): number | null {
+  if (!label) return null;
+  const m = String(label).replace(",", ".").match(/(\d+(?:\.\d+)?)/);
+  if (!m) return null;
+  const n = Number(m[1]);
+  if (!Number.isFinite(n)) return null;
+  return /كلغ|كيلو|kg/i.test(label) ? n : n * 1000;
+}
