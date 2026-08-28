@@ -78,7 +78,7 @@ export function HomeButton() {
       type="button"
       onClick={() => router.navigate({ to })}
       aria-label="الرئيسية"
-      className="flex min-h-11 min-w-11 items-center gap-2 rounded-full bg-primary-foreground/15 px-4 py-2 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary-foreground/25 active:scale-95"
+      className="flex min-h-11 shrink-0 items-center gap-2 rounded-full bg-primary-foreground/15 px-3.5 py-2 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary-foreground/25 active:scale-95"
     >
       <Home className="size-5" />
       الرئيسية
