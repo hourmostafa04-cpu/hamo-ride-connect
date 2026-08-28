@@ -61,14 +61,25 @@ const truckKinds = driverTruckKinds;
 
 export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
   const { account, signIn, findAccount, myLocation, geoStatus, requestLocation } = useHamoula();
-  /** Phone first: verified by a 6-digit SMS code before the account is restored or created. */
-  const [step, setStep] = useState<"phone" | "otp" | "register">("phone");
+  /** Role choice first, then phone (verified by SMS), then the account is restored or created. */
+  const [step, setStep] = useState<"role" | "phone" | "otp" | "register">(
+    account ? "phone" : "role",
+  );
   const [otp, setOtp] = useState("");
   const [otpBusy, setOtpBusy] = useState(false);
   /** E.164 number the current code was sent to. */
   const [otpSentTo, setOtpSentTo] = useState<string | null>(null);
   const [resendIn, setResendIn] = useState(0);
-  const [name, setName] = useState(account?.name ?? "");
+  const [firstName, setFirstName] = useState(account?.name?.split(/\s+/)[0] ?? "");
+  const [lastName, setLastName] = useState(
+    account?.name?.split(/\s+/).slice(1).join(" ") ?? "",
+  );
+  const name = `${firstName} ${lastName}`.trim();
+  const setName = (v: string) => {
+    const parts = v.trim().split(/\s+/);
+    setFirstName(parts[0] ?? "");
+    setLastName(parts.slice(1).join(" "));
+  };
   const [phone, setPhone] = useState(account?.phone ?? "");
   const [role, setRole] = useState<RoleId>(account?.role ?? "shipper");
   const [tons, setTons] = useState(account?.truckTons ?? tonOptions[1]!);
@@ -267,8 +278,8 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
   /** Step 1: send the 6-digit SMS code to the entered number. */
   const continueWithPhone = async () => {
     const normalized = normalizePhone(phone);
-    if (role === "driver" && !plate.trim()) {
-      setError("كتب رقم لوحة الشاحنة");
+    if (!firstName.trim() || !lastName.trim()) {
+      setError("كتب الاسم والنسب");
       return;
     }
     if (!normalized) {
@@ -325,6 +336,14 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
         description: existing.role === "driver" ? "صاحب شاحنة" : "صاحب بضاعة",
       });
       onDone(existing.role);
+      return;
+    }
+    // صاحب البضاعة: الاسم والنسب تسجلو قبل، كيدخل نيشان لطلب النقل.
+    if (role === "shipper" && name.trim()) {
+      signIn({ name: name.trim(), phone: formatPhone(normalized), role: "shipper" });
+      playSfx("success");
+      toast.success("تأكد الرقم ديالك", { description: "كمل طلب نقل البضاعة" });
+      onDone("shipper");
       return;
     }
     setStep("register");
@@ -409,17 +428,92 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
     onDone(role);
   };
 
+  if (step === "role") {
+    return (
+      <PhoneFrame>
+        <div className="mol-brand flex min-h-screen flex-1 flex-col bg-background">
+          <div className="gradient-primary px-6 pb-12 pt-14 text-primary-foreground">
+            <p className="text-xs font-extrabold tracking-[0.35em]">MOL TRANSPORT</p>
+            <h1 className="mt-3 text-4xl font-extrabold leading-tight">مول طرانسبور</h1>
+            <p className="mt-2 text-sm font-semibold opacity-90">
+              نقل البضائع فالمغرب — بسيط وسريع.
+            </p>
+          </div>
+          <div className="-mt-6 flex-1 space-y-4 rounded-t-3xl bg-background px-5 pb-10 pt-8">
+            <p className="text-base font-extrabold">شكون نتا؟</p>
+            <button
+              onClick={() => {
+                setRole("shipper");
+                setStep("phone");
+              }}
+              className="flex min-h-24 w-full items-center gap-4 rounded-3xl border-2 border-primary bg-primary px-5 py-5 text-right text-primary-foreground shadow-soft active:scale-[0.99]"
+            >
+              <Package className="size-10 shrink-0" />
+              <span>
+                <span className="block text-xl font-extrabold">صاحب بضاعة</span>
+                <span className="block text-sm font-semibold opacity-90">
+                  عندي بضاعة وباغي شاحنة
+                </span>
+              </span>
+            </button>
+            <button
+              onClick={() => {
+                setRole("driver");
+                setStep("phone");
+              }}
+              className="flex min-h-24 w-full items-center gap-4 rounded-3xl border-2 border-primary bg-primary-soft px-5 py-5 text-right text-accent-foreground active:scale-[0.99]"
+            >
+              <Truck className="size-10 shrink-0" />
+              <span>
+                <span className="block text-xl font-extrabold">صاحب شاحنة</span>
+                <span className="block text-sm font-semibold opacity-80">
+                  عندي شاحنة وكنقلب على الشحنات
+                </span>
+              </span>
+            </button>
+
+            {DEMO_LOGIN_ENABLED && (
+              <div className="rounded-2xl border-2 border-dashed border-primary/50 bg-primary-soft/50 p-3">
+                <p className="text-center text-xs font-bold text-accent-foreground">
+                  دخول تجريبي (وضع التطوير) — {DEMO_PHONE}
+                </p>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => void demoSignIn("shipper")}
+                    className="min-h-12 rounded-xl bg-primary py-3 text-sm font-extrabold text-primary-foreground"
+                  >
+                    دخول تجريبي · بضاعة
+                  </button>
+                  <button
+                    onClick={() => void demoSignIn("driver")}
+                    className="min-h-12 rounded-xl bg-primary py-3 text-sm font-extrabold text-primary-foreground"
+                  >
+                    دخول تجريبي · شاحنة
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </PhoneFrame>
+    );
+  }
+
   return (
     <PhoneFrame>
+      <div className="mol-brand flex min-h-screen flex-1 flex-col bg-background">
       <div className="gradient-primary px-6 pb-14 pt-12 text-primary-foreground">
-        <div className="inline-flex items-center gap-2 rounded-full bg-primary-foreground/15 px-3 py-1 text-xs font-semibold">
-          التسجيل والدخول
-        </div>
-        <h1 className="mt-4 text-3xl font-extrabold tracking-tight">أهلا بيك فمول طرانسبور</h1>
+        <p className="text-[11px] font-extrabold tracking-[0.35em]">MOL TRANSPORT</p>
+        <h1 className="mt-3 text-3xl font-extrabold tracking-tight">
+          {step === "otp" ? "كود التأكيد" : role === "driver" ? "تسجيل صاحب الشاحنة" : "تسجيل صاحب البضاعة"}
+        </h1>
         <p className="mt-2 max-w-xs text-sm leading-relaxed opacity-90">
-          كمل المعلومات ديالك باش تدخل للتطبيق.
+          {step === "otp"
+            ? "دخل الكود اللي وصلك ف SMS."
+            : "كتب المعلومات ديالك وضغط تأكيد."}
         </p>
       </div>
+
 
       <div className="-mt-8 flex-1 rounded-t-3xl bg-background px-5 pb-10 pt-7">
         {step === "register" && (
@@ -478,7 +572,30 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
 
         {step === "phone" && (
         <>
-        <label className="block text-sm font-bold">رقم الهاتف المغربي</label>
+        <label className="block text-sm font-bold">الاسم</label>
+        <div className="mt-2 flex items-center gap-3 rounded-2xl border-2 border-border bg-card px-4 py-3">
+          <User className="size-6 text-primary" />
+          <input
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            maxLength={30}
+            placeholder="مثال: سعيد"
+            className="w-full bg-transparent text-base font-bold outline-none placeholder:font-normal placeholder:text-muted-foreground"
+          />
+        </div>
+        <label className="mt-4 block text-sm font-bold">النسب</label>
+        <div className="mt-2 flex items-center gap-3 rounded-2xl border-2 border-border bg-card px-4 py-3">
+          <User className="size-6 text-primary" />
+          <input
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            maxLength={30}
+            placeholder="مثال: المرابط"
+            className="w-full bg-transparent text-base font-bold outline-none placeholder:font-normal placeholder:text-muted-foreground"
+          />
+        </div>
+        <label className="mt-4 block text-sm font-bold">رقم الهاتف المغربي</label>
+
         <div
           className={`mt-2 flex items-center gap-3 rounded-2xl border-2 bg-card px-4 py-3 ${
             listening === "phone" ? "border-primary" : "border-border"
@@ -753,37 +870,24 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
                   setPhoneTouched(true);
                   void continueWithPhone();
                 }}
-                disabled={!phoneValid || otpBusy}
+                disabled={!phoneValid || !firstName.trim() || !lastName.trim() || otpBusy}
                 className="flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl bg-primary py-5 text-lg font-extrabold text-primary-foreground shadow-soft transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {otpBusy ? <Loader2 className="size-6 animate-spin" /> : <LogIn className="size-6" />}
-                صيفط ليا رمز التحقق
+                تأكيد
               </button>
-
-              {/* وضع الاختبار فقط — كيختفي ملي VITE_DEMO_LOGIN=false */}
-              {DEMO_LOGIN_ENABLED && (
-                <div className="w-full rounded-2xl border-2 border-dashed border-primary/50 bg-primary-soft/50 p-3">
-                  <p className="text-center text-xs font-bold text-primary">
-                    دخول تجريبي (وضع التطوير) — {DEMO_PHONE}
-                  </p>
-                  <div className="mt-2 grid grid-cols-2 gap-2">
-                    <button
-                      onClick={() => void demoSignIn("shipper")}
-                      className="min-h-12 rounded-xl bg-primary/90 py-3 text-sm font-extrabold text-primary-foreground"
-                    >
-                      دخول تجريبي · بضاعة
-                    </button>
-                    <button
-                      onClick={() => void demoSignIn("driver")}
-                      className="min-h-12 rounded-xl bg-primary/90 py-3 text-sm font-extrabold text-primary-foreground"
-                    >
-                      دخول تجريبي · شاحنة
-                    </button>
-                  </div>
-                </div>
-              )}
+              <p className="text-center text-sm font-bold text-accent-foreground">
+                غادي توصلك رسالة SMS فيها كود التأكيد
+              </p>
+              <button
+                onClick={() => setStep("role")}
+                className="min-h-12 w-full rounded-2xl border-2 border-border bg-card py-3 text-base font-bold"
+              >
+                رجوع
+              </button>
             </>
           )}
+
 
           {step === "otp" && (
             <>
@@ -832,8 +936,10 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
         </StickyActions>
 
       </div>
+      </div>
     </PhoneFrame>
   );
+
 }
 
 function Chip({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {

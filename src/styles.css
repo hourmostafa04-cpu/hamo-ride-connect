@@ -184,3 +184,16 @@
 @utility gradient-primary {
   background-image: linear-gradient(135deg, var(--primary), var(--primary-glow));
 }
+
+/* MOL TRANSPORT brand scope: yellow/orange/white for the entry screens only. */
+.mol-brand {
+  --primary: oklch(0.72 0.18 62);
+  --primary-foreground: oklch(0.99 0.01 90);
+  --primary-glow: oklch(0.86 0.17 88);
+  --primary-soft: oklch(0.96 0.07 88);
+  --secondary: oklch(0.98 0.02 88);
+  --secondary-foreground: oklch(0.32 0.09 62);
+  --accent: oklch(0.96 0.07 88);
+  --accent-foreground: oklch(0.45 0.13 62);
+  --ring: oklch(0.72 0.18 62);
+}
