@@ -53,7 +53,7 @@ export function BackButton({ fallback = "/" }: { fallback?: string }) {
       type="button"
       onClick={goBack}
       aria-label="رجوع"
-      className="flex min-h-12 min-w-24 items-center gap-2 rounded-2xl bg-primary-foreground/20 px-5 py-3 text-base font-extrabold text-primary-foreground shadow-soft ring-1 ring-primary-foreground/30 transition-colors hover:bg-primary-foreground/30 active:scale-95 active:bg-primary-foreground/35"
+      className="flex min-h-12 shrink-0 items-center gap-2 rounded-2xl bg-primary-foreground/20 px-4 py-3 text-base font-extrabold text-primary-foreground shadow-soft ring-1 ring-primary-foreground/30 transition-colors hover:bg-primary-foreground/30 active:scale-95 active:bg-primary-foreground/35"
     >
       <ArrowRight className="size-6" />
       رجوع
@@ -78,7 +78,7 @@ export function HomeButton() {
       type="button"
       onClick={() => router.navigate({ to })}
       aria-label="الرئيسية"
-      className="flex min-h-11 min-w-11 items-center gap-2 rounded-full bg-primary-foreground/15 px-4 py-2 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary-foreground/25 active:scale-95"
+      className="flex min-h-11 shrink-0 items-center gap-2 rounded-full bg-primary-foreground/15 px-3.5 py-2 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary-foreground/25 active:scale-95"
     >
       <Home className="size-5" />
       الرئيسية
@@ -106,15 +106,15 @@ export function AppHeader({
   return (
     <header className="gradient-primary sticky top-0 z-30 px-5 pb-7 pt-6 text-primary-foreground">
       {(showBack || showProfile || showHome) && (
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
+        <div className="mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             {showBack ? <BackButton fallback={backTo} /> : null}
             {showHome ? <HomeButton /> : null}
           </div>
           {showProfile ? <ProfileSwitcher /> : <span />}
         </div>
       )}
-      <h1 className="text-2xl font-extrabold tracking-tight">{title}</h1>
+      <h1 className="text-xl font-extrabold tracking-tight sm:text-2xl">{title}</h1>
       {subtitle ? <p className="mt-1 text-sm opacity-90">{subtitle}</p> : null}
       {children ? <div className="mt-3">{children}</div> : null}
     </header>
