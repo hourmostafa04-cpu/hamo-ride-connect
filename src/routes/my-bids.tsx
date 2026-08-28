@@ -4,12 +4,12 @@ import { MyBids } from "@/components/hamoula/MyBids";
 export const Route = createFileRoute("/my-bids")({
   head: () => ({
     meta: [
-      { title: "سجل العروض ديالي | حمولة" },
+      { title: "سجل العروض ديالي | مول طرانسبور" },
       {
         name: "description",
         content: "شوف كاع العروض اللي بعتي: مقبولة، مرفوضة ولا قيد المراجعة، بالثمن والتاريخ.",
       },
-      { property: "og:title", content: "سجل العروض ديالي | حمولة" },
+      { property: "og:title", content: "سجل العروض ديالي | مول طرانسبور" },
       {
         property: "og:description",
         content: "تتبع حالة العروض ديالك مع أصحاب البضائع فمكان واحد.",

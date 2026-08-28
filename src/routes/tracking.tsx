@@ -22,12 +22,12 @@ function MapSkeleton() {
 export const Route = createFileRoute("/tracking")({
   head: () => ({
     meta: [
-      { title: "تتبع الرحلة | حمولة" },
+      { title: "تتبع الرحلة | مول طرانسبور" },
       {
         name: "description",
         content: "تتبع حالة رحلة بضاعتك خطوة بخطوة وتواصل مباشرة مع السائق عبر الدردشة.",
       },
-      { property: "og:title", content: "تتبع الرحلة | حمولة" },
+      { property: "og:title", content: "تتبع الرحلة | مول طرانسبور" },
       {
         property: "og:description",
         content: "حالة الرحلة مباشرة ودردشة فورية مع صاحب الشاحنة.",

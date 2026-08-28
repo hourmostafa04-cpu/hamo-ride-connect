@@ -9,15 +9,15 @@ import { capacityOptions, driverTruckKinds } from "@/lib/hamoula-data";
 export const Route = createFileRoute("/account")({
   head: () => ({
     meta: [
-      { title: "حسابي | حمولة" },
+      { title: "حسابي | مول طرانسبور" },
       {
         name: "description",
-        content: "شوف وبدل المعلومات ديالك فحمولة: الاسم، الدور، الشاحنة، الإشعارات والخروج.",
+        content: "شوف وبدل المعلومات ديالك فمول طرانسبور: الاسم، الدور، الشاحنة، الإشعارات والخروج.",
       },
-      { property: "og:title", content: "حسابي | حمولة" },
+      { property: "og:title", content: "حسابي | مول طرانسبور" },
       {
         property: "og:description",
-        content: "الملف الشخصي، تعديل المعلومات، الإعدادات والخروج من حمولة.",
+        content: "الملف الشخصي، تعديل المعلومات، الإعدادات والخروج من مول طرانسبور.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

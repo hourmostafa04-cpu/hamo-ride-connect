@@ -28,13 +28,13 @@ function MapSkeleton() {
 export const Route = createFileRoute("/trip-details")({
   head: () => ({
     meta: [
-      { title: "تفاصيل الرحلة | حمولة" },
+      { title: "تفاصيل الرحلة | مول طرانسبور" },
       {
         name: "description",
         content:
           "تفاصيل الرحلة: خريطة مسار السير من نقطة التحميل حتى الوجهة وتحديثات الحالة لحظة بلحظة.",
       },
-      { property: "og:title", content: "تفاصيل الرحلة | حمولة" },
+      { property: "og:title", content: "تفاصيل الرحلة | مول طرانسبور" },
       {
         property: "og:description",
         content: "خريطة المسار، المسافة المتبقية، وتحديثات مباشرة لحالة الشاحنة.",

@@ -10,12 +10,12 @@ import { NearbyDrivers } from "@/components/hamoula/NearbyDrivers";
 export const Route = createFileRoute("/offers")({
   head: () => ({
     meta: [
-      { title: "أصحاب الشاحنات القريبين | حمولة" },
+      { title: "أصحاب الشاحنات القريبين | مول طرانسبور" },
       {
         name: "description",
         content: "شوف أصحاب الشاحنات القريبين من نقطة التحميل مرتبين حسب المسافة، وتواصل معهم مباشرة.",
       },
-      { property: "og:title", content: "أصحاب الشاحنات القريبين | حمولة" },
+      { property: "og:title", content: "أصحاب الشاحنات القريبين | مول طرانسبور" },
       {
         property: "og:description",
         content: "لائحة أصحاب الشاحنات مرتبة من الأقرب للأبعد مع المسافة بالكيلومتر.",

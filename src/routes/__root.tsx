@@ -84,22 +84,22 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "حمولة | اختر دورك وابدأ النقل" },
+      { title: "مول طرانسبور | اختر دورك وابدأ النقل" },
       {
         name: "description",
-        content: "منصة حمولة لنقل البضائع في المغرب: صاحب بضاعة أو صاحب شاحنة، ابدأ في دقائق.",
+        content: "منصة مول طرانسبور لنقل البضائع في المغرب: صاحب بضاعة أو صاحب شاحنة، ابدأ في دقائق.",
       },
-      { property: "og:title", content: "حمولة | اختر دورك وابدأ النقل" },
+      { property: "og:title", content: "مول طرانسبور | اختر دورك وابدأ النقل" },
       {
         property: "og:description",
-        content: "منصة حمولة لنقل البضائع في المغرب: صاحب بضاعة أو صاحب شاحنة، ابدأ في دقائق.",
+        content: "منصة مول طرانسبور لنقل البضائع في المغرب: صاحب بضاعة أو صاحب شاحنة، ابدأ في دقائق.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "حمولة | اختر دورك وابدأ النقل" },
+      { name: "twitter:title", content: "مول طرانسبور | اختر دورك وابدأ النقل" },
       {
         name: "twitter:description",
-        content: "منصة حمولة لنقل البضائع في المغرب: صاحب بضاعة أو صاحب شاحنة، ابدأ في دقائق.",
+        content: "منصة مول طرانسبور لنقل البضائع في المغرب: صاحب بضاعة أو صاحب شاحنة، ابدأ في دقائق.",
       },
       {
         property: "og:image",
