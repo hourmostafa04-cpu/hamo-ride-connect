@@ -107,8 +107,11 @@ export async function fetchBoard(): Promise<{ loads: Load[]; bids: Bid[] }> {
 export async function saveLoad(load: Load) {
   if (!isRealLoad(load.id)) return;
   const userId = await currentUserId();
-  if (!userId) return;
-  await supabase.from("loads").upsert({
+  if (!userId) {
+    console.error("[hamoula] saveLoad: no authenticated user, load NOT saved", load.id);
+    throw new Error("لا يمكن حفظ الطلب بدون تسجيل الدخول");
+  }
+  const { error } = await supabase.from("loads").upsert({
     id: load.id,
     user_id: userId,
     shipper: load.shipper,
