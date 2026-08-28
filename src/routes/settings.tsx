@@ -8,12 +8,12 @@ import { buzz, resetPrefs, setPref, useNotifPrefs, type NotifPrefs } from "@/lib
 export const Route = createFileRoute("/settings")({
   head: () => ({
     meta: [
-      { title: "حمولة | إعدادات الإشعارات" },
+      { title: "مول طرانسبور | إعدادات الإشعارات" },
       {
         name: "description",
-        content: "تحكم فأصوات، اهتزاز وأنواع تنبيهات الرحلة والعروض فتطبيق حمولة.",
+        content: "تحكم فأصوات، اهتزاز وأنواع تنبيهات الرحلة والعروض فتطبيق مول طرانسبور.",
       },
-      { property: "og:title", content: "حمولة | إعدادات الإشعارات" },
+      { property: "og:title", content: "مول طرانسبور | إعدادات الإشعارات" },
       {
         property: "og:description",
         content: "وقّف ولا فعّل أصوات التطبيق، الاهتزاز وتنبيهات الرحلة كيفما بغيتي.",

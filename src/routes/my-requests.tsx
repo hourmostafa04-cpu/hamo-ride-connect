@@ -4,15 +4,15 @@ import { MyRequests } from "@/components/hamoula/MyRequests";
 export const Route = createFileRoute("/my-requests")({
   head: () => ({
     meta: [
-      { title: "طلباتي | حمولة" },
+      { title: "طلباتي | مول طرانسبور" },
       {
         name: "description",
         content: "كل طلبات النقل ديالك: مسودة، منشور، تم قبول سائق، في الطريق، تم التسليم ولا ملغى.",
       },
-      { property: "og:title", content: "طلباتي | حمولة" },
+      { property: "og:title", content: "طلباتي | مول طرانسبور" },
       {
         property: "og:description",
-        content: "تتبع وسجل كامل لطلبات نقل البضائع ديالك فحمولة.",
+        content: "تتبع وسجل كامل لطلبات نقل البضائع ديالك فمول طرانسبور.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

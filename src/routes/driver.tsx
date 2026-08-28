@@ -4,12 +4,12 @@ import { DriverDashboard } from "@/components/hamoula/DriverDashboard";
 export const Route = createFileRoute("/driver")({
   head: () => ({
     meta: [
-      { title: "لوحة صاحب الشاحنة | حمولة" },
+      { title: "لوحة صاحب الشاحنة | مول طرانسبور" },
       {
         name: "description",
         content: "شوف طلبات نقل البضائع القريبة منك، اقبل الثمن المقترح ولا بعت عرض مضاد بالصوت.",
       },
-      { property: "og:title", content: "لوحة صاحب الشاحنة | حمولة" },
+      { property: "og:title", content: "لوحة صاحب الشاحنة | مول طرانسبور" },
       {
         property: "og:description",
         content: "طلبات جديدة من أصحاب البضائع مباشرة فالهاتف ديالك.",

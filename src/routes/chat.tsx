@@ -18,12 +18,12 @@ import {
 export const Route = createFileRoute("/chat")({
   head: () => ({
     meta: [
-      { title: "المحادثة | حمولة" },
+      { title: "المحادثة | مول طرانسبور" },
       {
         name: "description",
         content: "محادثة خاصة بين صاحب البضاعة وصاحب الشاحنة: رسائل نصية وصوتية محفوظة ومباشرة.",
       },
-      { property: "og:title", content: "المحادثة | حمولة" },
+      { property: "og:title", content: "المحادثة | مول طرانسبور" },
       { property: "og:description", content: "رسائل نصية وصوتية بين صاحب الطلب والسائق." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

@@ -405,7 +405,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
         ? { truckTons: tons, truckType: kind, truckPlate: plate.trim(), available }
         : {}),
     });
-    toast.success("مرحبا بيك فحمولة", { description: formatPhone(normalized) });
+    toast.success("مرحبا بيك فمول طرانسبور", { description: formatPhone(normalized) });
     onDone(role);
   };
 
@@ -415,7 +415,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
         <div className="inline-flex items-center gap-2 rounded-full bg-primary-foreground/15 px-3 py-1 text-xs font-semibold">
           التسجيل والدخول
         </div>
-        <h1 className="mt-4 text-3xl font-extrabold tracking-tight">أهلا بيك فحمولة</h1>
+        <h1 className="mt-4 text-3xl font-extrabold tracking-tight">أهلا بيك فمول طرانسبور</h1>
         <p className="mt-2 max-w-xs text-sm leading-relaxed opacity-90">
           كمل المعلومات ديالك باش تدخل للتطبيق.
         </p>
