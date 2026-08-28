@@ -66,6 +66,7 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
   const [pickup, setPickup] = useState(initial.pickup);
   const [destination, setDestination] = useState(initial.destination);
   const [cargo, setCargo] = useState(initial.cargo);
+  const [notes, setNotes] = useState("");
   const [truck, setTruck] = useState(initial.truck);
   const [capacity, setCapacity] = useState(initial.capacity);
   const [price, setPrice] = useState(initial.price);
@@ -116,6 +117,7 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
     setPickup(empty.pickup);
     setDestination(empty.destination);
     setCargo(empty.cargo);
+    setNotes("");
     setCapacity(empty.capacity);
     setTruck(empty.truck);
     setPrice(empty.price);
@@ -257,6 +259,7 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
 
   return (
     <PhoneFrame>
+      <div className="mol-brand flex min-h-screen flex-1 flex-col bg-background">
       <AppHeader
         title="طلب نقل بضاعة"
         subtitle="عمّر المعلومات وسير للعروض"
