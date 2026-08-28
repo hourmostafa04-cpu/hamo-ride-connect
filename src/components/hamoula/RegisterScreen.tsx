@@ -230,6 +230,16 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
         }
         return;
       }
+      if (field === "firstName") {
+        setFirstName(text);
+        setPending({ field, text });
+        return;
+      }
+      if (field === "lastName") {
+        setLastName(text);
+        setPending({ field, text });
+        return;
+      }
       // Show the corrected Darija first — nothing is filled before confirmation.
       setPending({ field, text });
     },
