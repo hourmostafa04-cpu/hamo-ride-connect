@@ -255,6 +255,23 @@ type Ctx = {
 
 export type GeoStatus = "idle" | "locating" | "granted" | "denied" | "unsupported";
 
+/** حالة جلسة Auth: كنفرقو بين انقطاع الشبكة وبين جلسة ملغاة فعلياً. */
+export type SessionState = "checking" | "authenticated" | "offline" | "signed-out";
+
+/** خطأ شبكة (fetch failed / offline) ماشي خطأ صلاحية توكن. */
+function isNetworkError(e: unknown): boolean {
+  if (typeof navigator !== "undefined" && navigator.onLine === false) return true;
+  const msg = (e as { message?: string } | null)?.message?.toLowerCase() ?? "";
+  const name = (e as { name?: string } | null)?.name ?? "";
+  return (
+    name === "AuthRetryableFetchError" ||
+    msg.includes("failed to fetch") ||
+    msg.includes("network") ||
+    msg.includes("load failed") ||
+    msg.includes("timeout")
+  );
+}
+
 const HamoulaContext = createContext<Ctx | null>(null);
 
 const STORAGE_KEY = "hamoula-profile";
