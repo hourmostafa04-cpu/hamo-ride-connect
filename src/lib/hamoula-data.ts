@@ -64,17 +64,17 @@ export type TruckOption = {
 };
 
 export const truckTypes: TruckOption[] = [
-  { id: "triporteur", label: "تريبرتو", hint: "من 0 إلى 500 كيلو", maxKg: 500, icon: "Car" },
-  { id: "honda", label: "هوندا", hint: "من 0 إلى 1.5 طن", maxKg: 1500, icon: "Bus" },
-  { id: "pickup", label: "بيكوب", hint: "من 0 إلى 2.5 طن", maxKg: 2500, icon: "Car" },
-  { id: "staffit", label: "صطافيط", hint: "من 0 إلى 4 طن", maxKg: 4000, icon: "Bus" },
-  { id: "kontiri", label: "كونتيري", hint: "من 0 إلى 8 طن", maxKg: 8000, icon: "Truck" },
-  { id: "camion", label: "كاميون", hint: "من 0 إلى 20 طن", maxKg: 20000, icon: "Truck" },
-  { id: "remorque", label: "رموك", hint: "من 0 إلى 30 طن", maxKg: 30000, icon: "Container" },
+  { id: "triporteur", label: "تريبورتور", hint: "حتى 500 كلغ", maxKg: 500, icon: "Car" },
+  { id: "honda", label: "هوندا", hint: "حتى 1.5 طن", maxKg: 1500, icon: "Bus" },
+  { id: "pickup", label: "بيكوب", hint: "حتى 2 طن", maxKg: 2000, icon: "Car" },
+  { id: "staffit", label: "سطافيط", hint: "حتى 4 طن", maxKg: 4000, icon: "Bus" },
+  { id: "kontiri", label: "كونتير", hint: "حتى 8 طن", maxKg: 8000, icon: "Truck" },
+  { id: "camion", label: "كاميون كبير", hint: "حتى 20 طن", maxKg: 20000, icon: "Truck" },
+  { id: "remorque", label: "رموك", hint: "حتى 30 طن", maxKg: 30000, icon: "Container" },
   {
     id: "benne",
     label: "كاميون لبان (Benne)",
-    hint: "من 0 إلى 20 طن",
+    hint: "حتى 20 طن",
     maxKg: 20000,
     icon: "Tractor",
     note: "رملة، حصى، مواد البناء",

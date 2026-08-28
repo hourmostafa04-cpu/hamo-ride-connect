@@ -14,7 +14,7 @@ import {
   Snowflake,
   Check,
   ClipboardList,
-
+  NotebookPen,
 } from "lucide-react";
 
 const TRUCK_ICONS = { Car, Bus, Truck, Container, Tractor, Snowflake } as const;
@@ -26,7 +26,7 @@ import { ResumeWhereYouLeft } from "@/components/hamoula/ResumeWhereYouLeft";
 import { VoiceNotePlayer } from "@/components/hamoula/Voice";
 import { Mic, Loader2 } from "lucide-react";
 import { useAiDictation } from "@/hooks/use-ai-dictation";
-import { findTruck, truckTypes, capacityOptions, capacityKg } from "@/lib/hamoula-data";
+import { findTruck, truckTypes, capacityKg } from "@/lib/hamoula-data";
 import { useHamoula } from "@/lib/hamoula-store";
 import {
   defaultDestination,
@@ -66,6 +66,7 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
   const [pickup, setPickup] = useState(initial.pickup);
   const [destination, setDestination] = useState(initial.destination);
   const [cargo, setCargo] = useState(initial.cargo);
+  const [notes, setNotes] = useState("");
   const [truck, setTruck] = useState(initial.truck);
   const [capacity, setCapacity] = useState(initial.capacity);
   const [price, setPrice] = useState(initial.price);
@@ -116,6 +117,7 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
     setPickup(empty.pickup);
     setDestination(empty.destination);
     setCargo(empty.cargo);
+    setNotes("");
     setCapacity(empty.capacity);
     setTruck(empty.truck);
     setPrice(empty.price);
@@ -257,6 +259,7 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
 
   return (
     <PhoneFrame>
+      <div className="mol-brand flex min-h-screen flex-1 flex-col bg-background">
       <AppHeader
         title="طلب نقل بضاعة"
         subtitle="عمّر المعلومات وسير للعروض"
@@ -372,6 +375,7 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
           setPickup("");
           setDestination("");
           setCargo("");
+          setNotes("");
           setCapacity("");
           setTruck(emptyOrderForm().truck);
                 setPrice("");
@@ -383,7 +387,7 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
         }}
       >
         <CityField
-          label="نقطة التحميل"
+          label="نقطة الانطلاق"
           icon={<MapPin className="size-5 text-primary" />}
           value={pickup}
           showGps
@@ -408,7 +412,7 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
         />
 
         <div>
-          <label className="mb-2 block text-sm font-bold">حدد على الخريطة</label>
+          <label className="mb-2 block text-sm font-bold">GPS والخريطة</label>
           <ClientOnly fallback={<MapSkeleton />}>
             <Suspense fallback={<MapSkeleton />}>
               <MapPicker
@@ -434,37 +438,15 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
 
         <CargoField value={cargo} onChange={setCargo} />
 
-        <div className="rounded-2xl border-2 border-dashed border-border bg-card p-4">
-          <p className="text-sm font-bold">وزن الحمولة</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            الوزن كيدخل فحساب الثمن التقديري.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {capacityOptions.map((c) => (
-              <button
-                key={c}
-                type="button"
-                aria-pressed={capacity === c}
-                onClick={() => setCapacity(capacity === c ? "" : c)}
-                className={`min-h-11 rounded-full border-2 px-4 text-sm font-bold ${
-                  capacity === c
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-card text-muted-foreground"
-                }`}
-              >
-                {c}
-              </button>
-            ))}
-          </div>
-        </div>
+        <NotesField value={notes} onChange={setNotes} />
 
 
 
 
 
-        <div className="rounded-2xl border-2 border-dashed border-border bg-card p-4">
-          <p className="text-sm font-bold">نوع الشاحنة</p>
-          <p className="mt-1 text-xs text-muted-foreground">
+        <div className="rounded-3xl border-2 border-primary/25 bg-card p-4 shadow-soft">
+          <p className="text-base font-extrabold">نوع الشاحنة</p>
+          <p className="mt-1 text-xs font-semibold text-muted-foreground">
             المختار: {suggestedLabel} — الحمولة القصوى مبينة تحت كل شاحنة.
           </p>
 
@@ -478,18 +460,28 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
                   type="button"
                   aria-pressed={active}
                   onClick={() => setTruck(t.id)}
-                  className={`relative min-h-24 rounded-2xl border-2 p-3 text-center transition-colors ${
+                  className={`relative min-h-32 rounded-3xl border-2 p-3 text-center transition active:scale-[0.98] ${
                     active
-                      ? "border-primary bg-primary-soft text-accent-foreground"
-                      : "border-border bg-card text-muted-foreground"
+                      ? "border-primary bg-primary-soft text-accent-foreground shadow-soft ring-4 ring-primary/20"
+                      : "border-border bg-background text-muted-foreground"
                   }`}
                 >
                   {active && (
-                    <Check className="absolute left-2 top-2 size-5 rounded-full bg-primary p-0.5 text-primary-foreground" />
+                    <span className="absolute left-2 top-2 grid size-7 place-items-center rounded-full bg-primary text-primary-foreground">
+                      <Check className="size-5" />
+                    </span>
                   )}
-                  <Icon className="mx-auto mb-1 size-6 text-primary" />
-                  <span className="block text-sm font-extrabold leading-tight">{t.label}</span>
-                  <span className="mt-1 block rounded-full bg-secondary px-2 py-1 text-[11px] font-bold">
+                  <span
+                    className={`mx-auto mb-2 grid size-14 place-items-center rounded-2xl border-2 ${
+                      active ? "border-primary bg-card" : "border-border bg-secondary"
+                    }`}
+                  >
+                    <Icon className="size-8 text-primary" />
+                  </span>
+                  <span className="block text-sm font-extrabold leading-tight text-foreground">
+                    {t.label}
+                  </span>
+                  <span className="mt-2 block rounded-full bg-secondary px-2 py-1 text-[11px] font-extrabold text-secondary-foreground">
                     {t.hint}
                   </span>
                   {t.note && <span className="mt-1 block text-[10px] font-semibold">{t.note}</span>}
@@ -520,9 +512,7 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
           <p className="mt-2 text-xs text-muted-foreground">
             {priceLocked
               ? "هادا هو الثمن ديالك — ما غنبدلوهش."
-              : `ثمن تقديري فقط وقابل للتفاوض — محسوب حسب المسافة (${roadKm} كلم)${
-                  capacity ? ` والوزن (${capacity})` : ""
-                } ونوع الشاحنة (${suggested.label}).`}
+              : `ثمن تقديري فقط وقابل للتفاوض — محسوب حسب المسافة (${roadKm} كلم) ونوع الشاحنة (${suggested.label}).`}
           </p>
           <p className="mt-1 text-[11px] font-bold text-primary">
             ⚠️ الثمن تقديري فقط وقابل للتفاوض مع صاحب الشاحنة.
@@ -549,6 +539,7 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
         </StickyActions>
 
       </form>
+      </div>
     </PhoneFrame>
   );
 }
@@ -603,6 +594,63 @@ function CargoField({ value, onChange }: { value: string; onChange: (v: string) 
       {busy && (
         <p className="mt-1 text-xs font-bold text-primary">
           {dictation.state === "listening" ? "كنسمعك... قول نوع السلعة" : "كنعالجو..."}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** Optional notes field with its own mic; it stays outside the saved order payload. */
+function NotesField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const dictation = useAiDictation({
+    mode: "general",
+    silenceMs: 2000,
+    onText: (text) => {
+      const spoken = text.replace(/[.،,!؟?]/g, " ").replace(/\s+/g, " ").trim();
+      if (!spoken) {
+        toast.info("ما سمعناش الملاحظة — عاود سجل");
+        return;
+      }
+      onChange(spoken);
+      toast.success("تسجلت الملاحظة", { description: spoken });
+    },
+    onError: (m) => toast.error(m),
+  });
+
+  const busy = dictation.state !== "idle";
+
+  return (
+    <div data-testid="notes-field">
+      <label className="mb-2 block text-sm font-bold">ملاحظات اختيارية</label>
+      <div className="flex items-start gap-3 rounded-2xl border-2 border-border bg-card px-4 py-3 focus-within:border-primary">
+        <NotebookPen className="mt-1 size-5 shrink-0 text-primary" />
+        <textarea
+          value={value}
+          rows={3}
+          placeholder="مثال: التحميل سهل، التسليم قبل الخمسة..."
+          onChange={(e) => onChange(e.target.value)}
+          className="min-h-20 w-full resize-none bg-transparent text-base font-semibold outline-none placeholder:font-normal placeholder:text-muted-foreground"
+        />
+        <button
+          type="button"
+          aria-label="تسجيل صوتي للملاحظات"
+          onClick={() => (dictation.state === "listening" ? dictation.stop() : dictation.start())}
+          className={`grid size-10 shrink-0 place-items-center rounded-xl border-2 transition ${
+            dictation.state === "listening"
+              ? "animate-pulse border-primary bg-primary text-primary-foreground"
+              : "border-border bg-secondary text-foreground"
+          }`}
+        >
+          {dictation.state === "processing" ? (
+            <Loader2 className="size-5 animate-spin" />
+          ) : (
+            <Mic className="size-5" />
+          )}
+        </button>
+      </div>
+      {busy && (
+        <p className="mt-1 text-xs font-bold text-primary">
+          {dictation.state === "listening" ? "كنسمعك... قول الملاحظة" : "كنعالجو..."}
         </p>
       )}
     </div>
