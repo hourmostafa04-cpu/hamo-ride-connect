@@ -278,8 +278,8 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
   /** Step 1: send the 6-digit SMS code to the entered number. */
   const continueWithPhone = async () => {
     const normalized = normalizePhone(phone);
-    if (role === "driver" && !plate.trim()) {
-      setError("كتب رقم لوحة الشاحنة");
+    if (!firstName.trim() || !lastName.trim()) {
+      setError("كتب الاسم والنسب");
       return;
     }
     if (!normalized) {
