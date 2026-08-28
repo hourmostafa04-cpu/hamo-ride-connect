@@ -999,7 +999,7 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
       switchProfile,
       account,
       sessionState,
-      authed: sessionState === "authenticated",
+      ready,
       ready,
       signIn,
       signOut,
