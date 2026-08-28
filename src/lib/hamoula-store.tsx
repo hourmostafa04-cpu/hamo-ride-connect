@@ -489,6 +489,7 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
   const signIn = useCallback(
     (next: Account) => {
       setAccount(next);
+      localStorage.removeItem(SIGNED_OUT_KEY);
       localStorage.setItem(ACCOUNT_KEY, JSON.stringify(next));
       saveToRegistry(next);
       void saveAccount(next);
@@ -515,9 +516,11 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(() => {
     setAccount(null);
+    localStorage.setItem(SIGNED_OUT_KEY, "1");
     localStorage.removeItem(ACCOUNT_KEY);
     // End the verified phone session too — the account row stays in the database.
     void supabase.auth.signOut();
+
   }, []);
 
 
