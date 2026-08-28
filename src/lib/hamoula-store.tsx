@@ -212,7 +212,7 @@ type Ctx = {
   loads: Load[];
   bids: Bid[];
   activeLoad: Load | null;
-  publishLoad: (patch: Partial<TripRequest>) => Load;
+  publishLoad: (patch: Partial<TripRequest>) => Promise<Load>;
   addBid: (input: {
     loadId: string;
     price: number;
@@ -280,6 +280,8 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
   const [geoStatus, setGeoStatus] = useState<GeoStatus>("idle");
   const watchId = useRef<number | null>(null);
   const hydrated = useRef(false);
+  const boardRef = useRef(board);
+  boardRef.current = board;
 
   const requestLocation = useCallback(() => {
     if (typeof navigator === "undefined" || !navigator.geolocation) {
@@ -347,14 +349,11 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
     if (raw) {
       try {
         const parsed = JSON.parse(raw) as Board;
-        setBoard(
-          parsed.loads.length === 0 ? { ...parsed, loads: demoLoads() } : parsed,
-        );
+        // Demo/mock loads are disabled: only real database rows are shown.
+        setBoard({ ...parsed, loads: parsed.loads.filter((l) => isRealLoad(l.id)) });
       } catch {
-        setBoard((b) => ({ ...b, loads: demoLoads() }));
+        /* ignore corrupt board; DB sync will fill real loads */
       }
-    } else {
-      setBoard((b) => ({ ...b, loads: demoLoads() }));
     }
     const rawGeo = localStorage.getItem(GEO_KEY);
     if (rawGeo) {
@@ -540,7 +539,7 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
     const remote = await fetchBoard();
     setBoard((b) => ({
       ...b,
-      loads: [...remote.loads, ...b.loads.filter((l) => !isRealLoad(l.id))],
+      loads: remote.loads,
       bids: [...remote.bids, ...b.bids.filter((x) => !isRealBid(x.driverId))],
     }));
   }, []);
