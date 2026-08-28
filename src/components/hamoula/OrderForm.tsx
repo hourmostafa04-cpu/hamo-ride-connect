@@ -6,18 +6,31 @@ import {
   Navigation,
   Banknote,
   Boxes,
-  Truck,
-  Car,
-  Bus,
-  Container,
-  Tractor,
-  Snowflake,
   Check,
   ClipboardList,
   NotebookPen,
 } from "lucide-react";
 
-const TRUCK_ICONS = { Car, Bus, Truck, Container, Tractor, Snowflake } as const;
+import triporteurImg from "@/assets/trucks/triporteur.png";
+import hondaImg from "@/assets/trucks/honda.png";
+import pickupImg from "@/assets/trucks/pickup.png";
+import staffitImg from "@/assets/trucks/staffit.png";
+import kontiriImg from "@/assets/trucks/kontiri.png";
+import camionImg from "@/assets/trucks/camion.png";
+import remorqueImg from "@/assets/trucks/remorque.png";
+import benneImg from "@/assets/trucks/benne.png";
+
+/** Real vehicle pictures shown in the truck picker, keyed by truck id. */
+const TRUCK_IMAGES: Record<string, string> = {
+  triporteur: triporteurImg,
+  honda: hondaImg,
+  pickup: pickupImg,
+  staffit: staffitImg,
+  kontiri: kontiriImg,
+  camion: camionImg,
+  remorque: remorqueImg,
+  benne: benneImg,
+};
 
 import { toast } from "sonner";
 import { playSfx } from "@/lib/sfx";
