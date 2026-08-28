@@ -258,6 +258,9 @@ const BOARD_KEY = "hamoula-board";
 const ACCOUNT_KEY = "hamoula-account";
 const ACCOUNTS_KEY = "hamoula-accounts";
 const ACCOUNTS_MIGRATED_KEY = "hamoula-accounts-migrated";
+/** كيتحط غير منين المستخدم يضغط «خروج من الحساب» — باش نفرقو على انقطاع الشبكة. */
+const SIGNED_OUT_KEY = "hamoula-signed-out";
+
 
 const GEO_KEY = "hamoula-location";
 
