@@ -58,9 +58,11 @@ const tonsChipForKg = (maxKg: number) =>
 
 
 
-type VoiceField = "name" | "phone";
+type VoiceField = "name" | "firstName" | "lastName" | "phone";
 const FIELD_PROMPT: Record<VoiceField, string> = {
   name: "قول السمية ديالك",
+  firstName: "قول الاسم ديالك",
+  lastName: "قول النسب ديالك",
   phone: "قول رقم التيليفون ديالك",
 };
 
