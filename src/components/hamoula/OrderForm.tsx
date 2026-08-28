@@ -599,3 +599,60 @@ function CargoField({ value, onChange }: { value: string; onChange: (v: string) 
     </div>
   );
 }
+
+/** Optional notes field with its own mic; it stays outside the saved order payload. */
+function NotesField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const dictation = useAiDictation({
+    mode: "general",
+    silenceMs: 2000,
+    onText: (text) => {
+      const spoken = text.replace(/[.،,!؟?]/g, " ").replace(/\s+/g, " ").trim();
+      if (!spoken) {
+        toast.info("ما سمعناش الملاحظة — عاود سجل");
+        return;
+      }
+      onChange(spoken);
+      toast.success("تسجلت الملاحظة", { description: spoken });
+    },
+    onError: (m) => toast.error(m),
+  });
+
+  const busy = dictation.state !== "idle";
+
+  return (
+    <div data-testid="notes-field">
+      <label className="mb-2 block text-sm font-bold">ملاحظات اختيارية</label>
+      <div className="flex items-start gap-3 rounded-2xl border-2 border-border bg-card px-4 py-3 focus-within:border-primary">
+        <NotebookPen className="mt-1 size-5 shrink-0 text-primary" />
+        <textarea
+          value={value}
+          rows={3}
+          placeholder="مثال: التحميل سهل، التسليم قبل الخمسة..."
+          onChange={(e) => onChange(e.target.value)}
+          className="min-h-20 w-full resize-none bg-transparent text-base font-semibold outline-none placeholder:font-normal placeholder:text-muted-foreground"
+        />
+        <button
+          type="button"
+          aria-label="تسجيل صوتي للملاحظات"
+          onClick={() => (dictation.state === "listening" ? dictation.stop() : dictation.start())}
+          className={`grid size-10 shrink-0 place-items-center rounded-xl border-2 transition ${
+            dictation.state === "listening"
+              ? "animate-pulse border-primary bg-primary text-primary-foreground"
+              : "border-border bg-secondary text-foreground"
+          }`}
+        >
+          {dictation.state === "processing" ? (
+            <Loader2 className="size-5 animate-spin" />
+          ) : (
+            <Mic className="size-5" />
+          )}
+        </button>
+      </div>
+      {busy && (
+        <p className="mt-1 text-xs font-bold text-primary">
+          {dictation.state === "listening" ? "كنسمعك... قول الملاحظة" : "كنعالجو..."}
+        </p>
+      )}
+    </div>
+  );
+}
