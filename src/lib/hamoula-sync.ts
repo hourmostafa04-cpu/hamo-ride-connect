@@ -130,6 +130,10 @@ export async function saveLoad(load: Load) {
     accepted_offer: load.acceptedOffer ?? null,
     updated_at: new Date().toISOString(),
   } as never);
+  if (error) {
+    console.error("[hamoula] saveLoad failed:", error.message, load.id);
+    throw new Error(`فشل حفظ الطلب: ${error.message}`);
+  }
 }
 
 /** Lifecycle update for one request (منشور → مقبول → في الطريق → تم التسليم / ملغى). */
