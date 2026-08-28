@@ -78,3 +78,10 @@
 - تحويل ألوان ورقة تصدير العروض `src/lib/bids-export.ts` إلى درجات دافئة.
 - `--whatsapp` بقي أخضر لأنه لون علامة واتساب.
 - لا تغيير في النصوص أو ترتيب الصفحات أو أي منطق/Backend.
+
+## 2026-08-28 — مراجعة UI/UX عامة (CSS/UI فقط)
+- إصلاح هيدر التطبيق `PhoneFrame.tsx`: شبكة `grid-cols-[minmax(0,1fr)_auto]` مع `min-w-0` و`shrink-0` حتى ما يتقطعش المحتوى على الهواتف الصغيرة، وتصغير حجم العنوان على الموبايل (`text-xl sm:text-2xl`).
+- إصلاح بطاقة الحساب `ProfileSwitcher.tsx`: عرض أقصى محدود + `truncate` للاسم والدور + `shrink-0` للأفاتار والسهم (كان الاسم كيتقطع على 3 أسطر).
+- تدفئة التوكنات المحايدة في `src/styles.css` (`--muted`, `--muted-foreground`, `--border`, `--input`, `--card-foreground`, `--popover-foreground`) من الرمادي المزرق إلى رمادي دافئ متناسق مع هوية MOL.
+- إضافة أداة `scroll-row` لإخفاء شريط التمرير في صفوف الفلاتر الأفقية وتطبيقها في `DriverDashboard.tsx` و`MyBids.tsx` و`NearbyDrivers.tsx`.
+- لا تغيير في النصوص ولا الوظائف ولا Auth/OTP/Vonage ولا Maps/GPS ولا Voice/Chat/Push ولا الطلبات/العروض ولا قاعدة البيانات.
