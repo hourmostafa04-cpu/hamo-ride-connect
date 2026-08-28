@@ -9,6 +9,8 @@ import {
   Check,
   ClipboardList,
   NotebookPen,
+  ShieldCheck,
+
 } from "lucide-react";
 
 import triporteurImg from "@/assets/trucks/triporteur.png";
@@ -458,12 +460,12 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
 
 
         <div className="rounded-3xl border-2 border-primary/25 bg-card p-4 shadow-soft">
-          <p className="text-base font-extrabold">نوع الشاحنة</p>
-          <p className="mt-1 text-xs font-semibold text-muted-foreground">
-            المختار: {suggestedLabel} — الحمولة القصوى مبينة تحت كل شاحنة.
+          <p className="text-center text-lg font-extrabold">نوع الشاحنة</p>
+          <p className="mt-1 text-center text-xs font-semibold text-muted-foreground">
+            اختر نوع الشاحنة المناسبة لبضاعتك
           </p>
 
-          <div className="mt-4 grid grid-cols-2 gap-3">
+          <div className="mt-4 grid grid-cols-4 gap-2">
             {truckTypes.map((t) => {
               const active = truck === t.id;
               return (
@@ -472,41 +474,37 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
                   type="button"
                   aria-pressed={active}
                   onClick={() => setTruck(t.id)}
-                  className={`relative rounded-3xl border-2 p-3 text-center transition active:scale-[0.98] ${
+                  className={`relative overflow-hidden rounded-2xl border-2 p-1.5 text-center transition active:scale-[0.97] ${
                     active
-                      ? "border-primary bg-primary-soft text-accent-foreground shadow-soft ring-4 ring-primary/20"
-                      : "border-border bg-background text-muted-foreground"
+                      ? "border-primary bg-primary-soft shadow-soft ring-2 ring-primary/25"
+                      : "border-border bg-background"
                   }`}
                 >
                   {active && (
-                    <span className="absolute left-2 top-2 z-10 grid size-7 place-items-center rounded-full bg-primary text-primary-foreground">
-                      <Check className="size-5" />
+                    <span className="absolute left-1 top-1 z-10 grid size-5 place-items-center rounded-full bg-primary text-primary-foreground">
+                      <Check className="size-3.5" />
                     </span>
                   )}
-                  <span
-                    className={`mx-auto mb-2 grid h-20 w-full place-items-center overflow-hidden rounded-2xl border-2 ${
-                      active ? "border-primary bg-card" : "border-border bg-secondary"
-                    }`}
-                  >
-                    <img
-                      src={TRUCK_IMAGES[t.id]}
-                      alt={t.label}
-                      loading="lazy"
-                      className="h-full w-full object-contain p-1"
-                    />
-                  </span>
-                  <span className="block text-sm font-extrabold leading-tight text-foreground">
+                  <img
+                    src={TRUCK_IMAGES[t.id]}
+                    alt={t.label}
+                    loading="lazy"
+                    width={944}
+                    height={704}
+                    className="mx-auto h-12 w-full object-contain"
+                  />
+                  <span className="mt-1 block text-[10px] font-extrabold leading-tight text-foreground">
                     {t.label}
                   </span>
-                  <span className="mt-2 block rounded-full bg-secondary px-2 py-1 text-[11px] font-extrabold text-secondary-foreground">
+                  <span className="mt-0.5 block text-[9px] font-bold text-muted-foreground">
                     {t.hint}
                   </span>
-                  {t.note && <span className="mt-1 block text-[10px] font-semibold">{t.note}</span>}
                 </button>
               );
             })}
           </div>
         </div>
+
 
 
         <div>
@@ -535,6 +533,20 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
             ⚠️ الثمن تقديري فقط وقابل للتفاوض مع صاحب الشاحنة.
           </p>
         </div>
+
+        <div className="flex items-center gap-3 rounded-3xl border-2 border-primary/20 bg-primary-soft/60 p-4">
+          <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-card">
+            <ShieldCheck className="size-6 text-primary" />
+          </span>
+          <span className="block">
+            <span className="block text-sm font-extrabold text-foreground">شحن آمن ومضمون</span>
+            <span className="block text-xs font-semibold text-muted-foreground">
+              كنحرصو على سلامة بضاعتك من الانطلاق حتى التسليم
+            </span>
+          </span>
+        </div>
+
+
 
         <StickyActions>
           <button
