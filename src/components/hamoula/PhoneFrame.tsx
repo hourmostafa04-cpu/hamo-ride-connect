@@ -53,7 +53,7 @@ export function BackButton({ fallback = "/" }: { fallback?: string }) {
       type="button"
       onClick={goBack}
       aria-label="رجوع"
-      className="flex min-h-12 min-w-24 items-center gap-2 rounded-2xl bg-primary-foreground/20 px-5 py-3 text-base font-extrabold text-primary-foreground shadow-soft ring-1 ring-primary-foreground/30 transition-colors hover:bg-primary-foreground/30 active:scale-95 active:bg-primary-foreground/35"
+      className="flex min-h-12 shrink-0 items-center gap-2 rounded-2xl bg-primary-foreground/20 px-4 py-3 text-base font-extrabold text-primary-foreground shadow-soft ring-1 ring-primary-foreground/30 transition-colors hover:bg-primary-foreground/30 active:scale-95 active:bg-primary-foreground/35"
     >
       <ArrowRight className="size-6" />
       رجوع
