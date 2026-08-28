@@ -428,17 +428,92 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
     onDone(role);
   };
 
+  if (step === "role") {
+    return (
+      <PhoneFrame>
+        <div className="mol-brand flex min-h-screen flex-1 flex-col bg-background">
+          <div className="gradient-primary px-6 pb-12 pt-14 text-primary-foreground">
+            <p className="text-xs font-extrabold tracking-[0.35em]">MOL TRANSPORT</p>
+            <h1 className="mt-3 text-4xl font-extrabold leading-tight">مول طرانسبور</h1>
+            <p className="mt-2 text-sm font-semibold opacity-90">
+              نقل البضائع فالمغرب — بسيط وسريع.
+            </p>
+          </div>
+          <div className="-mt-6 flex-1 space-y-4 rounded-t-3xl bg-background px-5 pb-10 pt-8">
+            <p className="text-base font-extrabold">شكون نتا؟</p>
+            <button
+              onClick={() => {
+                setRole("shipper");
+                setStep("phone");
+              }}
+              className="flex min-h-24 w-full items-center gap-4 rounded-3xl border-2 border-primary bg-primary px-5 py-5 text-right text-primary-foreground shadow-soft active:scale-[0.99]"
+            >
+              <Package className="size-10 shrink-0" />
+              <span>
+                <span className="block text-xl font-extrabold">صاحب بضاعة</span>
+                <span className="block text-sm font-semibold opacity-90">
+                  عندي بضاعة وباغي شاحنة
+                </span>
+              </span>
+            </button>
+            <button
+              onClick={() => {
+                setRole("driver");
+                setStep("phone");
+              }}
+              className="flex min-h-24 w-full items-center gap-4 rounded-3xl border-2 border-primary bg-primary-soft px-5 py-5 text-right text-accent-foreground active:scale-[0.99]"
+            >
+              <Truck className="size-10 shrink-0" />
+              <span>
+                <span className="block text-xl font-extrabold">صاحب شاحنة</span>
+                <span className="block text-sm font-semibold opacity-80">
+                  عندي شاحنة وكنقلب على الشحنات
+                </span>
+              </span>
+            </button>
+
+            {DEMO_LOGIN_ENABLED && (
+              <div className="rounded-2xl border-2 border-dashed border-primary/50 bg-primary-soft/50 p-3">
+                <p className="text-center text-xs font-bold text-accent-foreground">
+                  دخول تجريبي (وضع التطوير) — {DEMO_PHONE}
+                </p>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => void demoSignIn("shipper")}
+                    className="min-h-12 rounded-xl bg-primary py-3 text-sm font-extrabold text-primary-foreground"
+                  >
+                    دخول تجريبي · بضاعة
+                  </button>
+                  <button
+                    onClick={() => void demoSignIn("driver")}
+                    className="min-h-12 rounded-xl bg-primary py-3 text-sm font-extrabold text-primary-foreground"
+                  >
+                    دخول تجريبي · شاحنة
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </PhoneFrame>
+    );
+  }
+
   return (
     <PhoneFrame>
+      <div className="mol-brand flex min-h-screen flex-1 flex-col bg-background">
       <div className="gradient-primary px-6 pb-14 pt-12 text-primary-foreground">
-        <div className="inline-flex items-center gap-2 rounded-full bg-primary-foreground/15 px-3 py-1 text-xs font-semibold">
-          التسجيل والدخول
-        </div>
-        <h1 className="mt-4 text-3xl font-extrabold tracking-tight">أهلا بيك فمول طرانسبور</h1>
+        <p className="text-[11px] font-extrabold tracking-[0.35em]">MOL TRANSPORT</p>
+        <h1 className="mt-3 text-3xl font-extrabold tracking-tight">
+          {step === "otp" ? "كود التأكيد" : role === "driver" ? "تسجيل صاحب الشاحنة" : "تسجيل صاحب البضاعة"}
+        </h1>
         <p className="mt-2 max-w-xs text-sm leading-relaxed opacity-90">
-          كمل المعلومات ديالك باش تدخل للتطبيق.
+          {step === "otp"
+            ? "دخل الكود اللي وصلك ف SMS."
+            : "كتب المعلومات ديالك وضغط تأكيد."}
         </p>
       </div>
+
 
       <div className="-mt-8 flex-1 rounded-t-3xl bg-background px-5 pb-10 pt-7">
         {step === "register" && (
