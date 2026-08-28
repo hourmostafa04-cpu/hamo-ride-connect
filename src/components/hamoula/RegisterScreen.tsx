@@ -61,14 +61,25 @@ const truckKinds = driverTruckKinds;
 
 export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
   const { account, signIn, findAccount, myLocation, geoStatus, requestLocation } = useHamoula();
-  /** Phone first: verified by a 6-digit SMS code before the account is restored or created. */
-  const [step, setStep] = useState<"phone" | "otp" | "register">("phone");
+  /** Role choice first, then phone (verified by SMS), then the account is restored or created. */
+  const [step, setStep] = useState<"role" | "phone" | "otp" | "register">(
+    account ? "phone" : "role",
+  );
   const [otp, setOtp] = useState("");
   const [otpBusy, setOtpBusy] = useState(false);
   /** E.164 number the current code was sent to. */
   const [otpSentTo, setOtpSentTo] = useState<string | null>(null);
   const [resendIn, setResendIn] = useState(0);
-  const [name, setName] = useState(account?.name ?? "");
+  const [firstName, setFirstName] = useState(account?.name?.split(/\s+/)[0] ?? "");
+  const [lastName, setLastName] = useState(
+    account?.name?.split(/\s+/).slice(1).join(" ") ?? "",
+  );
+  const name = `${firstName} ${lastName}`.trim();
+  const setName = (v: string) => {
+    const parts = v.trim().split(/\s+/);
+    setFirstName(parts[0] ?? "");
+    setLastName(parts.slice(1).join(" "));
+  };
   const [phone, setPhone] = useState(account?.phone ?? "");
   const [role, setRole] = useState<RoleId>(account?.role ?? "shipper");
   const [tons, setTons] = useState(account?.truckTons ?? tonOptions[1]!);
