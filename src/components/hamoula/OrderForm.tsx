@@ -437,29 +437,7 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
 
         <CargoField value={cargo} onChange={setCargo} />
 
-        <div className="rounded-2xl border-2 border-dashed border-border bg-card p-4">
-          <p className="text-sm font-bold">وزن الحمولة</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            الوزن كيدخل فحساب الثمن التقديري.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {capacityOptions.map((c) => (
-              <button
-                key={c}
-                type="button"
-                aria-pressed={capacity === c}
-                onClick={() => setCapacity(capacity === c ? "" : c)}
-                className={`min-h-11 rounded-full border-2 px-4 text-sm font-bold ${
-                  capacity === c
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-card text-muted-foreground"
-                }`}
-              >
-                {c}
-              </button>
-            ))}
-          </div>
-        </div>
+        <NotesField value={notes} onChange={setNotes} />
 
 
 
