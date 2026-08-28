@@ -177,6 +177,8 @@ export type Account = {
   truckTons?: string;
   /** Driver only: vehicle kind label. */
   truckType?: string;
+  /** Driver only: licence plate number. */
+  truckPlate?: string;
   /** Driver only: availability (متوفر / غير متوفر). */
   available?: boolean;
 };
