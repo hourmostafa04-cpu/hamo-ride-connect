@@ -443,9 +443,9 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
 
 
 
-        <div className="rounded-2xl border-2 border-dashed border-border bg-card p-4">
-          <p className="text-sm font-bold">نوع الشاحنة</p>
-          <p className="mt-1 text-xs text-muted-foreground">
+        <div className="rounded-3xl border-2 border-primary/25 bg-card p-4 shadow-soft">
+          <p className="text-base font-extrabold">نوع الشاحنة</p>
+          <p className="mt-1 text-xs font-semibold text-muted-foreground">
             المختار: {suggestedLabel} — الحمولة القصوى مبينة تحت كل شاحنة.
           </p>
 
@@ -459,18 +459,28 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
                   type="button"
                   aria-pressed={active}
                   onClick={() => setTruck(t.id)}
-                  className={`relative min-h-24 rounded-2xl border-2 p-3 text-center transition-colors ${
+                  className={`relative min-h-32 rounded-3xl border-2 p-3 text-center transition active:scale-[0.98] ${
                     active
-                      ? "border-primary bg-primary-soft text-accent-foreground"
-                      : "border-border bg-card text-muted-foreground"
+                      ? "border-primary bg-primary-soft text-accent-foreground shadow-soft ring-4 ring-primary/20"
+                      : "border-border bg-background text-muted-foreground"
                   }`}
                 >
                   {active && (
-                    <Check className="absolute left-2 top-2 size-5 rounded-full bg-primary p-0.5 text-primary-foreground" />
+                    <span className="absolute left-2 top-2 grid size-7 place-items-center rounded-full bg-primary text-primary-foreground">
+                      <Check className="size-5" />
+                    </span>
                   )}
-                  <Icon className="mx-auto mb-1 size-6 text-primary" />
-                  <span className="block text-sm font-extrabold leading-tight">{t.label}</span>
-                  <span className="mt-1 block rounded-full bg-secondary px-2 py-1 text-[11px] font-bold">
+                  <span
+                    className={`mx-auto mb-2 grid size-14 place-items-center rounded-2xl border-2 ${
+                      active ? "border-primary bg-card" : "border-border bg-secondary"
+                    }`}
+                  >
+                    <Icon className="size-8 text-primary" />
+                  </span>
+                  <span className="block text-sm font-extrabold leading-tight text-foreground">
+                    {t.label}
+                  </span>
+                  <span className="mt-2 block rounded-full bg-secondary px-2 py-1 text-[11px] font-extrabold text-secondary-foreground">
                     {t.hint}
                   </span>
                   {t.note && <span className="mt-1 block text-[10px] font-semibold">{t.note}</span>}
