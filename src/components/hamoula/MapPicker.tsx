@@ -48,7 +48,7 @@ export default function MapPicker({
     L.control.zoom({ position: "topleft" }).addTo(m);
 
     pickupMarker.current = L.marker([pickup.lat, pickup.lng], {
-      icon: pinIcon("#16a34a", "التحميل"),
+      icon: pinIcon("#f97316", "التحميل"),
       draggable: true,
     })
       .addTo(m)
@@ -72,7 +72,7 @@ export default function MapPicker({
         [pickup.lat, pickup.lng],
         [destination.lat, destination.lng],
       ],
-      { color: "#16a34a", weight: 4, dashArray: "8 8" },
+      { color: "#f97316", weight: 4, dashArray: "8 8" },
     ).addTo(m);
 
     m.on("click", (e: L.LeafletMouseEvent) => {

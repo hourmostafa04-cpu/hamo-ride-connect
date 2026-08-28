@@ -18,7 +18,7 @@ function dot(color: string, label: string) {
 function makeTruckIcon(bearing: number) {
   return L.divIcon({
   className: "",
-  html: `<div style="transform:rotate(${bearing}deg);transition:transform .6s linear"><div style="width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:9999px;background:#16a34a;border:3px solid #fff;box-shadow:0 0 0 6px rgba(22,163,74,.25);display:flex;align-items:center;justify-content:center;"><svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2'/><path d='M14 9h4l4 4v4a1 1 0 0 1-1 1h-1'/><circle cx='7' cy='18' r='2'/><circle cx='17' cy='18' r='2'/></svg></div></div>`,
+  html: `<div style="transform:rotate(${bearing}deg);transition:transform .6s linear"><div style="width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:9999px;background:#f97316;border:3px solid #fff;box-shadow:0 0 0 6px rgba(249,115,22,.25);display:flex;align-items:center;justify-content:center;"><svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2'/><path d='M14 9h4l4 4v4a1 1 0 0 1-1 1h-1'/><circle cx='7' cy='18' r='2'/><circle cx='17' cy='18' r='2'/></svg></div></div>`,
   iconSize: [0, 0],
   iconAnchor: [0, 0],
   });
@@ -61,7 +61,7 @@ export default function TripMap({
       { color: "#94a3b8", weight: 3, dashArray: "6 8" },
     ).addTo(m);
 
-    trail.current = L.polyline([[pickup.lat, pickup.lng]], { color: "#16a34a", weight: 5 }).addTo(
+    trail.current = L.polyline([[pickup.lat, pickup.lng]], { color: "#f97316", weight: 5 }).addTo(
       m,
     );
     truck.current = L.marker([driver.lat, driver.lng], { icon: makeTruckIcon(bearing) }).addTo(m);
