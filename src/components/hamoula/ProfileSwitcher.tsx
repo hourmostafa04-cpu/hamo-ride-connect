@@ -12,7 +12,7 @@ export function ProfileSwitcher() {
     <div className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex min-h-11 max-w-[9.5rem] items-center gap-2 rounded-full bg-primary-foreground/15 py-1.5 pe-3 ps-1.5 text-primary-foreground sm:max-w-[12rem]"
+        className="flex min-h-11 max-w-[8rem] items-center gap-2 rounded-full bg-primary-foreground/15 py-1.5 pe-2.5 ps-1.5 text-primary-foreground sm:max-w-[12rem]"
       >
         <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary-foreground/25 text-[11px] font-bold">
           {profile.initials}
