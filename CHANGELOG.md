@@ -71,3 +71,10 @@
 ## 2026-08-28 — تصميم لوحة صاحب الشاحنة
 - تطبيق هوية MOL TRANSPORT (برتقالي/أصفر/أبيض) على `DriverDashboard.tsx` عبر تغليف الصفحة بـ `.mol-brand`.
 - الحفاظ على نفس ترتيب العناصر والنصوص والأزرار ووظائف GPS والطلب الصوتي وقائمة الطلبات.
+
+## 2026-08-28 — توحيد الهوية اللونية (CSS/UI فقط)
+- تحويل التوكنات العامة في `src/styles.css` من الأخضر إلى هوية MOL TRANSPORT (برتقالي/أصفر دافئ/أبيض): `--primary`, `--primary-glow`, `--primary-soft`, `--secondary`, `--secondary-foreground`, `--accent`, `--accent-foreground`, `--ring`, `--foreground`, وظل `shadow-soft`.
+- تحويل ألوان الخرائط من `#16a34a` إلى `#f97316` في `MapPicker.tsx` و`TripMap.tsx` و`NearbyDriversMap.tsx` (الماركر، المسار، الهالة).
+- تحويل ألوان ورقة تصدير العروض `src/lib/bids-export.ts` إلى درجات دافئة.
+- `--whatsapp` بقي أخضر لأنه لون علامة واتساب.
+- لا تغيير في النصوص أو ترتيب الصفحات أو أي منطق/Backend.
