@@ -14,7 +14,7 @@ import {
   Snowflake,
   Check,
   ClipboardList,
-
+  NotebookPen,
 } from "lucide-react";
 
 const TRUCK_ICONS = { Car, Bus, Truck, Container, Tractor, Snowflake } as const;
@@ -26,7 +26,7 @@ import { ResumeWhereYouLeft } from "@/components/hamoula/ResumeWhereYouLeft";
 import { VoiceNotePlayer } from "@/components/hamoula/Voice";
 import { Mic, Loader2 } from "lucide-react";
 import { useAiDictation } from "@/hooks/use-ai-dictation";
-import { findTruck, truckTypes, capacityOptions, capacityKg } from "@/lib/hamoula-data";
+import { findTruck, truckTypes, capacityKg } from "@/lib/hamoula-data";
 import { useHamoula } from "@/lib/hamoula-store";
 import {
   defaultDestination,
