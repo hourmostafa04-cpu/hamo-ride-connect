@@ -19,7 +19,7 @@ type UserRow = {
 };
 
 function rowToAccount(r: UserRow): Account {
-  const profile = (r.profile ?? {}) as { displayPhone?: string; email?: string };
+  const profile = (r.profile ?? {}) as { displayPhone?: string; email?: string; truckPlate?: string };
   return {
     name: r.name,
     phone: profile.displayPhone || r.phone,
@@ -27,6 +27,7 @@ function rowToAccount(r: UserRow): Account {
     role: r.role === "driver" ? "driver" : "shipper",
     ...(r.truck_tons ? { truckTons: r.truck_tons } : {}),
     ...(r.truck_type ? { truckType: r.truck_type } : {}),
+    ...(profile.truckPlate ? { truckPlate: profile.truckPlate } : {}),
     available: r.available,
   };
 }
@@ -62,6 +63,7 @@ export async function saveAccount(account: Account): Promise<void> {
       profile: {
         displayPhone: account.phone,
         ...(account.email ? { email: account.email } : {}),
+        ...(account.truckPlate ? { truckPlate: account.truckPlate } : {}),
       },
       updated_at: new Date().toISOString(),
     } as never,

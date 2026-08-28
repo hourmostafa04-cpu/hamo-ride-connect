@@ -177,6 +177,8 @@ export type Account = {
   truckTons?: string;
   /** Driver only: vehicle kind label. */
   truckType?: string;
+  /** Driver only: licence plate number. */
+  truckPlate?: string;
   /** Driver only: availability (متوفر / غير متوفر). */
   available?: boolean;
 };
@@ -681,7 +683,7 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
         driverPhone: account?.role === "driver" ? account.phone : undefined,
         truck:
           account?.role === "driver" && account.truckType ? account.truckType : "شاحنة متوسطة",
-        plate: "12345 - أ - 20",
+        plate: account?.truckPlate?.trim() || "12345 - أ - 20",
         rating: profiles[1]!.rating,
         trips: 214,
         price,

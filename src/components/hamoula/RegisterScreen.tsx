@@ -16,7 +16,7 @@ import {
 import { formatMoroccanPhone, strictSpokenPhone } from "@/lib/moroccan-phone";
 import { useHamoula, type RoleId } from "@/lib/hamoula-store";
 import {
-  driverTonOptions,
+  capacityOptions,
   driverTruckKinds,
   SEMI_BENNE,
   SEMI_PLATEAU,
@@ -55,7 +55,7 @@ export function normalizeDigits(raw: string) {
   return latestMoroccanPhone(raw);
 }
 
-const tonOptions = driverTonOptions;
+const tonOptions = capacityOptions;
 const isSemiKind = (k: string) => k === SEMI_BENNE || k === SEMI_PLATEAU;
 const truckKinds = driverTruckKinds;
 
@@ -73,6 +73,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
   const [role, setRole] = useState<RoleId>(account?.role ?? "shipper");
   const [tons, setTons] = useState(account?.truckTons ?? tonOptions[1]!);
   const [kind, setKind] = useState(account?.truckType ?? truckKinds[1]!);
+  const [plate, setPlate] = useState(account?.truckPlate ?? "");
   const [error, setError] = useState<string | null>(null);
   const [phoneTouched, setPhoneTouched] = useState(false);
   /** Driver availability captured at registration (متوفر / غير متوفر). */
@@ -266,6 +267,10 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
   /** Step 1: send the 6-digit SMS code to the entered number. */
   const continueWithPhone = async () => {
     const normalized = normalizePhone(phone);
+    if (role === "driver" && !plate.trim()) {
+      setError("كتب رقم لوحة الشاحنة");
+      return;
+    }
     if (!normalized) {
       setError("رقم الهاتف ماشي صحيح — مثال: 0661 22 44 88 ولا 212661224488+");
       return;
@@ -383,6 +388,10 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
       setError("كتب الاسم والنسب ديالك");
       return;
     }
+    if (role === "driver" && !plate.trim()) {
+      setError("كتب رقم لوحة الشاحنة");
+      return;
+    }
     if (!normalized) {
       setError("رقم الهاتف ماشي صحيح — مثال: 0661 22 44 88 ولا 212661224488+");
       return;
@@ -392,7 +401,9 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
       name: name.trim(),
       phone: formatPhone(normalized),
       role,
-      ...(role === "driver" ? { truckTons: tons, truckType: kind, available } : {}),
+      ...(role === "driver"
+        ? { truckTons: tons, truckType: kind, truckPlate: plate.trim(), available }
+        : {}),
     });
     toast.success("مرحبا بيك فحمولة", { description: formatPhone(normalized) });
     onDone(role);
@@ -665,8 +676,17 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
         {role === "driver" && (
           <div className="mt-6 space-y-5 rounded-2xl border-2 border-primary/30 bg-primary-soft/50 p-4">
             <div>
-              <p className="text-sm font-bold">حمولة الشاحنة بالطن</p>
-              <div className="mt-3 grid grid-cols-2 gap-3">
+              <p className="text-sm font-bold">رقم لوحة الشاحنة</p>
+              <input
+                value={plate}
+                onChange={(e) => setPlate(e.target.value)}
+                placeholder="مثال: 12345 - أ - 20"
+                className="mt-3 w-full rounded-2xl border-2 border-border bg-card px-4 py-3 text-base font-bold outline-none focus:border-primary"
+              />
+            </div>
+            <div>
+              <p className="text-sm font-bold">الوزن / الحمولة القصوى</p>
+              <div className="mt-3 flex flex-wrap gap-2">
                 {tonOptions.map((t) => (
                   <Chip key={t} active={tons === t} onClick={() => setTons(t)} label={t} />
                 ))}

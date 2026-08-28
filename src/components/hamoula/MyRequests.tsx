@@ -13,19 +13,19 @@ function statusTone(s: TripStatus) {
   return "bg-secondary text-foreground";
 }
 
-/** عروض السائقين على هاد الطلب مع قبول/رفض. */
+/** عروض أصحاب الشاحنات على هاد الطلب مع قبول/رفض. */
 function LoadOffers({ bids, onAccept, onDecline }: { bids: Bid[]; onAccept: (b: Bid) => void; onDecline: (b: Bid) => void }) {
   const pending = bids.filter((b) => b.status === "pending");
   if (pending.length === 0) return null;
   return (
     <div className="mt-3 space-y-2 rounded-2xl bg-secondary/50 p-3">
-      <p className="text-xs font-extrabold">عروض السائقين ({pending.length})</p>
+      <p className="text-xs font-extrabold">عروض أصحاب الشاحنات ({pending.length})</p>
       {pending.map((b) => (
         <div key={b.id} className="rounded-xl border-2 border-border bg-card p-3">
           <div className="flex items-center justify-between gap-2">
             <p className="flex items-center gap-2 text-sm font-extrabold">
               <Truck className="size-4 text-primary" />
-              {b.driver || "سائق"}
+              {b.driver || "صاحب الشاحنة"}
             </p>
             <span className="text-sm font-extrabold text-primary">{b.price} درهم</span>
           </div>
@@ -142,12 +142,12 @@ export function MyRequests() {
 
   const onAccept = (b: Bid) => {
     acceptBid(b.id);
-    toast.success("تقبل السائق ✅", { description: `${b.driver || "سائق"} · ${b.price} درهم` });
+    toast.success("تقبل صاحب الشاحنة ✅", { description: `${b.driver || "صاحب الشاحنة"} · ${b.price} درهم` });
   };
 
   const onDecline = (b: Bid) => {
     declineBid(b.id);
-    toast("تفض العرض", { description: `${b.driver || "سائق"} · ${b.price} درهم` });
+    toast("تفض العرض", { description: `${b.driver || "صاحب الشاحنة"} · ${b.price} درهم` });
   };
 
   return (

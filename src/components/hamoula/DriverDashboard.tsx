@@ -18,7 +18,7 @@ import {
 import { PhoneFrame, AppHeader, LiveBadge, useHomePath } from "@/components/hamoula/PhoneFrame";
 import { ResumeWhereYouLeft } from "@/components/hamoula/ResumeWhereYouLeft";
 import { VoiceBanner, VoiceNotePlayer, VoiceRecorderSheet } from "@/components/hamoula/Voice";
-import { findTruck, driverVoiceReplies } from "@/lib/hamoula-data";
+import { findTruck, driverVoiceReplies, capacityKg } from "@/lib/hamoula-data";
 import { useHamoula, type Load } from "@/lib/hamoula-store";
 import { GpsChip } from "@/components/hamoula/GpsChip";
 import { ContactActions } from "@/components/hamoula/ContactActions";
@@ -90,16 +90,25 @@ export function DriverDashboard() {
 
   // Re-sorts automatically on every new GPS fix; falls back to a stable
   // newest-first order when no location is available.
+  /** Max payload of the signed-in driver's truck, in kg (null when unknown). */
+  const myMaxKg = capacityKg(account?.truckTons);
+
   const withDistance = useMemo(() => {
     const open = loads.filter((l) => l.status === "open");
     return open
-      .map((l) => ({ load: l, km: base ? distanceKm(base, l.pickupPoint) : null }))
-      .sort((a, b) =>
-        a.km === null || b.km === null
-          ? b.load.createdAt - a.load.createdAt
-          : a.km - b.km || b.load.createdAt - a.load.createdAt,
-      );
-  }, [loads, base?.lat, base?.lng]);
+      .map((l) => {
+        const loadKg = capacityKg(l.capacity);
+        // Unsuitable only when we know both weights and the cargo is heavier.
+        const fits = myMaxKg === null || loadKg === null ? true : loadKg <= myMaxKg;
+        return { load: l, km: base ? distanceKm(base, l.pickupPoint) : null, fits };
+      })
+      .sort((a, b) => {
+        // Suitable loads first, then nearest, then newest (stable without GPS).
+        if (a.fits !== b.fits) return a.fits ? -1 : 1;
+        if (a.km === null || b.km === null) return b.load.createdAt - a.load.createdAt;
+        return a.km - b.km || b.load.createdAt - a.load.createdAt;
+      });
+  }, [loads, base?.lat, base?.lng, myMaxKg]);
   const max = distanceFilters.find((f) => f.id === filter)?.max ?? Infinity;
   const q = cargoQuery.trim();
   const visible = withDistance.filter(
@@ -316,11 +325,12 @@ export function DriverDashboard() {
           </div>
         )}
 
-        {visible.map(({ load: l, km }) => (
+        {visible.map(({ load: l, km, fits }) => (
           <LoadCard
             key={l.id}
             load={l}
             km={km}
+            fits={fits}
             myBid={myBidFor(l.id)}
             onBid={(price, kind, voiceNote) => {
               addBid({ loadId: l.id, price, kind, voiceNote });
@@ -375,11 +385,14 @@ function LoadCard({
   load,
   myBid,
   km,
+  fits,
   onBid,
 }: {
   load: Load;
   myBid: ReturnType<ReturnType<typeof useHamoula>["myBidFor"]>;
   km: number | null;
+  /** False when the cargo weight exceeds the driver's truck payload. */
+  fits: boolean;
   onBid: (
     price: number,
     kind: "accepted-price" | "counter",
@@ -431,6 +444,7 @@ function LoadCard({
         <div className="mt-2 flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
           <Weight className="size-3.5" />
           {load.cargo ? `${load.cargo} · ` : ""}
+          {load.capacity ? `${load.capacity} · ` : ""}
           {truck?.hint ?? truckLabel}
         </div>
       </div>
@@ -452,7 +466,13 @@ function LoadCard({
         compact
       />
 
-      {myBid ? (
+      {!fits && (
+        <div className="rounded-2xl border-2 border-destructive bg-destructive/10 px-4 py-3 text-sm font-extrabold text-destructive">
+          غير مناسب للحمولة — وزن البضاعة {load.capacity} أكبر من حمولة الشاحنة ديالك
+        </div>
+      )}
+
+      {!fits ? null : myBid ? (
         <div className="rounded-2xl bg-primary-soft px-4 py-3 text-sm font-bold text-accent-foreground">
           تبعت العرض ديالك: {myBid.price} درهم · كنتسناو جواب مول السلعة
         </div>
