@@ -936,8 +936,10 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
         </StickyActions>
 
       </div>
+      </div>
     </PhoneFrame>
   );
+
 }
 
 function Chip({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
