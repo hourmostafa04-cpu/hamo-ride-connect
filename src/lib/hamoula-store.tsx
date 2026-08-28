@@ -12,7 +12,6 @@ import type { Offer, VoiceNote } from "./hamoula-data";
 import { mockOffers, offerVoiceNotes } from "./hamoula-data";
 import { defaultDestination, defaultPickup, roadDistanceKm, type LatLng } from "./hamoula-geo";
 import { counterOfferPrice } from "./hamoula-pricing";
-import { demoLoads } from "./hamoula-demo-loads";
 import { supabase } from "@/integrations/supabase/client";
 import {
   clearDraft,
