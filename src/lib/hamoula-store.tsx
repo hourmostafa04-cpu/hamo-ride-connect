@@ -627,40 +627,45 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
   }, [ready, currentLoadId, tripStatus]);
 
   const publishLoad = useCallback(
-    (patch: Partial<TripRequest>) => {
+    async (patch: Partial<TripRequest>): Promise<Load> => {
       const id = `L-${Date.now()}`;
-      let created!: Load;
-      setBoard((b) => {
-        const req: TripRequest = {
-          ...b.request,
-          ...patch,
-          status: "searching",
-          acceptedOffer: null,
-          loadId: id,
-          updatedAt: Date.now(),
-        };
-        created = {
-          id,
-          shipper: account?.role === "shipper" ? account.name : shipperName,
-          shipperPhone: account?.role === "shipper" ? account.phone : undefined,
-          pickup: req.pickup,
-          destination: req.destination,
-          cargo: req.cargo ?? "",
-          pickupPoint: req.pickupPoint,
-          destinationPoint: req.destinationPoint,
-          truck: req.truck,
-          capacity: req.capacity,
-          price: req.price,
-          voiceNote: req.voiceNote,
-          createdAt: Date.now(),
-          status: "open",
-          tripStatus: "searching",
-          acceptedOffer: null,
-        };
-        return { request: req, loads: [created, ...b.loads], bids: b.bids };
-      });
-      // Permanent copy under "طلباتي" + the unfinished draft is done.
-      void saveLoad(created).then(() => notifyEvent("new-load"));
+      // Build the new load explicitly, outside any React state update.
+      const base = boardRef.current.request;
+      const req: TripRequest = {
+        ...base,
+        ...patch,
+        status: "searching",
+        acceptedOffer: null,
+        loadId: id,
+        updatedAt: Date.now(),
+      };
+      const created: Load = {
+        id,
+        shipper: account?.role === "shipper" ? account.name : shipperName,
+        shipperPhone: account?.role === "shipper" ? account.phone : undefined,
+        pickup: req.pickup,
+        destination: req.destination,
+        cargo: req.cargo ?? "",
+        pickupPoint: req.pickupPoint,
+        destinationPoint: req.destinationPoint,
+        truck: req.truck,
+        capacity: req.capacity,
+        price: req.price,
+        voiceNote: req.voiceNote,
+        createdAt: Date.now(),
+        status: "open",
+        tripStatus: "searching",
+        acceptedOffer: null,
+      };
+      // Persist FIRST: the request is only "published" once the INSERT succeeds.
+      try {
+        await saveLoad(created);
+      } catch (err) {
+        console.error("[hamoula] publishLoad: حفظ الطلب فشل، ما غاديش يتنشر", err);
+        throw err;
+      }
+      setBoard((b) => ({ request: req, loads: [created, ...b.loads], bids: b.bids }));
+      void notifyEvent("new-load");
       if (accountPhone) void clearDraft(accountPhone);
       setPendingDraft(null);
       return created;
