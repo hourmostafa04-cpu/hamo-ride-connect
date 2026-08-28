@@ -465,7 +465,6 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
 
           <div className="mt-4 grid grid-cols-2 gap-3">
             {truckTypes.map((t) => {
-              const Icon = TRUCK_ICONS[t.icon];
               const active = truck === t.id;
               return (
                 <button
@@ -473,23 +472,28 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
                   type="button"
                   aria-pressed={active}
                   onClick={() => setTruck(t.id)}
-                  className={`relative min-h-32 rounded-3xl border-2 p-3 text-center transition active:scale-[0.98] ${
+                  className={`relative rounded-3xl border-2 p-3 text-center transition active:scale-[0.98] ${
                     active
                       ? "border-primary bg-primary-soft text-accent-foreground shadow-soft ring-4 ring-primary/20"
                       : "border-border bg-background text-muted-foreground"
                   }`}
                 >
                   {active && (
-                    <span className="absolute left-2 top-2 grid size-7 place-items-center rounded-full bg-primary text-primary-foreground">
+                    <span className="absolute left-2 top-2 z-10 grid size-7 place-items-center rounded-full bg-primary text-primary-foreground">
                       <Check className="size-5" />
                     </span>
                   )}
                   <span
-                    className={`mx-auto mb-2 grid size-14 place-items-center rounded-2xl border-2 ${
+                    className={`mx-auto mb-2 grid h-20 w-full place-items-center overflow-hidden rounded-2xl border-2 ${
                       active ? "border-primary bg-card" : "border-border bg-secondary"
                     }`}
                   >
-                    <Icon className="size-8 text-primary" />
+                    <img
+                      src={TRUCK_IMAGES[t.id]}
+                      alt={t.label}
+                      loading="lazy"
+                      className="h-full w-full object-contain p-1"
+                    />
                   </span>
                   <span className="block text-sm font-extrabold leading-tight text-foreground">
                     {t.label}
