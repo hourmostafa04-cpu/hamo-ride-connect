@@ -338,6 +338,14 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
       onDone(existing.role);
       return;
     }
+    // صاحب البضاعة: الاسم والنسب تسجلو قبل، كيدخل نيشان لطلب النقل.
+    if (role === "shipper" && name.trim()) {
+      signIn({ name: name.trim(), phone: formatPhone(normalized), role: "shipper" });
+      playSfx("success");
+      toast.success("تأكد الرقم ديالك", { description: "كمل طلب نقل البضاعة" });
+      onDone("shipper");
+      return;
+    }
     setStep("register");
     toast("حساب جديد", { description: "كمل التسجيل مرة وحدة وصافي" });
   };
