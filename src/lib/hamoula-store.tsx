@@ -195,6 +195,10 @@ type Ctx = {
   profile: Profile;
   switchProfile: (id: string) => void;
   account: Account | null;
+  /** حالة جلسة Auth الحقيقية (ماشي الحساب المحفوظ محلياً). */
+  sessionState: SessionState;
+  /** True only when a valid Supabase session backs the account. */
+  authed: boolean;
   /** True once localStorage has been read on the client. */
   ready: boolean;
   signIn: (account: Account) => void;
@@ -251,6 +255,23 @@ type Ctx = {
 
 export type GeoStatus = "idle" | "locating" | "granted" | "denied" | "unsupported";
 
+/** حالة جلسة Auth: كنفرقو بين انقطاع الشبكة وبين جلسة ملغاة فعلياً. */
+export type SessionState = "checking" | "authenticated" | "offline" | "signed-out";
+
+/** خطأ شبكة (fetch failed / offline) ماشي خطأ صلاحية توكن. */
+function isNetworkError(e: unknown): boolean {
+  if (typeof navigator !== "undefined" && navigator.onLine === false) return true;
+  const msg = (e as { message?: string } | null)?.message?.toLowerCase() ?? "";
+  const name = (e as { name?: string } | null)?.name ?? "";
+  return (
+    name === "AuthRetryableFetchError" ||
+    msg.includes("failed to fetch") ||
+    msg.includes("network") ||
+    msg.includes("load failed") ||
+    msg.includes("timeout")
+  );
+}
+
 const HamoulaContext = createContext<Ctx | null>(null);
 
 const STORAGE_KEY = "hamoula-profile";
@@ -279,6 +300,7 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
   const [profileId, setProfileId] = useState(profiles[0]!.id);
   const [board, setBoard] = useState<Board>({ loads: [], bids: [], request: defaultRequest });
   const [account, setAccount] = useState<Account | null>(null);
+  const [sessionState, setSessionState] = useState<SessionState>("checking");
   const [ready, setReady] = useState(false);
   const [myLocation, setMyLocation] = useState<LatLng | null>(null);
   const [geoStatus, setGeoStatus] = useState<GeoStatus>("idle");
@@ -400,29 +422,64 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
     hydrated.current = true;
     setReady(true);
 
-    // الجلسة كتبقى محفوظة على الجهاز: OTP كيتطلب غير فأول تسجيل.
-    // إلا المستخدم ضغط «خروج من الحساب» كنمسحو كلشي، وإلا كنخليو الحساب محفوظ.
-    void supabase.auth.getSession().then(async ({ data }) => {
-      const session = data.session;
-      const sessionPhone = session?.user?.phone;
-      if (sessionPhone) {
-        const remote = await fetchAccount(sessionPhone);
-        if (remote) {
-          setAccount(remote);
-          localStorage.setItem(ACCOUNT_KEY, JSON.stringify(remote));
+    // استرجاع الجلسة: كنعتمدو على Supabase (refresh token) ماشي على الحساب المحلي.
+    void (async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        const session = data.session;
+        if (session) {
+          // كنتأكدو أن التوكن مازال صالح عند الخادم (كيتجدد أوتوماتيكياً).
+          const { data: userData, error: userErr } = await supabase.auth.getUser();
+          if (userErr) {
+            if (isNetworkError(userErr)) {
+              setSessionState("offline");
+              return;
+            }
+            // جلسة ملغاة فعلياً.
+            await supabase.auth.signOut();
+            setSessionState("signed-out");
+            setAccount(null);
+            localStorage.removeItem(ACCOUNT_KEY);
+            return;
+          }
+          const sessionPhone = userData.user?.phone;
+          setSessionState("authenticated");
+          if (sessionPhone) {
+            const remote = await fetchAccount(sessionPhone);
+            if (remote) {
+              setAccount(remote);
+              localStorage.setItem(ACCOUNT_KEY, JSON.stringify(remote));
+            }
+          }
+          return;
         }
+        // ما كايناش جلسة: إلا كانت الشبكة مقطوعة كنحتافظو بالحساب بلا اعتباره داخل.
+        if (typeof navigator !== "undefined" && navigator.onLine === false) {
+          setSessionState("offline");
+          return;
+        }
+        setSessionState("signed-out");
+        setAccount(null);
+        localStorage.removeItem(ACCOUNT_KEY);
+      } catch (e) {
+        // فشل شبكي: ما كنمسحوش الحساب، ولكن ما كنعتبروهش تسجيل دخول صالح.
+        if (isNetworkError(e)) setSessionState("offline");
+        else setSessionState("signed-out");
       }
-      // بلا جلسة صالحة: ما كنمسحوش الحساب المحفوظ — المستخدم كيدخل نيشان
-      // بلا SMS جديد. الخروج الصريح وحدو هو اللي كيمسح الحساب.
-    });
+    })();
 
-    // كنمسحو الحساب غير إلا كان الخروج صريح من طرف المستخدم.
-    const { data: authSub } = supabase.auth.onAuthStateChange((event) => {
+    const { data: authSub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {
+        if (session) setSessionState("authenticated");
+        return;
+      }
       if (event !== "SIGNED_OUT") return;
-      if (localStorage.getItem(SIGNED_OUT_KEY) !== "1") return;
+      setSessionState("signed-out");
       setAccount(null);
       localStorage.removeItem(ACCOUNT_KEY);
     });
+
 
 
     // Keep the other role's tab in sync — same board, two users.
@@ -627,6 +684,10 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
 
   const publishLoad = useCallback(
     async (patch: Partial<TripRequest>): Promise<Load> => {
+      // عمليات محمية: خاص جلسة Auth صالحة (ماشي غير حساب محفوظ محلياً).
+      if (sessionState !== "authenticated") {
+        throw new Error("الجلسة غير متاحة حالياً. تحقق من الاتصال ثم أعد المحاولة.");
+      }
       const id = `L-${Date.now()}`;
       // Build the new load explicitly, outside any React state update.
       const base = boardRef.current.request;
@@ -669,7 +730,7 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
       setPendingDraft(null);
       return created;
     },
-    [account, accountPhone],
+    [account, accountPhone, sessionState],
   );
 
   const addBid = useCallback<Ctx["addBid"]>(
@@ -902,6 +963,8 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
       profile,
       switchProfile,
       account,
+      sessionState,
+      authed: sessionState === "authenticated",
       ready,
       signIn,
       signOut,
@@ -939,6 +1002,7 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
       profile,
       switchProfile,
       account,
+      sessionState,
       ready,
       signIn,
       signOut,
