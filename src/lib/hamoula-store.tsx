@@ -684,6 +684,10 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
 
   const publishLoad = useCallback(
     async (patch: Partial<TripRequest>): Promise<Load> => {
+      // عمليات محمية: خاص جلسة Auth صالحة (ماشي غير حساب محفوظ محلياً).
+      if (sessionState !== "authenticated") {
+        throw new Error("الجلسة غير متاحة حالياً. تحقق من الاتصال ثم أعد المحاولة.");
+      }
       const id = `L-${Date.now()}`;
       // Build the new load explicitly, outside any React state update.
       const base = boardRef.current.request;
