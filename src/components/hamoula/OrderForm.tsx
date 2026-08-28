@@ -6,18 +6,31 @@ import {
   Navigation,
   Banknote,
   Boxes,
-  Truck,
-  Car,
-  Bus,
-  Container,
-  Tractor,
-  Snowflake,
   Check,
   ClipboardList,
   NotebookPen,
 } from "lucide-react";
 
-const TRUCK_ICONS = { Car, Bus, Truck, Container, Tractor, Snowflake } as const;
+import triporteurImg from "@/assets/trucks/triporteur.png";
+import hondaImg from "@/assets/trucks/honda.png";
+import pickupImg from "@/assets/trucks/pickup.png";
+import staffitImg from "@/assets/trucks/staffit.png";
+import kontiriImg from "@/assets/trucks/kontiri.png";
+import camionImg from "@/assets/trucks/camion.png";
+import remorqueImg from "@/assets/trucks/remorque.png";
+import benneImg from "@/assets/trucks/benne.png";
+
+/** Real vehicle pictures shown in the truck picker, keyed by truck id. */
+const TRUCK_IMAGES: Record<string, string> = {
+  triporteur: triporteurImg,
+  honda: hondaImg,
+  pickup: pickupImg,
+  staffit: staffitImg,
+  kontiri: kontiriImg,
+  camion: camionImg,
+  remorque: remorqueImg,
+  benne: benneImg,
+};
 
 import { toast } from "sonner";
 import { playSfx } from "@/lib/sfx";
@@ -452,7 +465,6 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
 
           <div className="mt-4 grid grid-cols-2 gap-3">
             {truckTypes.map((t) => {
-              const Icon = TRUCK_ICONS[t.icon];
               const active = truck === t.id;
               return (
                 <button
@@ -460,23 +472,28 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
                   type="button"
                   aria-pressed={active}
                   onClick={() => setTruck(t.id)}
-                  className={`relative min-h-32 rounded-3xl border-2 p-3 text-center transition active:scale-[0.98] ${
+                  className={`relative rounded-3xl border-2 p-3 text-center transition active:scale-[0.98] ${
                     active
                       ? "border-primary bg-primary-soft text-accent-foreground shadow-soft ring-4 ring-primary/20"
                       : "border-border bg-background text-muted-foreground"
                   }`}
                 >
                   {active && (
-                    <span className="absolute left-2 top-2 grid size-7 place-items-center rounded-full bg-primary text-primary-foreground">
+                    <span className="absolute left-2 top-2 z-10 grid size-7 place-items-center rounded-full bg-primary text-primary-foreground">
                       <Check className="size-5" />
                     </span>
                   )}
                   <span
-                    className={`mx-auto mb-2 grid size-14 place-items-center rounded-2xl border-2 ${
+                    className={`mx-auto mb-2 grid h-20 w-full place-items-center overflow-hidden rounded-2xl border-2 ${
                       active ? "border-primary bg-card" : "border-border bg-secondary"
                     }`}
                   >
-                    <Icon className="size-8 text-primary" />
+                    <img
+                      src={TRUCK_IMAGES[t.id]}
+                      alt={t.label}
+                      loading="lazy"
+                      className="h-full w-full object-contain p-1"
+                    />
                   </span>
                   <span className="block text-sm font-extrabold leading-tight text-foreground">
                     {t.label}
