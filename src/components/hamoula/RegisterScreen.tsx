@@ -572,7 +572,30 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
 
         {step === "phone" && (
         <>
-        <label className="block text-sm font-bold">رقم الهاتف المغربي</label>
+        <label className="block text-sm font-bold">الاسم</label>
+        <div className="mt-2 flex items-center gap-3 rounded-2xl border-2 border-border bg-card px-4 py-3">
+          <User className="size-6 text-primary" />
+          <input
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            maxLength={30}
+            placeholder="مثال: سعيد"
+            className="w-full bg-transparent text-base font-bold outline-none placeholder:font-normal placeholder:text-muted-foreground"
+          />
+        </div>
+        <label className="mt-4 block text-sm font-bold">النسب</label>
+        <div className="mt-2 flex items-center gap-3 rounded-2xl border-2 border-border bg-card px-4 py-3">
+          <User className="size-6 text-primary" />
+          <input
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            maxLength={30}
+            placeholder="مثال: المرابط"
+            className="w-full bg-transparent text-base font-bold outline-none placeholder:font-normal placeholder:text-muted-foreground"
+          />
+        </div>
+        <label className="mt-4 block text-sm font-bold">رقم الهاتف المغربي</label>
+
         <div
           className={`mt-2 flex items-center gap-3 rounded-2xl border-2 bg-card px-4 py-3 ${
             listening === "phone" ? "border-primary" : "border-border"
