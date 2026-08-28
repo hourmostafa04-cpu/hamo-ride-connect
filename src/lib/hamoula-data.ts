@@ -186,15 +186,16 @@ export const BENNE_MEDIUM = driverTruckKinds[4]!;
 export const BENNE_LARGE = driverTruckKinds[5]!;
 export const SEMI_BENNE = driverTruckKinds[6]!;
 export const SEMI_PLATEAU = driverTruckKinds[7]!;
-/** Top tonnage chip suggested for semi-trailers. */
-export const SEMI_TOP_TONS = driverTonOptions[4]!;
+/** Top tonnage chip suggested for semi-trailers (from the shared capacity list). */
+export const SEMI_TOP_TONS = "30 طن+";
 
-/** Default tonnage chip suggested for each truck kind. */
+/** Default tonnage chip suggested for each truck kind (shared capacity labels). */
 export const defaultTonsFor = (kind: string): string => {
   const i = driverTruckKinds.indexOf(kind);
-  const byKind = [0, 1, 2, 3, 2, 3, 4, 4];
-  return driverTonOptions[byKind[i] ?? 1]!;
+  const byKind = ["1.5 طن", "3 طن", "7 طن", "15 طن", "7 طن", "15 طن", "30 طن+", "30 طن+"];
+  return byKind[i] ?? "3 طن";
 };
+
 
 /**
  * Converts a capacity chip label ("500 كلغ" / "3.5 طن" / "30 طن+") to kilograms.
