@@ -58,9 +58,11 @@ const tonsChipForKg = (maxKg: number) =>
 
 
 
-type VoiceField = "name" | "phone";
+type VoiceField = "name" | "firstName" | "lastName" | "phone";
 const FIELD_PROMPT: Record<VoiceField, string> = {
   name: "قول السمية ديالك",
+  firstName: "قول الاسم ديالك",
+  lastName: "قول النسب ديالك",
   phone: "قول رقم التيليفون ديالك",
 };
 
@@ -228,6 +230,16 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
         }
         return;
       }
+      if (field === "firstName") {
+        setFirstName(text);
+        setPending({ field, text });
+        return;
+      }
+      if (field === "lastName") {
+        setLastName(text);
+        setPending({ field, text });
+        return;
+      }
       // Show the corrected Darija first — nothing is filled before confirmation.
       setPending({ field, text });
     },
@@ -257,6 +269,17 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
       setApplying(false);
       playSfx("error");
       toast.error("الرقم ماشي صحيح", { description: "خاص 10 أرقام كيبداو ب 06 ولا 07" });
+      return;
+    }
+    if (pending.field === "firstName" || pending.field === "lastName") {
+      if (pending.field === "firstName") setFirstName(pending.text);
+      if (pending.field === "lastName") setLastName(pending.text);
+      playSfx("success");
+      toast.success(pending.field === "firstName" ? "عمرنا الاسم" : "عمرنا النسب", {
+        description: pending.text,
+      });
+      setApplying(false);
+      setPending(null);
       return;
     }
     await applySpeech(pending.field, pending.text);
@@ -606,7 +629,11 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
         {step === "phone" && (
         <>
         <label className="block text-sm font-bold">الاسم</label>
-        <div className="mt-2 flex items-center gap-3 rounded-2xl border-2 border-border bg-card px-4 py-3">
+        <div
+          className={`mt-2 flex items-center gap-3 rounded-2xl border-2 bg-card px-4 py-3 ${
+            listening === "firstName" ? "border-primary" : "border-border"
+          }`}
+        >
           <User className="size-6 text-primary" />
           <input
             value={firstName}
@@ -615,9 +642,37 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
             placeholder="مثال: سعيد"
             className="w-full bg-transparent text-base font-bold outline-none placeholder:font-normal placeholder:text-muted-foreground"
           />
+          <FieldMic
+            active={listening === "firstName"}
+            busy={listening === "firstName" && processing}
+            settling={listening === "firstName" && silenceSoon}
+            onClick={() => (listening === "firstName" ? stopVoice() : startVoice("firstName"))}
+            label="قول الاسم ديالك"
+          />
         </div>
+        {listening === "firstName" && (
+          <div
+            className={`mt-2 flex items-center gap-3 transition-opacity duration-300 ${silenceSoon ? "opacity-50" : ""}`}
+          >
+            <Waveform active />
+            <span className="text-xs font-bold text-primary">
+              {processing
+                ? "كنحللو الصوت بالذكاء الاصطناعي…"
+                : silenceSoon
+                  ? "سالينا؟ غانعمروها…"
+                  : FIELD_PROMPT.firstName}
+            </span>
+          </div>
+        )}
+        {listening === "firstName" && heard && (
+          <p className="mt-1 text-sm font-semibold text-muted-foreground">«{heard}»</p>
+        )}
         <label className="mt-4 block text-sm font-bold">النسب</label>
-        <div className="mt-2 flex items-center gap-3 rounded-2xl border-2 border-border bg-card px-4 py-3">
+        <div
+          className={`mt-2 flex items-center gap-3 rounded-2xl border-2 bg-card px-4 py-3 ${
+            listening === "lastName" ? "border-primary" : "border-border"
+          }`}
+        >
           <User className="size-6 text-primary" />
           <input
             value={lastName}
@@ -626,7 +681,31 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
             placeholder="مثال: المرابط"
             className="w-full bg-transparent text-base font-bold outline-none placeholder:font-normal placeholder:text-muted-foreground"
           />
+          <FieldMic
+            active={listening === "lastName"}
+            busy={listening === "lastName" && processing}
+            settling={listening === "lastName" && silenceSoon}
+            onClick={() => (listening === "lastName" ? stopVoice() : startVoice("lastName"))}
+            label="قول النسب ديالك"
+          />
         </div>
+        {listening === "lastName" && (
+          <div
+            className={`mt-2 flex items-center gap-3 transition-opacity duration-300 ${silenceSoon ? "opacity-50" : ""}`}
+          >
+            <Waveform active />
+            <span className="text-xs font-bold text-primary">
+              {processing
+                ? "كنحللو الصوت بالذكاء الاصطناعي…"
+                : silenceSoon
+                  ? "سالينا؟ غانعمروها…"
+                  : FIELD_PROMPT.lastName}
+            </span>
+          </div>
+        )}
+        {listening === "lastName" && heard && (
+          <p className="mt-1 text-sm font-semibold text-muted-foreground">«{heard}»</p>
+        )}
         <label className="mt-4 block text-sm font-bold">رقم الهاتف المغربي</label>
 
         <div
