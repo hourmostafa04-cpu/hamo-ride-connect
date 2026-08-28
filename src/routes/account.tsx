@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Bell, LogOut, Package, Pencil, Phone, Truck, User } from "lucide-react";
+import { Bell, LogOut, Package, Pencil, Phone, Power, Truck, User } from "lucide-react";
 import { PhoneFrame, AppHeader, StickyActions } from "@/components/hamoula/PhoneFrame";
 import { useHamoula, type RoleId } from "@/lib/hamoula-store";
-import { driverTonOptions, driverTruckKinds } from "@/lib/hamoula-data";
+import { capacityOptions, driverTruckKinds } from "@/lib/hamoula-data";
 
 export const Route = createFileRoute("/account")({
   head: () => ({
@@ -33,7 +33,7 @@ function AccountPage() {
   const [name, setName] = useState(account?.name ?? "");
   // The role is fixed at registration: it can never be switched from the account screen.
   const role: RoleId = account?.role ?? "shipper";
-  const [tons, setTons] = useState(account?.truckTons ?? driverTonOptions[1]!);
+  const [tons, setTons] = useState(account?.truckTons ?? capacityOptions[1]!);
   const [kind, setKind] = useState(account?.truckType ?? driverTruckKinds[1]!);
 
   if (!account) {
@@ -122,8 +122,8 @@ function AccountPage() {
             {role === "driver" && (
               <div className="space-y-3">
                 <p className="text-sm font-bold">الشاحنة ديالك</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {driverTonOptions.map((t) => (
+                <div className="flex flex-wrap gap-2">
+                  {capacityOptions.map((t) => (
                     <button
                       key={t}
                       onClick={() => setTons(t)}
@@ -193,6 +193,20 @@ function AccountPage() {
           >
             <LogOut className="size-5" />
             خروج من الحساب
+          </button>
+
+          {/* إغلاق التطبيق: كيسد الشاشة/التبويب بلا ما يمسح الجلسة ولا الحساب. */}
+          <button
+            onClick={() => {
+              toast("سالينا — بقات الجلسة محفوظة");
+              window.close();
+              // بعض المتصفحات ما كتسمحش بسد التبويب: كنرجعو للشاشة الأولى بلا خروج.
+              setTimeout(() => navigate({ to: "/" }), 300);
+            }}
+            className="flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl border-2 border-border bg-secondary text-base font-extrabold text-foreground"
+          >
+            <Power className="size-5" />
+            إغلاق التطبيق / Fermer
           </button>
         </StickyActions>
       </main>
