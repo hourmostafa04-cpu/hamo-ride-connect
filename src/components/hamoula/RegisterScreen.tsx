@@ -271,6 +271,17 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
       toast.error("الرقم ماشي صحيح", { description: "خاص 10 أرقام كيبداو ب 06 ولا 07" });
       return;
     }
+    if (pending.field === "firstName" || pending.field === "lastName") {
+      if (pending.field === "firstName") setFirstName(pending.text);
+      if (pending.field === "lastName") setLastName(pending.text);
+      playSfx("success");
+      toast.success(pending.field === "firstName" ? "عمرنا الاسم" : "عمرنا النسب", {
+        description: pending.text,
+      });
+      setApplying(false);
+      setPending(null);
+      return;
+    }
     await applySpeech(pending.field, pending.text);
     setApplying(false);
     setPending(null);
