@@ -311,6 +311,10 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
       setError("كتب الاسم والنسب");
       return;
     }
+    if (role === "driver" && !plate.trim()) {
+      setError("كتب رقم الشاحنة / رقم اللوحة");
+      return;
+    }
     if (!normalized) {
       setError("رقم الهاتف ماشي صحيح — مثال: 0661 22 44 88 ولا 212661224488+");
       return;
