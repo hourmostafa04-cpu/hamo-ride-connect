@@ -12,16 +12,16 @@ export function ProfileSwitcher() {
     <div className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 rounded-full bg-primary-foreground/15 py-1.5 pe-3 ps-1.5 text-primary-foreground"
+        className="flex min-h-11 max-w-[9.5rem] items-center gap-2 rounded-full bg-primary-foreground/15 py-1.5 pe-3 ps-1.5 text-primary-foreground sm:max-w-[12rem]"
       >
-        <span className="flex size-8 items-center justify-center rounded-full bg-primary-foreground/25 text-[11px] font-bold">
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary-foreground/25 text-[11px] font-bold">
           {profile.initials}
         </span>
-        <span className="text-right leading-tight">
-          <span className="block text-xs font-bold">{profile.name}</span>
-          <span className="block text-[10px] opacity-90">{profile.roleLabel}</span>
+        <span className="min-w-0 flex-1 text-right leading-tight">
+          <span className="block truncate text-xs font-bold">{profile.name}</span>
+          <span className="block truncate text-[10px] opacity-90">{profile.roleLabel}</span>
         </span>
-        <ChevronDown className={`size-4 transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`size-4 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (
