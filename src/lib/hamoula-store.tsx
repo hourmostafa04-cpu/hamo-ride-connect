@@ -683,7 +683,7 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
         driverPhone: account?.role === "driver" ? account.phone : undefined,
         truck:
           account?.role === "driver" && account.truckType ? account.truckType : "شاحنة متوسطة",
-        plate: "12345 - أ - 20",
+        plate: account?.truckPlate?.trim() || "12345 - أ - 20",
         rating: profiles[1]!.rating,
         trips: 214,
         price,
