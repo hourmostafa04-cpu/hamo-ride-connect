@@ -121,7 +121,8 @@ export function DriverDashboard() {
 
 
   return (
-    <PhoneFrame>
+    <div className="mol-brand">
+      <PhoneFrame>
       <AppHeader title="لوحة صاحب الشاحنة" subtitle={profile.name} showBack backTo="/driver">
         <GpsChip />
       </AppHeader>
@@ -354,6 +355,7 @@ export function DriverDashboard() {
         </Link>
       </div>
     </PhoneFrame>
+    </div>
   );
 }
 
