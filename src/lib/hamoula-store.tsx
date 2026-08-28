@@ -401,29 +401,64 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
     hydrated.current = true;
     setReady(true);
 
-    // الجلسة كتبقى محفوظة على الجهاز: OTP كيتطلب غير فأول تسجيل.
-    // إلا المستخدم ضغط «خروج من الحساب» كنمسحو كلشي، وإلا كنخليو الحساب محفوظ.
-    void supabase.auth.getSession().then(async ({ data }) => {
-      const session = data.session;
-      const sessionPhone = session?.user?.phone;
-      if (sessionPhone) {
-        const remote = await fetchAccount(sessionPhone);
-        if (remote) {
-          setAccount(remote);
-          localStorage.setItem(ACCOUNT_KEY, JSON.stringify(remote));
+    // استرجاع الجلسة: كنعتمدو على Supabase (refresh token) ماشي على الحساب المحلي.
+    void (async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        const session = data.session;
+        if (session) {
+          // كنتأكدو أن التوكن مازال صالح عند الخادم (كيتجدد أوتوماتيكياً).
+          const { data: userData, error: userErr } = await supabase.auth.getUser();
+          if (userErr) {
+            if (isNetworkError(userErr)) {
+              setSessionState("offline");
+              return;
+            }
+            // جلسة ملغاة فعلياً.
+            await supabase.auth.signOut();
+            setSessionState("signed-out");
+            setAccount(null);
+            localStorage.removeItem(ACCOUNT_KEY);
+            return;
+          }
+          const sessionPhone = userData.user?.phone;
+          setSessionState("authenticated");
+          if (sessionPhone) {
+            const remote = await fetchAccount(sessionPhone);
+            if (remote) {
+              setAccount(remote);
+              localStorage.setItem(ACCOUNT_KEY, JSON.stringify(remote));
+            }
+          }
+          return;
         }
+        // ما كايناش جلسة: إلا كانت الشبكة مقطوعة كنحتافظو بالحساب بلا اعتباره داخل.
+        if (typeof navigator !== "undefined" && navigator.onLine === false) {
+          setSessionState("offline");
+          return;
+        }
+        setSessionState("signed-out");
+        setAccount(null);
+        localStorage.removeItem(ACCOUNT_KEY);
+      } catch (e) {
+        // فشل شبكي: ما كنمسحوش الحساب، ولكن ما كنعتبروهش تسجيل دخول صالح.
+        if (isNetworkError(e)) setSessionState("offline");
+        else setSessionState("signed-out");
       }
-      // بلا جلسة صالحة: ما كنمسحوش الحساب المحفوظ — المستخدم كيدخل نيشان
-      // بلا SMS جديد. الخروج الصريح وحدو هو اللي كيمسح الحساب.
-    });
+    })();
 
-    // كنمسحو الحساب غير إلا كان الخروج صريح من طرف المستخدم.
-    const { data: authSub } = supabase.auth.onAuthStateChange((event) => {
+    const { data: authSub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {
+        if (session) setSessionState("authenticated");
+        return;
+      }
       if (event !== "SIGNED_OUT") return;
-      if (localStorage.getItem(SIGNED_OUT_KEY) !== "1") return;
+      setSessionState("signed-out");
       setAccount(null);
       localStorage.removeItem(ACCOUNT_KEY);
     });
+
 
 
     // Keep the other role's tab in sync — same board, two users.
