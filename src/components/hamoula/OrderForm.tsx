@@ -346,18 +346,26 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
 
       <form
         className="flex-1 space-y-6 px-5 py-6"
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
-          publishLoad({
-            pickup,
-            destination,
-            pickupPoint,
-            destinationPoint,
-            cargo,
-            truck,
-            capacity,
-            price: Number(price) || 0,
-          });
+          try {
+            await publishLoad({
+              pickup,
+              destination,
+              pickupPoint,
+              destinationPoint,
+              cargo,
+              truck,
+              capacity,
+              price: Number(price) || 0,
+            });
+          } catch (err) {
+            console.error("[hamoula] إرسال الطلب فشل", err);
+            toast.error("ما تسجلش الطلب", {
+              description: "وقع مشكل فالحفظ. عاود المحاولة من فضلك.",
+            });
+            return;
+          }
           playSfx("success");
           // Clear the on-screen draft so the next request starts empty.
           setPickup("");

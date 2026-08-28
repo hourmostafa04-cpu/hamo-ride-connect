@@ -107,8 +107,11 @@ export async function fetchBoard(): Promise<{ loads: Load[]; bids: Bid[] }> {
 export async function saveLoad(load: Load) {
   if (!isRealLoad(load.id)) return;
   const userId = await currentUserId();
-  if (!userId) return;
-  await supabase.from("loads").upsert({
+  if (!userId) {
+    console.error("[hamoula] saveLoad: no authenticated user, load NOT saved", load.id);
+    throw new Error("لا يمكن حفظ الطلب بدون تسجيل الدخول");
+  }
+  const { error } = await supabase.from("loads").upsert({
     id: load.id,
     user_id: userId,
     shipper: load.shipper,
@@ -127,6 +130,10 @@ export async function saveLoad(load: Load) {
     accepted_offer: load.acceptedOffer ?? null,
     updated_at: new Date().toISOString(),
   } as never);
+  if (error) {
+    console.error("[hamoula] saveLoad failed:", error.message, load.id);
+    throw new Error(`فشل حفظ الطلب: ${error.message}`);
+  }
 }
 
 /** Lifecycle update for one request (منشور → مقبول → في الطريق → تم التسليم / ملغى). */
