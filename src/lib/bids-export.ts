@@ -72,12 +72,12 @@ export function printPdf(rows: ExportRow[], driverName: string) {
   const html = `<!doctype html><html dir="rtl" lang="ar"><head><meta charset="utf-8">
 <title>سجل العروض — حمولة</title>
 <style>
-body{font-family:"Cairo",system-ui,sans-serif;padding:24px;color:#14281d}
+body{font-family:"Cairo",system-ui,sans-serif;padding:24px;color:#2b1a08}
 h1{font-size:20px;margin:0 0 4px}
-p{margin:0 0 16px;color:#5b6b60;font-size:12px}
+p{margin:0 0 16px;color:#7a6249;font-size:12px}
 table{width:100%;border-collapse:collapse;font-size:12px}
-th,td{border:1px solid #cfe0d4;padding:8px;text-align:right}
-th{background:#e8f5ec}
+th,td{border:1px solid #f0d9b8;padding:8px;text-align:right}
+th{background:#fdf1e0}
 </style></head><body>
 <h1>سجل العروض — حمولة</h1>
 <p>${escHtml(driverName)} · ${escHtml(new Date().toLocaleString("fr-MA"))} · ${rows.length} عرض</p>

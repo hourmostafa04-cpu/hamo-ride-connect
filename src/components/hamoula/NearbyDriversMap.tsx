@@ -18,7 +18,7 @@ function truckIcon(label: string) {
   return L.divIcon({
     className: "",
     html: `<div style="display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%)">
-      <div style="width:30px;height:30px;border-radius:9999px;background:#16a34a;border:3px solid #fff;box-shadow:0 0 0 5px rgba(22,163,74,.2);display:flex;align-items:center;justify-content:center"><svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2'/><path d='M14 9h4l4 4v4a1 1 0 0 1-1 1h-1'/><circle cx='7' cy='18' r='2'/><circle cx='17' cy='18' r='2'/></svg></div>
+      <div style="width:30px;height:30px;border-radius:9999px;background:#f97316;border:3px solid #fff;box-shadow:0 0 0 5px rgba(249,115,22,.2);display:flex;align-items:center;justify-content:center"><svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2'/><path d='M14 9h4l4 4v4a1 1 0 0 1-1 1h-1'/><circle cx='7' cy='18' r='2'/><circle cx='17' cy='18' r='2'/></svg></div>
       <div style="margin-top:3px;background:#fff;color:#0f172a;font:700 10px/1 Cairo,sans-serif;padding:3px 6px;border-radius:9999px;box-shadow:0 1px 4px rgba(0,0,0,.2);white-space:nowrap">${label}</div>
     </div>`,
     iconSize: [0, 0],
@@ -64,7 +64,7 @@ export default function NearbyDriversMap({
     L.marker([pickup.lat, pickup.lng], { icon: pickupIcon }).addTo(g);
     L.circle([pickup.lat, pickup.lng], {
       radius: 8000,
-      color: "#16a34a",
+      color: "#f97316",
       weight: 1,
       fillOpacity: 0.06,
     }).addTo(g);
