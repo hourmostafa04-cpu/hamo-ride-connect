@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Phone, User, Package, Truck, LogIn, Check, Mic, Square, Loader2, ShieldCheck } from "lucide-react";
+import { Phone, User, Package, Truck, LogIn, Check, Mic, Square, Loader2, ShieldCheck, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PhoneFrame, StickyActions } from "@/components/hamoula/PhoneFrame";
 import { Waveform, speak } from "@/components/hamoula/Voice";
@@ -489,13 +489,31 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
       <PhoneFrame>
         <div className="mol-brand flex min-h-screen flex-1 flex-col bg-background">
           <div className="gradient-primary px-6 pb-12 pt-14 text-primary-foreground">
-            <p className="text-xs font-extrabold tracking-[0.35em]">MOL TRANSPORT</p>
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-xs font-extrabold tracking-[0.35em]">MOL TRANSPORT</p>
+              {/* «إغلاق التطبيق»: يغلق الواجهة فقط — لا يمسح الجلسة ولا يسجل خروجاً. */}
+              <button
+                type="button"
+                onClick={() => {
+                  window.close();
+                  window.setTimeout(() => {
+                    if (!window.closed) window.location.replace("about:blank");
+                  }, 300);
+                }}
+                aria-label="إغلاق التطبيق"
+                className="flex min-h-11 shrink-0 items-center gap-2 rounded-full bg-primary-foreground/20 px-4 py-2 text-sm font-extrabold text-primary-foreground ring-1 ring-primary-foreground/30 transition-colors hover:bg-primary-foreground/30 active:scale-95"
+              >
+                <X className="size-5" />
+                إغلاق التطبيق
+              </button>
+            </div>
             <h1 className="mt-3 text-4xl font-extrabold leading-tight">مول طرانسبور</h1>
             <p className="mt-2 text-sm font-semibold opacity-90">
               نقل البضائع فالمغرب — بسيط وسريع.
             </p>
           </div>
-          <div className="-mt-6 flex-1 space-y-4 rounded-t-3xl bg-background px-5 pb-10 pt-8">
+          {/* هامش سفلي إضافي حتى لا يغطي زر التمرير العائم منطقة الدخول التجريبي. */}
+          <div className="-mt-6 flex-1 space-y-4 rounded-t-3xl bg-background px-5 pb-28 pt-8">
             <p className="text-base font-extrabold">شكون نتا؟</p>
             <button
               onClick={() => {
