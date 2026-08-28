@@ -28,11 +28,21 @@ export function ratePerKm(truckId?: string): number {
   return (truckId && RATE_PER_KM[truckId]) || 7;
 }
 
+/**
+ * Weight multiplier applied to the per-km part of the estimate.
+ * 0 kg → 1.0, 10 t → 1.4, 30 t → 1.8 (capped).
+ */
+export function weightFactor(kg?: number | null): number {
+  if (!kg || kg <= 0) return 1;
+  return Math.min(1.8, 1 + (kg / 1000) * 0.04);
+}
+
 /** Rounded to the nearest 50 DH so it reads like a real quote. */
-export function estimatePrice(km: number, truckId?: string): number {
-  const raw = BASE_FEE + Math.max(0, km) * ratePerKm(truckId);
+export function estimatePrice(km: number, truckId?: string, kg?: number | null): number {
+  const raw = BASE_FEE + Math.max(0, km) * ratePerKm(truckId) * weightFactor(kg);
   return Math.max(BASE_FEE, Math.round(raw / 50) * 50);
 }
+
 
 /**
  * Realistic mock counter-offer: anchored on the market rate for the route
