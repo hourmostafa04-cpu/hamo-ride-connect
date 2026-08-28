@@ -195,6 +195,10 @@ type Ctx = {
   profile: Profile;
   switchProfile: (id: string) => void;
   account: Account | null;
+  /** حالة جلسة Auth الحقيقية (ماشي الحساب المحفوظ محلياً). */
+  sessionState: SessionState;
+  /** True only when a valid Supabase session backs the account. */
+  authed: boolean;
   /** True once localStorage has been read on the client. */
   ready: boolean;
   signIn: (account: Account) => void;
