@@ -18,6 +18,8 @@ import { useHamoula, type RoleId } from "@/lib/hamoula-store";
 import {
   capacityOptions,
   driverTruckKinds,
+  truckTypes,
+  capacityKg,
   SEMI_BENNE,
   SEMI_PLATEAU,
   SEMI_TOP_TONS,
@@ -27,6 +29,33 @@ import { extractTonnage, extractTruckKind, tonChipFor } from "@/lib/voice-order"
 import { smartParse } from "@/lib/smart-parse";
 import { DEMO_LOGIN_ENABLED, DEMO_PHONE, demoAccount } from "@/lib/demo-login";
 import { ensureDemoAuthUser } from "@/lib/demo-auth.functions";
+
+import triporteurImg from "@/assets/trucks/triporteur.png";
+import hondaImg from "@/assets/trucks/honda.png";
+import pickupImg from "@/assets/trucks/pickup.png";
+import staffitImg from "@/assets/trucks/staffit.png";
+import kontiriImg from "@/assets/trucks/kontiri.png";
+import camionImg from "@/assets/trucks/camion.png";
+import remorqueImg from "@/assets/trucks/remorque.png";
+import benneImg from "@/assets/trucks/benne.png";
+
+/** Same vehicle artwork used in the shipper request form. */
+const TRUCK_IMAGES: Record<string, string> = {
+  triporteur: triporteurImg,
+  honda: hondaImg,
+  pickup: pickupImg,
+  staffit: staffitImg,
+  kontiri: kontiriImg,
+  camion: camionImg,
+  remorque: remorqueImg,
+  benne: benneImg,
+};
+
+/** Closest capacity chip (shared with the shipper form) for a vehicle payload. */
+const tonsChipForKg = (maxKg: number) =>
+  capacityOptions.find((c) => (capacityKg(c) ?? 0) >= maxKg) ??
+  capacityOptions[capacityOptions.length - 1]!;
+
 
 
 type VoiceField = "name" | "phone";
@@ -280,6 +309,10 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
     const normalized = normalizePhone(phone);
     if (!firstName.trim() || !lastName.trim()) {
       setError("كتب الاسم والنسب");
+      return;
+    }
+    if (role === "driver" && !plate.trim()) {
+      setError("كتب رقم الشاحنة / رقم اللوحة");
       return;
     }
     if (!normalized) {
@@ -647,7 +680,23 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
         <p className="mt-1 text-xs text-muted-foreground">
           كنقبلو 06 / 07 ولا 212+ — الميكرو كيتحبس بوحدو من بعد 2 ثواني باش تحبسو
         </p>
+        {role === "driver" && (
+          <>
+            <label className="mt-4 block text-sm font-bold">رقم الشاحنة / رقم اللوحة</label>
+            <div className="mt-2 flex items-center gap-3 rounded-2xl border-2 border-border bg-card px-4 py-3">
+              <Truck className="size-6 text-primary" />
+              <input
+                value={plate}
+                onChange={(e) => setPlate(e.target.value)}
+                maxLength={24}
+                placeholder="مثال: 12345 - أ - 20"
+                className="w-full bg-transparent text-base font-bold outline-none placeholder:font-normal placeholder:text-muted-foreground"
+              />
+            </div>
+          </>
+        )}
         </>
+
         )}
 
         {pending && step !== "otp" && (
@@ -793,14 +842,58 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
         {role === "driver" && (
           <div className="mt-6 space-y-5 rounded-2xl border-2 border-primary/30 bg-primary-soft/50 p-4">
             <div>
-              <p className="text-sm font-bold">رقم لوحة الشاحنة</p>
-              <input
-                value={plate}
-                onChange={(e) => setPlate(e.target.value)}
-                placeholder="مثال: 12345 - أ - 20"
-                className="mt-3 w-full rounded-2xl border-2 border-border bg-card px-4 py-3 text-base font-bold outline-none focus:border-primary"
-              />
+              <p className="text-sm font-bold">نوع الشاحنة</p>
+              <div className="mt-3 grid grid-cols-4 gap-2">
+                {truckTypes.map((t) => {
+                  const active = kind === t.label;
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => {
+                        setKind(t.label);
+                        setTons(tonsChipForKg(t.maxKg));
+                      }}
+                      className={`relative overflow-hidden rounded-2xl border-2 p-1.5 text-center transition active:scale-[0.97] ${
+                        active
+                          ? "border-primary bg-primary-soft shadow-soft ring-2 ring-primary/25"
+                          : "border-border bg-card"
+                      }`}
+                    >
+                      {active && (
+                        <span className="absolute left-1 top-1 z-10 grid size-5 place-items-center rounded-full bg-primary text-primary-foreground">
+                          <Check className="size-3.5" />
+                        </span>
+                      )}
+                      <img
+                        src={TRUCK_IMAGES[t.id]}
+                        alt={t.label}
+                        loading="lazy"
+                        className="mx-auto h-12 w-full object-contain"
+                      />
+                      <span className="mt-1 block text-[10px] font-extrabold leading-tight text-foreground">
+                        {t.label}
+                      </span>
+                      <span className="mt-0.5 block text-[9px] font-bold text-muted-foreground">
+                        {t.hint}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
+            {!plate.trim() && (
+              <div>
+                <p className="text-sm font-bold">رقم لوحة الشاحنة</p>
+                <input
+                  value={plate}
+                  onChange={(e) => setPlate(e.target.value)}
+                  placeholder="مثال: 12345 - أ - 20"
+                  className="mt-3 w-full rounded-2xl border-2 border-border bg-card px-4 py-3 text-base font-bold outline-none focus:border-primary"
+                />
+              </div>
+            )}
             <div>
               <p className="text-sm font-bold">الوزن / الحمولة القصوى</p>
               <div className="mt-3 flex flex-wrap gap-2">
@@ -834,24 +927,9 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
                 <Chip active={!available} onClick={() => setAvailable(false)} label="غير متوفر" />
               </div>
             </div>
-            <div>
-              <p className="text-sm font-bold">نوع الشاحنة</p>
-              <div className="mt-3 space-y-3">
-                {truckKinds.map((k) => (
-                  <Chip
-                    key={k}
-                    active={kind === k}
-                    onClick={() => {
-                      setKind(k);
-                      setTons(isSemiKind(k) ? SEMI_TOP_TONS : defaultTonsFor(k));
-                    }}
-                    label={k}
-                  />
-                ))}
-              </div>
-            </div>
           </div>
         )}
+
 
         </>
         )}
@@ -870,7 +948,13 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
                   setPhoneTouched(true);
                   void continueWithPhone();
                 }}
-                disabled={!phoneValid || !firstName.trim() || !lastName.trim() || otpBusy}
+                disabled={
+                  !phoneValid ||
+                  !firstName.trim() ||
+                  !lastName.trim() ||
+                  (role === "driver" && !plate.trim()) ||
+                  otpBusy
+                }
                 className="flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl bg-primary py-5 text-lg font-extrabold text-primary-foreground shadow-soft transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {otpBusy ? <Loader2 className="size-6 animate-spin" /> : <LogIn className="size-6" />}
