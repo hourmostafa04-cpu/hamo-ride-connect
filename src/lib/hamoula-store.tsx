@@ -279,6 +279,7 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
   const [profileId, setProfileId] = useState(profiles[0]!.id);
   const [board, setBoard] = useState<Board>({ loads: [], bids: [], request: defaultRequest });
   const [account, setAccount] = useState<Account | null>(null);
+  const [sessionState, setSessionState] = useState<SessionState>("checking");
   const [ready, setReady] = useState(false);
   const [myLocation, setMyLocation] = useState<LatLng | null>(null);
   const [geoStatus, setGeoStatus] = useState<GeoStatus>("idle");
