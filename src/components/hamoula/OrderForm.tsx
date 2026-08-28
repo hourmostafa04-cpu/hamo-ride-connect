@@ -26,7 +26,7 @@ import { ResumeWhereYouLeft } from "@/components/hamoula/ResumeWhereYouLeft";
 import { VoiceNotePlayer } from "@/components/hamoula/Voice";
 import { Mic, Loader2 } from "lucide-react";
 import { useAiDictation } from "@/hooks/use-ai-dictation";
-import { findTruck, truckTypes } from "@/lib/hamoula-data";
+import { findTruck, truckTypes, capacityOptions, capacityKg } from "@/lib/hamoula-data";
 import { useHamoula } from "@/lib/hamoula-store";
 import {
   defaultDestination,
@@ -76,7 +76,8 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
   const [destinationPoint, setDestinationPoint] = useState<LatLng>(initial.destinationPoint);
   const bothPicked = Boolean(pickup.trim() && destination.trim());
   const roadKm = Math.round(roadDistanceKm(pickupPoint, destinationPoint));
-  const estimated = estimatePrice(roadKm, truck);
+  const cargoKg = capacityKg(capacity);
+  const estimated = estimatePrice(roadKm, truck, cargoKg);
 
   /**
    * The stored draft is read from localStorage after the first render, so the
@@ -433,6 +434,30 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
 
         <CargoField value={cargo} onChange={setCargo} />
 
+        <div className="rounded-2xl border-2 border-dashed border-border bg-card p-4">
+          <p className="text-sm font-bold">وزن الحمولة</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            الوزن كيدخل فحساب الثمن التقديري.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {capacityOptions.map((c) => (
+              <button
+                key={c}
+                type="button"
+                aria-pressed={capacity === c}
+                onClick={() => setCapacity(capacity === c ? "" : c)}
+                className={`min-h-11 rounded-full border-2 px-4 text-sm font-bold ${
+                  capacity === c
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-card text-muted-foreground"
+                }`}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+        </div>
+
 
 
 
@@ -477,7 +502,7 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
 
         <div>
           <label className="mb-2 block text-sm font-bold">
-            {priceLocked ? "الثمن المقترح" : "السعر المقترح التقديري"}
+            {priceLocked ? "الثمن المقترح" : "الثمن التقديري (قابل للتفاوض)"}
           </label>
           <div className="flex items-center gap-3 rounded-2xl border-2 border-border bg-card px-4 py-3 focus-within:border-primary">
             <Banknote className="size-5 text-primary" />
@@ -495,7 +520,12 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
           <p className="mt-2 text-xs text-muted-foreground">
             {priceLocked
               ? "هادا هو الثمن ديالك — ما غنبدلوهش."
-              : `تقدير: 150 درهم تحميل + ${roadKm} كلم — تقدر تبدلو كيف بغيتي`}
+              : `ثمن تقديري فقط وقابل للتفاوض — محسوب حسب المسافة (${roadKm} كلم)${
+                  capacity ? ` والوزن (${capacity})` : ""
+                } ونوع الشاحنة (${suggested.label}).`}
+          </p>
+          <p className="mt-1 text-[11px] font-bold text-primary">
+            ⚠️ الثمن تقديري فقط وقابل للتفاوض مع صاحب الشاحنة.
           </p>
         </div>
 
