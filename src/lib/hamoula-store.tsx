@@ -999,6 +999,7 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
       myLocation,
       geoStatus,
       requestLocation,
+      refreshBoard: refreshFromDb,
     }),
     [
       profile,
