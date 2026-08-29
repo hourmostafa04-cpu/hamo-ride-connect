@@ -38,6 +38,7 @@ import kontiriImg from "@/assets/trucks/kontiri.png";
 import camionImg from "@/assets/trucks/camion.png";
 import remorqueImg from "@/assets/trucks/remorque.png";
 import benneImg from "@/assets/trucks/benne.png";
+import skylineImg from "@/assets/mol-skyline.png";
 
 /** Same vehicle artwork used in the shipper request form. */
 const TRUCK_IMAGES: Record<string, string> = {
