@@ -250,6 +250,8 @@ type Ctx = {
   myLocation: LatLng | null;
   geoStatus: GeoStatus;
   requestLocation: () => void;
+  /** Pull the latest loads and bids from the shared backend. */
+  refreshBoard: () => Promise<void>;
 
 };
 
@@ -997,6 +999,7 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
       myLocation,
       geoStatus,
       requestLocation,
+      refreshBoard: refreshFromDb,
     }),
     [
       profile,
