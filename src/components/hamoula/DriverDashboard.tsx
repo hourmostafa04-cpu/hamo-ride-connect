@@ -3,7 +3,6 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { playSfx } from "@/lib/sfx";
 import {
-  ArrowRight,
   MapPin,
   Navigation,
   Mic,
@@ -15,7 +14,7 @@ import {
   Weight,
   X,
 } from "lucide-react";
-import { PhoneFrame, AppHeader, LiveBadge, useHomePath } from "@/components/hamoula/PhoneFrame";
+import { PhoneFrame, AppHeader, LiveBadge } from "@/components/hamoula/PhoneFrame";
 import { ResumeWhereYouLeft } from "@/components/hamoula/ResumeWhereYouLeft";
 import { VoiceBanner, VoiceNotePlayer, VoiceRecorderSheet } from "@/components/hamoula/Voice";
 import { findTruck, driverVoiceReplies, capacityKg } from "@/lib/hamoula-data";
