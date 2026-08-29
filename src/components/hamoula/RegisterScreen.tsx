@@ -489,12 +489,25 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
     return (
       <PhoneFrame>
         <div className="mol-brand relative flex min-h-screen flex-1 flex-col overflow-hidden bg-[oklch(0.985_0.03_88)]">
-          {/* خلفية كريمية/ذهبية + زخرفة مغربية */}
+          {/* خلفية كريمية/ذهبية */}
           <div
             className="pointer-events-none absolute inset-0"
             style={{
               backgroundImage:
-                "radial-gradient(120% 60% at 50% 0%, oklch(0.97 0.08 88) 0%, oklch(0.995 0.012 90) 70%)",
+                "linear-gradient(180deg, oklch(0.975 0.045 88) 0%, oklch(0.995 0.012 90) 55%, oklch(0.97 0.05 88) 100%)",
+            }}
+          />
+          {/* شمس ذهبية أعلى اليمين */}
+          <div className="pointer-events-none absolute -right-16 -top-20 size-56 rounded-full bg-primary/80 blur-[1px]" />
+          <div className="pointer-events-none absolute -right-24 -top-28 size-72 rounded-full ring-8 ring-primary/25" />
+          {/* زخرفة مغربية أعلى اليسار */}
+          <div
+            className="pointer-events-none absolute -left-6 -top-6 size-40 opacity-40"
+            style={{
+              backgroundImage:
+                "repeating-linear-gradient(45deg, oklch(0.82 0.14 80) 0 1px, transparent 1px 18px), repeating-linear-gradient(-45deg, oklch(0.82 0.14 80) 0 1px, transparent 1px 18px)",
+              maskImage: "radial-gradient(circle at 0% 0%, black 0%, transparent 75%)",
+              WebkitMaskImage: "radial-gradient(circle at 0% 0%, black 0%, transparent 75%)",
             }}
           />
           <img
@@ -503,18 +516,12 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
             aria-hidden
             width={1536}
             height={512}
-            className="pointer-events-none absolute inset-x-0 top-28 w-full opacity-25"
+            className="pointer-events-none absolute inset-x-0 top-40 w-full opacity-30"
           />
 
-          <div className="relative flex flex-1 flex-col px-5 pb-28 pt-6">
-            <div className="flex items-start justify-between gap-3">
-              <p className="text-lg font-extrabold leading-none tracking-[0.12em] text-foreground">
-                MOL
-                <span className="mt-0.5 block text-[9px] font-bold tracking-[0.3em] text-muted-foreground">
-                  TRANSPORT
-                </span>
-              </p>
-              {/* «إغلاق التطبيق»: يغلق الواجهة فقط — لا يمسح الجلسة ولا يسجل خروجاً. */}
+          <div className="relative flex flex-1 flex-col px-5 pb-28 pt-4">
+            {/* «إغلاق التطبيق»: يغلق الواجهة فقط — لا يمسح الجلسة ولا يسجل خروجاً. */}
+            <div className="flex justify-start">
               <button
                 type="button"
                 onClick={() => {
@@ -524,27 +531,32 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
                   }, 300);
                 }}
                 aria-label="إغلاق التطبيق"
-                className="flex min-h-9 shrink-0 items-center gap-1.5 rounded-full bg-card/80 px-3 py-1.5 text-[11px] font-bold text-muted-foreground ring-1 ring-border transition-colors hover:bg-card active:scale-95"
+                className="flex min-h-8 shrink-0 items-center gap-1 rounded-full bg-card/80 px-2.5 py-1 text-[10px] font-bold text-muted-foreground ring-1 ring-border transition-colors hover:bg-card active:scale-95"
               >
-                <X className="size-4" />
+                <X className="size-3.5" />
                 إغلاق التطبيق
               </button>
             </div>
 
-            <h1 className="mt-6 text-2xl font-extrabold leading-snug text-foreground">
-              مرحباً بك في مول ترانسبور
-            </h1>
-            <p className="mt-1 text-sm font-semibold text-muted-foreground">
-              نقل البضائع بسهولة وأمان
-            </p>
+            {/* الشعار والعنوان */}
+            <div className="mt-4 flex flex-col items-center text-center">
+              <Truck className="size-10 text-primary" />
+              <h1 className="mt-1 text-3xl font-extrabold leading-tight text-foreground">
+                مول <span className="text-primary">ترانسبور</span>
+              </h1>
+              <p className="mt-1 text-sm font-bold text-muted-foreground">
+                نقل البضائع بسهولة وأمان
+              </p>
+            </div>
 
             {/* صف الشاحنات من الصغيرة إلى الكبيرة */}
-            <div className="mt-5 flex items-end justify-between gap-1">
+            <div dir="ltr" className="mt-4 flex items-end justify-between gap-0.5">
               {[
-                { src: triporteurImg, h: "h-9" },
-                { src: hondaImg, h: "h-11" },
-                { src: pickupImg, h: "h-12" },
-                { src: staffitImg, h: "h-14" },
+                { src: triporteurImg, h: "h-8" },
+                { src: hondaImg, h: "h-10" },
+                { src: pickupImg, h: "h-11" },
+                { src: staffitImg, h: "h-12" },
+                { src: kontiriImg, h: "h-14" },
                 { src: camionImg, h: "h-16" },
               ].map((t, i) => (
                 <img
@@ -558,30 +570,31 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
             </div>
 
             {/* Card: اختر نوع الحساب */}
-            <div className="mt-6 rounded-3xl bg-card/90 p-4 shadow-soft ring-1 ring-border backdrop-blur">
-              <p className="text-center text-base font-extrabold">اختر نوع الحساب</p>
+            <div className="mt-6 rounded-3xl bg-card/95 p-4 shadow-soft ring-1 ring-border backdrop-blur">
+              <p className="text-center text-xl font-extrabold">اختر نوع الحساب</p>
+              <div className="mx-auto mt-2 h-1 w-12 rounded-full bg-primary" />
               <div className="mt-4 grid grid-cols-2 gap-3">
                 <AccountCard
-                  icon={<Truck className="size-8 text-primary" />}
-                  title="صاحب بشاحنة"
-                  subtitle="أبحث عن حمولة"
-                  highlight
-                  onClick={() => {
-                    setRole("driver");
-                    setStep("phone");
-                  }}
-                />
-                <AccountCard
-                  icon={<Package className="size-8 text-primary" />}
+                  icon={<Package className="size-7 text-[oklch(0.35_0.08_62)]" />}
                   title="صاحب بضاعة"
-                  subtitle="أبحث عن شاحنة"
+                  subtitle="أبحث عن شاحنة لنقل بضاعتي إلى وجهتها"
                   onClick={() => {
                     setRole("shipper");
                     setStep("phone");
                   }}
                 />
+                <AccountCard
+                  icon={<Truck className="size-7 text-[oklch(0.35_0.08_62)]" />}
+                  title="صاحب شاحنة"
+                  subtitle="أبحث عن شحنات لنقلها بشاحنتي"
+                  onClick={() => {
+                    setRole("driver");
+                    setStep("phone");
+                  }}
+                />
               </div>
             </div>
+
 
             {DEMO_LOGIN_ENABLED && (
               <div className="mt-5 rounded-2xl border-2 border-dashed border-primary/40 bg-primary-soft/50 p-3">
@@ -1262,20 +1275,25 @@ function AccountCard({
 }) {
   return (
     <div
-      className={`flex flex-col items-center gap-1 rounded-2xl border-2 bg-card px-3 py-4 text-center ${
-        highlight ? "border-primary shadow-soft" : "border-border"
+      className={`flex h-full flex-col items-center rounded-2xl bg-secondary/60 px-3 py-4 text-center ring-1 ${
+        highlight ? "shadow-soft ring-primary" : "ring-border"
       }`}
     >
-      {icon}
-      <span className="mt-1 text-sm font-extrabold">{title}</span>
-      <span className="text-[11px] font-semibold text-muted-foreground">{subtitle}</span>
+      <span className="flex size-14 items-center justify-center rounded-full bg-primary-soft">
+        {icon}
+      </span>
+      <span className="mt-3 text-base font-extrabold">{title}</span>
+      <span className="mt-1 text-[11px] font-semibold leading-relaxed text-muted-foreground">
+        {subtitle}
+      </span>
       <button
         type="button"
         onClick={onClick}
-        className="mt-2 min-h-9 w-full rounded-lg bg-primary py-2 text-sm font-extrabold text-primary-foreground active:scale-95"
+        className="mt-auto min-h-10 w-full rounded-xl bg-primary py-2 text-base font-extrabold text-primary-foreground shadow-soft active:scale-95"
       >
         دخول
       </button>
     </div>
   );
+
 }
