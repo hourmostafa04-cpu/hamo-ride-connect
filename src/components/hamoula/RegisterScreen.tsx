@@ -331,14 +331,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
   /** Step 1: send the 6-digit SMS code to the entered number. */
   const continueWithPhone = async () => {
     const normalized = normalizePhone(phone);
-    if (!firstName.trim() || !lastName.trim()) {
-      setError("كتب الاسم والنسب");
-      return;
-    }
-    if (role === "driver" && !plate.trim()) {
-      setError("كتب رقم الشاحنة / رقم اللوحة");
-      return;
-    }
+    // الدخول/التسجيل موحد: غير الرقم هو المطلوب هنا — باقي المعلومات غير للحسابات الجديدة.
     if (!normalized) {
       setError("رقم الهاتف ماشي صحيح — مثال: 0661 22 44 88 ولا 212661224488+");
       return;
@@ -627,12 +620,20 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
       <div className="gradient-primary px-6 pb-14 pt-12 text-primary-foreground">
         <p className="text-[11px] font-extrabold tracking-[0.35em]">MOL TRANSPORT</p>
         <h1 className="mt-3 text-3xl font-extrabold tracking-tight">
-          {step === "otp" ? "كود التأكيد" : role === "driver" ? "تسجيل صاحب الشاحنة" : "تسجيل صاحب البضاعة"}
+          {step === "otp"
+            ? "كود التأكيد"
+            : step === "phone"
+              ? "دخول / تسجيل"
+              : role === "driver"
+                ? "تسجيل صاحب الشاحنة"
+                : "تسجيل صاحب البضاعة"}
         </h1>
         <p className="mt-2 max-w-xs text-sm leading-relaxed opacity-90">
           {step === "otp"
             ? "دخل الكود اللي وصلك ف SMS."
-            : "كتب المعلومات ديالك وضغط تأكيد."}
+            : step === "phone"
+              ? "دخل رقم الهاتف ديالك — إلا عندك حساب غتدخل نيشان، وإلا ما عندكش غتكمل التسجيل من هنا."
+              : "كتب المعلومات ديالك وضغط تأكيد."}
         </p>
       </div>
 
