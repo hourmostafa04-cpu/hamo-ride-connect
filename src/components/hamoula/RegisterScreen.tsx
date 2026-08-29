@@ -1245,3 +1245,37 @@ function FieldMic({
     </button>
   );
 }
+
+/** بطاقة نوع الحساب في الصفحة الرئيسية (شكل فقط). */
+function AccountCard({
+  icon,
+  title,
+  subtitle,
+  highlight = false,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  subtitle: string;
+  highlight?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <div
+      className={`flex flex-col items-center gap-1 rounded-2xl border-2 bg-card px-3 py-4 text-center ${
+        highlight ? "border-primary shadow-soft" : "border-border"
+      }`}
+    >
+      {icon}
+      <span className="mt-1 text-sm font-extrabold">{title}</span>
+      <span className="text-[11px] font-semibold text-muted-foreground">{subtitle}</span>
+      <button
+        type="button"
+        onClick={onClick}
+        className="mt-2 min-h-9 w-full rounded-lg bg-primary py-2 text-sm font-extrabold text-primary-foreground active:scale-95"
+      >
+        دخول
+      </button>
+    </div>
+  );
+}
