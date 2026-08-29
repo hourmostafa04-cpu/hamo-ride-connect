@@ -555,7 +555,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
                 { src: triporteurImg, h: "h-8" },
                 { src: hondaImg, h: "h-10" },
                 { src: pickupImg, h: "h-11" },
-                { src: staffitImg, h: "h-13" },
+                { src: staffitImg, h: "h-12" },
                 { src: kontiriImg, h: "h-14" },
                 { src: camionImg, h: "h-16" },
               ].map((t, i) => (
