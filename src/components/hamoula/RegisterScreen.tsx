@@ -1003,13 +1003,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
                   setPhoneTouched(true);
                   void continueWithPhone();
                 }}
-                disabled={
-                  !phoneValid ||
-                  !firstName.trim() ||
-                  !lastName.trim() ||
-                  (role === "driver" && !plate.trim()) ||
-                  otpBusy
-                }
+                disabled={!phoneValid || otpBusy}
                 className="flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl bg-primary py-5 text-lg font-extrabold text-primary-foreground shadow-soft transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {otpBusy ? <Loader2 className="size-6 animate-spin" /> : <LogIn className="size-6" />}
