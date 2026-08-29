@@ -301,24 +301,24 @@ export function DriverDashboard() {
               لا توجد طلبات حالياً. حيد للحساب ديال مول السلعة وسير طلب باش تشوف كيفاش كيوصل.
             </p>
             <div className="mt-5 flex flex-col gap-3">
-              <Link
-                to={homePath}
-                className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-base font-bold text-primary-foreground transition-opacity hover:opacity-90 active:scale-95"
-              >
-                <ArrowRight className="size-5" />
-                الرجوع للرئيسية
-              </Link>
               <button
                 type="button"
-                onClick={() => {
+                disabled={refreshing}
+                onClick={async () => {
                   setRefreshing(true);
                   playSfx("tap");
-                  setTimeout(() => {
+                  try {
+                    await refreshBoard();
+                    toast("تحديث الطلبات", { description: "تم تحديث قائمة الطلبات" });
+                  } catch (e) {
+                    toast.error("ما قدرناش نحدثو الطلبات", {
+                      description: e instanceof Error ? e.message : "شوف الاتصال بالإنترنت",
+                    });
+                  } finally {
                     setRefreshing(false);
-                    toast("تحديث الطلبات", { description: "ما كاين حتى طلب جديد دابا" });
-                  }, 700);
+                  }
                 }}
-                className="flex min-h-11 items-center justify-center gap-2 rounded-xl border-2 border-border bg-card px-5 py-3 text-base font-bold text-foreground transition-colors hover:bg-secondary active:scale-95"
+                className="flex min-h-11 items-center justify-center gap-2 rounded-xl border-2 border-border bg-card px-5 py-3 text-base font-bold text-foreground transition-colors hover:bg-secondary active:scale-95 disabled:opacity-60"
               >
                 <RefreshCw className={`size-5 ${refreshing ? "animate-spin" : ""}`} />
                 تحديث الطلبات
@@ -347,13 +347,6 @@ export function DriverDashboard() {
           />
         ))}
 
-        <Link
-          to={homePath}
-          className="flex items-center justify-center gap-2 py-2 text-sm font-semibold text-muted-foreground"
-        >
-          <ArrowRight className="size-4" />
-          الرئيسية
-        </Link>
       </div>
     </PhoneFrame>
     </div>
