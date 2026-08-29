@@ -58,6 +58,7 @@ export function DriverDashboard() {
     myLocation,
     geoStatus,
     requestLocation,
+    refreshBoard,
     profile,
     account,
     updateAccount,
