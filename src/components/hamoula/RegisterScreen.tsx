@@ -1275,20 +1275,25 @@ function AccountCard({
 }) {
   return (
     <div
-      className={`flex flex-col items-center gap-1 rounded-2xl border-2 bg-card px-3 py-4 text-center ${
-        highlight ? "border-primary shadow-soft" : "border-border"
+      className={`flex h-full flex-col items-center rounded-2xl bg-secondary/60 px-3 py-4 text-center ring-1 ${
+        highlight ? "shadow-soft ring-primary" : "ring-border"
       }`}
     >
-      {icon}
-      <span className="mt-1 text-sm font-extrabold">{title}</span>
-      <span className="text-[11px] font-semibold text-muted-foreground">{subtitle}</span>
+      <span className="flex size-14 items-center justify-center rounded-full bg-primary-soft">
+        {icon}
+      </span>
+      <span className="mt-3 text-base font-extrabold">{title}</span>
+      <span className="mt-1 text-[11px] font-semibold leading-relaxed text-muted-foreground">
+        {subtitle}
+      </span>
       <button
         type="button"
         onClick={onClick}
-        className="mt-2 min-h-9 w-full rounded-lg bg-primary py-2 text-sm font-extrabold text-primary-foreground active:scale-95"
+        className="mt-auto min-h-10 w-full rounded-xl bg-primary py-2 text-base font-extrabold text-primary-foreground shadow-soft active:scale-95"
       >
         دخول
       </button>
     </div>
   );
+
 }
