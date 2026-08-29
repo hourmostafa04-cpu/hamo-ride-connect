@@ -38,6 +38,7 @@ import kontiriImg from "@/assets/trucks/kontiri.png";
 import camionImg from "@/assets/trucks/camion.png";
 import remorqueImg from "@/assets/trucks/remorque.png";
 import benneImg from "@/assets/trucks/benne.png";
+import skylineImg from "@/assets/mol-skyline.png";
 
 /** Same vehicle artwork used in the shipper request form. */
 const TRUCK_IMAGES: Record<string, string> = {
@@ -487,10 +488,32 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
   if (step === "role") {
     return (
       <PhoneFrame>
-        <div className="mol-brand flex min-h-screen flex-1 flex-col bg-background">
-          <div className="gradient-primary px-6 pb-12 pt-14 text-primary-foreground">
+        <div className="mol-brand relative flex min-h-screen flex-1 flex-col overflow-hidden bg-[oklch(0.985_0.03_88)]">
+          {/* خلفية كريمية/ذهبية + زخرفة مغربية */}
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              backgroundImage:
+                "radial-gradient(120% 60% at 50% 0%, oklch(0.97 0.08 88) 0%, oklch(0.995 0.012 90) 70%)",
+            }}
+          />
+          <img
+            src={skylineImg}
+            alt=""
+            aria-hidden
+            width={1536}
+            height={512}
+            className="pointer-events-none absolute inset-x-0 top-28 w-full opacity-25"
+          />
+
+          <div className="relative flex flex-1 flex-col px-5 pb-28 pt-6">
             <div className="flex items-start justify-between gap-3">
-              <p className="text-xs font-extrabold tracking-[0.35em]">MOL TRANSPORT</p>
+              <p className="text-lg font-extrabold leading-none tracking-[0.12em] text-foreground">
+                MOL
+                <span className="mt-0.5 block text-[9px] font-bold tracking-[0.3em] text-muted-foreground">
+                  TRANSPORT
+                </span>
+              </p>
               {/* «إغلاق التطبيق»: يغلق الواجهة فقط — لا يمسح الجلسة ولا يسجل خروجاً. */}
               <button
                 type="button"
@@ -501,53 +524,67 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
                   }, 300);
                 }}
                 aria-label="إغلاق التطبيق"
-                className="flex min-h-11 shrink-0 items-center gap-2 rounded-full bg-primary-foreground/20 px-4 py-2 text-sm font-extrabold text-primary-foreground ring-1 ring-primary-foreground/30 transition-colors hover:bg-primary-foreground/30 active:scale-95"
+                className="flex min-h-9 shrink-0 items-center gap-1.5 rounded-full bg-card/80 px-3 py-1.5 text-[11px] font-bold text-muted-foreground ring-1 ring-border transition-colors hover:bg-card active:scale-95"
               >
-                <X className="size-5" />
+                <X className="size-4" />
                 إغلاق التطبيق
               </button>
             </div>
-            <h1 className="mt-3 text-4xl font-extrabold leading-tight">مول طرانسبور</h1>
-            <p className="mt-2 text-sm font-semibold opacity-90">
-              نقل البضائع فالمغرب — بسيط وسريع.
+
+            <h1 className="mt-6 text-2xl font-extrabold leading-snug text-foreground">
+              مرحباً بك في مول ترانسبور
+            </h1>
+            <p className="mt-1 text-sm font-semibold text-muted-foreground">
+              نقل البضائع بسهولة وأمان
             </p>
-          </div>
-          {/* هامش سفلي إضافي حتى لا يغطي زر التمرير العائم منطقة الدخول التجريبي. */}
-          <div className="-mt-6 flex-1 space-y-4 rounded-t-3xl bg-background px-5 pb-28 pt-8">
-            <p className="text-base font-extrabold">شكون نتا؟</p>
-            <button
-              onClick={() => {
-                setRole("shipper");
-                setStep("phone");
-              }}
-              className="flex min-h-24 w-full items-center gap-4 rounded-3xl border-2 border-primary bg-primary px-5 py-5 text-right text-primary-foreground shadow-soft active:scale-[0.99]"
-            >
-              <Package className="size-10 shrink-0" />
-              <span>
-                <span className="block text-xl font-extrabold">صاحب بضاعة</span>
-                <span className="block text-sm font-semibold opacity-90">
-                  عندي بضاعة وباغي شاحنة
-                </span>
-              </span>
-            </button>
-            <button
-              onClick={() => {
-                setRole("driver");
-                setStep("phone");
-              }}
-              className="flex min-h-24 w-full items-center gap-4 rounded-3xl border-2 border-primary bg-primary-soft px-5 py-5 text-right text-accent-foreground active:scale-[0.99]"
-            >
-              <Truck className="size-10 shrink-0" />
-              <span>
-                <span className="block text-xl font-extrabold">صاحب شاحنة</span>
-                <span className="block text-sm font-semibold opacity-80">
-                  عندي شاحنة وكنقلب على الشحنات
-                </span>
-              </span>
-            </button>
+
+            {/* صف الشاحنات من الصغيرة إلى الكبيرة */}
+            <div className="mt-5 flex items-end justify-between gap-1">
+              {[
+                { src: triporteurImg, h: "h-9" },
+                { src: hondaImg, h: "h-11" },
+                { src: pickupImg, h: "h-12" },
+                { src: staffitImg, h: "h-14" },
+                { src: camionImg, h: "h-16" },
+              ].map((t, i) => (
+                <img
+                  key={i}
+                  src={t.src}
+                  alt=""
+                  aria-hidden
+                  className={`${t.h} w-auto flex-1 object-contain`}
+                />
+              ))}
+            </div>
+
+            {/* Card: اختر نوع الحساب */}
+            <div className="mt-6 rounded-3xl bg-card/90 p-4 shadow-soft ring-1 ring-border backdrop-blur">
+              <p className="text-center text-base font-extrabold">اختر نوع الحساب</p>
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <AccountCard
+                  icon={<Truck className="size-8 text-primary" />}
+                  title="صاحب بشاحنة"
+                  subtitle="أبحث عن حمولة"
+                  highlight
+                  onClick={() => {
+                    setRole("driver");
+                    setStep("phone");
+                  }}
+                />
+                <AccountCard
+                  icon={<Package className="size-8 text-primary" />}
+                  title="صاحب بضاعة"
+                  subtitle="أبحث عن شاحنة"
+                  onClick={() => {
+                    setRole("shipper");
+                    setStep("phone");
+                  }}
+                />
+              </div>
+            </div>
 
             {DEMO_LOGIN_ENABLED && (
-              <div className="rounded-2xl border-2 border-dashed border-primary/50 bg-primary-soft/50 p-3">
+              <div className="mt-5 rounded-2xl border-2 border-dashed border-primary/40 bg-primary-soft/50 p-3">
                 <p className="text-center text-xs font-bold text-accent-foreground">
                   دخول تجريبي (وضع التطوير) — {DEMO_PHONE}
                 </p>
@@ -572,6 +609,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
       </PhoneFrame>
     );
   }
+
 
   return (
     <PhoneFrame>
@@ -1205,5 +1243,39 @@ function FieldMic({
         <Mic className="relative size-5" />
       )}
     </button>
+  );
+}
+
+/** بطاقة نوع الحساب في الصفحة الرئيسية (شكل فقط). */
+function AccountCard({
+  icon,
+  title,
+  subtitle,
+  highlight = false,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  subtitle: string;
+  highlight?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <div
+      className={`flex flex-col items-center gap-1 rounded-2xl border-2 bg-card px-3 py-4 text-center ${
+        highlight ? "border-primary shadow-soft" : "border-border"
+      }`}
+    >
+      {icon}
+      <span className="mt-1 text-sm font-extrabold">{title}</span>
+      <span className="text-[11px] font-semibold text-muted-foreground">{subtitle}</span>
+      <button
+        type="button"
+        onClick={onClick}
+        className="mt-2 min-h-9 w-full rounded-lg bg-primary py-2 text-sm font-extrabold text-primary-foreground active:scale-95"
+      >
+        دخول
+      </button>
+    </div>
   );
 }
