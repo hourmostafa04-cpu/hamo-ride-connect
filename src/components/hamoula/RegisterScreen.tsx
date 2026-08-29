@@ -597,24 +597,21 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
 
 
             {DEMO_LOGIN_ENABLED && (
-              <div className="mt-5 rounded-2xl border-2 border-dashed border-primary/40 bg-primary-soft/50 p-3">
-                <p className="text-center text-xs font-bold text-accent-foreground">
-                  دخول تجريبي (وضع التطوير) — {DEMO_PHONE}
-                </p>
-                <div className="mt-2 grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => void demoSignIn("shipper")}
-                    className="min-h-12 rounded-xl bg-primary py-3 text-sm font-extrabold text-primary-foreground"
-                  >
-                    دخول تجريبي · بضاعة
-                  </button>
-                  <button
-                    onClick={() => void demoSignIn("driver")}
-                    className="min-h-12 rounded-xl bg-primary py-3 text-sm font-extrabold text-primary-foreground"
-                  >
-                    دخول تجريبي · شاحنة
-                  </button>
-                </div>
+              /* دخول تجريبي — وضع التطوير فقط، بشكل غير بارز في الواجهة الرئيسية */
+              <div className="mt-auto flex items-center justify-center gap-3 pt-4 opacity-70">
+                <button
+                  onClick={() => void demoSignIn("shipper")}
+                  className="text-[11px] font-semibold text-muted-foreground underline underline-offset-4"
+                >
+                  دخول تجريبي · بضاعة
+                </button>
+                <span className="size-1 rounded-full bg-border" />
+                <button
+                  onClick={() => void demoSignIn("driver")}
+                  className="text-[11px] font-semibold text-muted-foreground underline underline-offset-4"
+                >
+                  دخول تجريبي · شاحنة
+                </button>
               </div>
             )}
           </div>
