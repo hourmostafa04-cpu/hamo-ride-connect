@@ -694,85 +694,9 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
 
         {step === "phone" && (
         <>
-        <label className="block text-sm font-bold">الاسم</label>
-        <div
-          className={`mt-2 flex items-center gap-3 rounded-2xl border-2 bg-card px-4 py-3 ${
-            listening === "firstName" ? "border-primary" : "border-border"
-          }`}
-        >
-          <User className="size-6 text-primary" />
-          <input
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-            maxLength={30}
-            placeholder="مثال: سعيد"
-            className="w-full bg-transparent text-base font-bold outline-none placeholder:font-normal placeholder:text-muted-foreground"
-          />
-          <FieldMic
-            active={listening === "firstName"}
-            busy={listening === "firstName" && processing}
-            settling={listening === "firstName" && silenceSoon}
-            onClick={() => (listening === "firstName" ? stopVoice() : startVoice("firstName"))}
-            label="قول الاسم ديالك"
-          />
-        </div>
-        {listening === "firstName" && (
-          <div
-            className={`mt-2 flex items-center gap-3 transition-opacity duration-300 ${silenceSoon ? "opacity-50" : ""}`}
-          >
-            <Waveform active />
-            <span className="text-xs font-bold text-primary">
-              {processing
-                ? "كنحللو الصوت بالذكاء الاصطناعي…"
-                : silenceSoon
-                  ? "سالينا؟ غانعمروها…"
-                  : FIELD_PROMPT.firstName}
-            </span>
-          </div>
-        )}
-        {listening === "firstName" && heard && (
-          <p className="mt-1 text-sm font-semibold text-muted-foreground">«{heard}»</p>
-        )}
-        <label className="mt-4 block text-sm font-bold">النسب</label>
-        <div
-          className={`mt-2 flex items-center gap-3 rounded-2xl border-2 bg-card px-4 py-3 ${
-            listening === "lastName" ? "border-primary" : "border-border"
-          }`}
-        >
-          <User className="size-6 text-primary" />
-          <input
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
-            maxLength={30}
-            placeholder="مثال: المرابط"
-            className="w-full bg-transparent text-base font-bold outline-none placeholder:font-normal placeholder:text-muted-foreground"
-          />
-          <FieldMic
-            active={listening === "lastName"}
-            busy={listening === "lastName" && processing}
-            settling={listening === "lastName" && silenceSoon}
-            onClick={() => (listening === "lastName" ? stopVoice() : startVoice("lastName"))}
-            label="قول النسب ديالك"
-          />
-        </div>
-        {listening === "lastName" && (
-          <div
-            className={`mt-2 flex items-center gap-3 transition-opacity duration-300 ${silenceSoon ? "opacity-50" : ""}`}
-          >
-            <Waveform active />
-            <span className="text-xs font-bold text-primary">
-              {processing
-                ? "كنحللو الصوت بالذكاء الاصطناعي…"
-                : silenceSoon
-                  ? "سالينا؟ غانعمروها…"
-                  : FIELD_PROMPT.lastName}
-            </span>
-          </div>
-        )}
-        {listening === "lastName" && heard && (
-          <p className="mt-1 text-sm font-semibold text-muted-foreground">«{heard}»</p>
-        )}
-        <label className="mt-4 block text-sm font-bold">رقم الهاتف المغربي</label>
+        {/* دخول/تسجيل موحد: رقم الهاتف فقط — إلا كان الحساب موجود كيدخل نيشان،
+            وإلا ما كانش كيكمل التسجيل من نفس المسار بعد تأكيد الكود. */}
+        <label className="block text-sm font-bold">رقم الهاتف المغربي</label>
 
         <div
           className={`mt-2 flex items-center gap-3 rounded-2xl border-2 bg-card px-4 py-3 ${
@@ -825,21 +749,6 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
         <p className="mt-1 text-xs text-muted-foreground">
           كنقبلو 06 / 07 ولا 212+ — الميكرو كيتحبس بوحدو من بعد 2 ثواني باش تحبسو
         </p>
-        {role === "driver" && (
-          <>
-            <label className="mt-4 block text-sm font-bold">رقم الشاحنة / رقم اللوحة</label>
-            <div className="mt-2 flex items-center gap-3 rounded-2xl border-2 border-border bg-card px-4 py-3">
-              <Truck className="size-6 text-primary" />
-              <input
-                value={plate}
-                onChange={(e) => setPlate(e.target.value)}
-                maxLength={24}
-                placeholder="مثال: 12345 - أ - 20"
-                className="w-full bg-transparent text-base font-bold outline-none placeholder:font-normal placeholder:text-muted-foreground"
-              />
-            </div>
-          </>
-        )}
         </>
 
         )}
