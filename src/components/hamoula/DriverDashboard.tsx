@@ -62,7 +62,6 @@ export function DriverDashboard() {
     account,
     updateAccount,
   } = useHamoula();
-  const homePath = useHomePath();
   const navigate = useNavigate();
   const [filter, setFilter] = useState<string>("all");
   const [refreshing, setRefreshing] = useState(false);
