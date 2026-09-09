@@ -377,9 +377,30 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
         className="flex-1 space-y-6 px-5 py-6"
         onSubmit={async (e) => {
           e.preventDefault();
+          // تحقق قبل الإرسال: ما كنسجلوش طلب ناقص ولا بثمن 0.
+          const finalPrice = Number(price) || 0;
+          const missing: string[] = [];
+          if (!pickup.trim()) missing.push("نقطة الانطلاق");
+          if (!destination.trim()) missing.push("الوجهة");
+          if (!cargo.trim()) missing.push("نوع السلعة");
+          if (!truck) missing.push("نوع الشاحنة");
+          if (!hasRoute) missing.push("نقطتين مختلفتين على الخريطة");
+          if (missing.length) {
+            toast.error("معلومات ناقصة", {
+              description: `كمّل: ${missing.join("، ")}`,
+            });
+            return;
+          }
+          if (finalPrice <= 0) {
+            toast.error("الثمن غير صالح", {
+              description: "اختر نوع الشاحنة والنقط باش يتحسب الثمن، ولا كتبو بيدك.",
+            });
+            return;
+          }
           // Block autosave before publish resets the store, otherwise this render can
           // write the previously selected truck back into the fresh draft.
           resettingFormRef.current = true;
+
           try {
             await publishLoad({
               pickup,
