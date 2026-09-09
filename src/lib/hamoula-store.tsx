@@ -645,6 +645,8 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
       currentRequest.pickup || currentRequest.destination || currentRequest.cargo,
     );
     const t = setTimeout(() => {
+      // Never re-save a draft while/after a publish is being finalized.
+      if (publishingRef.current) return;
       if (hasContent) void saveDraft(accountPhone, currentRequest);
       else void clearDraft(accountPhone);
     }, 700);
@@ -692,6 +694,7 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
       if (sessionState !== "authenticated") {
         throw new Error("الجلسة غير متاحة حالياً. تحقق من الاتصال ثم أعد المحاولة.");
       }
+      publishingRef.current = true;
       const id = `L-${Date.now()}`;
       // Build the new load explicitly, outside any React state update.
       const base = boardRef.current.request;
