@@ -4,9 +4,10 @@ import { RegisterScreen } from "@/components/hamoula/RegisterScreen";
 import { useHamoula } from "@/lib/hamoula-store";
 
 /** Routes only a driver account may open. */
-const driverOnly = ["/driver", "/loads", "/my-bids"];
+const driverOnly = ["/driver", "/loads", "/my-bids", "/my-trips"];
 /** Routes only a shipper account may open (the cargo request flow). */
-const shipperOnly = ["/", "/request", "/offers"];
+const shipperOnly = ["/", "/request", "/offers", "/my-requests"];
+
 
 export const driverHome = "/driver";
 export const shipperHome = "/";

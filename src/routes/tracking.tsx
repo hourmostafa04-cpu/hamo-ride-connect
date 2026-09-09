@@ -52,9 +52,19 @@ function nowTime() {
 
 function TrackingPage() {
   const navigate = useNavigate();
-  const { profile, request, updateRequest, tripLive, setTripLive } = useHamoula();
+  const { profile, request, updateRequest, tripLive, setTripLive, activeLoad } = useHamoula();
   const homePath = useHomePath();
   const driver = request.acceptedOffer;
+  // أسماء الطرفين كتجي دائماً من الطلب/العرض الحقيقي — لا بيانات تجريبية.
+  const counterpartName =
+    profile.role === "driver"
+      ? activeLoad?.shipper?.trim() || "صاحب البضاعة"
+      : driver?.driver?.trim() || "صاحب الشاحنة";
+  const counterpartSub =
+    profile.role === "driver"
+      ? "صاحب البضاعة"
+      : [driver?.truck, driver?.plate].filter(Boolean).join(" · ") || "شاحنة";
+
   // Status lives in the store so the trip keeps advancing from any screen.
   const current = Math.max(0, statusByStep.indexOf(request.status));
   const live = tripLive;
@@ -152,21 +162,16 @@ function TrackingPage() {
               <Truck className="size-6" />
             </span>
             <div className="flex-1">
-              <h2 className="font-bold">
-                {profile.role === "driver" ? "سعيد المرابط" : (driver?.driver ?? "يوسف العلمي")}
-              </h2>
-              <p className="text-xs text-muted-foreground">
-                {profile.role === "driver"
-                  ? "صاحب البضاعة"
-                  : `${driver?.truck ?? "شاحنة متوسطة"} · ${driver?.plate ?? "12345 - أ - 20"}`}
-              </p>
+              <h2 className="font-bold">{counterpartName}</h2>
+              <p className="text-xs text-muted-foreground">{counterpartSub}</p>
             </div>
           </div>
           <div className="mt-3 border-t-2 border-dashed border-border pt-3">
             <ContactActions
-              seed={driver?.id ?? "hamoula-driver"}
-              name={profile.role === "driver" ? "مول السلعة" : (driver?.driver ?? "السائق")}
+              seed={driver?.id ?? request.loadId ?? "hamoula-trip"}
+              name={counterpartName}
             />
+
           </div>
         </section>
 

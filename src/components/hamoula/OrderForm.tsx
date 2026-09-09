@@ -86,12 +86,15 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
 
   const [pickupPoint, setPickupPoint] = useState<LatLng>(initial.pickupPoint);
   const [destinationPoint, setDestinationPoint] = useState<LatLng>(initial.destinationPoint);
-  const bothPicked = Boolean(pickup.trim() && destination.trim());
+  
   const roadKm = Math.round(roadDistanceKm(pickupPoint, destinationPoint));
+  /** الثمن كيعتمد على الإحداثيات ماشي على كتابة اسم المدينة. */
+  const hasRoute = roadKm > 0;
   // التقدير يعتمد على طوناج الشاحنة المختارة (مثال: كونتير = 8 طن) إلا إذا حدّد المستخدم حمولة أدق.
   // When no truck is selected yet, keep the estimate empty so the user picks a vehicle first.
   const cargoKg = capacityKg(capacity) ?? (truck ? truckMaxKg(truck) : 0);
-  const estimated = truck ? estimatePrice(roadKm, truck, cargoKg) : null;
+  const estimated = truck && hasRoute ? estimatePrice(roadKm, truck, cargoKg) : null;
+
 
   /**
    * The stored draft is read from localStorage after the first render, so the
@@ -118,11 +121,12 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
   }, [ready, request]);
 
   // Auto-estimate follows distance + truck tier, but never overrides a locked price.
-  // No estimate is shown until the user selects a truck.
+  // No estimate is shown until the user selects a truck (city names are NOT required).
   useEffect(() => {
     if (priceLocked) return;
-    setPrice(bothPicked && estimated != null ? String(estimated) : "");
-  }, [estimated, priceLocked, bothPicked]);
+    setPrice(estimated != null ? String(estimated) : "");
+  }, [estimated, priceLocked]);
+
 
 
   /** Fresh empty request: clears the form, the map route and the stored draft. */
@@ -373,9 +377,30 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
         className="flex-1 space-y-6 px-5 py-6"
         onSubmit={async (e) => {
           e.preventDefault();
+          // تحقق قبل الإرسال: ما كنسجلوش طلب ناقص ولا بثمن 0.
+          const finalPrice = Number(price) || 0;
+          const missing: string[] = [];
+          if (!pickup.trim()) missing.push("نقطة الانطلاق");
+          if (!destination.trim()) missing.push("الوجهة");
+          if (!cargo.trim()) missing.push("نوع السلعة");
+          if (!truck) missing.push("نوع الشاحنة");
+          if (!hasRoute) missing.push("نقطتين مختلفتين على الخريطة");
+          if (missing.length) {
+            toast.error("معلومات ناقصة", {
+              description: `كمّل: ${missing.join("، ")}`,
+            });
+            return;
+          }
+          if (finalPrice <= 0) {
+            toast.error("الثمن غير صالح", {
+              description: "اختر نوع الشاحنة والنقط باش يتحسب الثمن، ولا كتبو بيدك.",
+            });
+            return;
+          }
           // Block autosave before publish resets the store, otherwise this render can
           // write the previously selected truck back into the fresh draft.
           resettingFormRef.current = true;
+
           try {
             await publishLoad({
               pickup,
@@ -441,7 +466,7 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
               />
             </Suspense>
           </ClientOnly>
-          {bothPicked && (
+          {hasRoute && (
             <div className="mt-2 flex items-center justify-between rounded-2xl border-2 border-border bg-secondary px-3 py-2 text-xs font-bold">
               <span className="text-primary">المسافة التقريبية: {roadKm} كلم</span>
               <span className="text-foreground">مدة الطريق: {travelTimeLabel(roadKm)}</span>

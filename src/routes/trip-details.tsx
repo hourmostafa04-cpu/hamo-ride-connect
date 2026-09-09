@@ -53,8 +53,18 @@ function nowTime() {
 }
 
 function TripDetailsPage() {
-  const { profile, request, tripLive, setTripLive } = useHamoula();
+  const { profile, request, tripLive, setTripLive, activeLoad } = useHamoula();
   const driver = request.acceptedOffer;
+  // أسماء الطرفين من الطلب/العرض الحقيقي فقط — بلا بيانات تجريبية.
+  const counterpartName =
+    profile.role === "driver"
+      ? activeLoad?.shipper?.trim() || "صاحب البضاعة"
+      : driver?.driver?.trim() || "صاحب الشاحنة";
+  const counterpartSub =
+    profile.role === "driver"
+      ? "صاحب البضاعة"
+      : [driver?.truck, driver?.plate].filter(Boolean).join(" · ") || "شاحنة";
+
   // Status comes from the global trip engine so it stays in sync everywhere.
   const step = Math.max(0, statusByStep.indexOf(request.status));
   const live = tripLive;
@@ -138,21 +148,16 @@ function TripDetailsPage() {
                 <Truck className="size-5" />
               </span>
               <div>
-                <p className="font-extrabold">
-                  {profile.role === "driver" ? "سعيد المرابط" : (driver?.driver ?? "يوسف العلمي")}
-                </p>
-                <p className="text-xs font-semibold text-muted-foreground">
-                  {profile.role === "driver"
-                    ? "صاحب البضاعة"
-                    : `${driver?.truck ?? "شاحنة متوسطة"} · ${driver?.plate ?? "12345 - أ - 20"}`}
-                </p>
+                <p className="font-extrabold">{counterpartName}</p>
+                <p className="text-xs font-semibold text-muted-foreground">{counterpartSub}</p>
               </div>
             </div>
             <ContactActions
-              seed={driver?.id ?? "hamoula-driver"}
-              name={profile.role === "driver" ? "مول السلعة" : (driver?.driver ?? "السائق")}
+              seed={driver?.id ?? request.loadId ?? "hamoula-trip"}
+              name={counterpartName}
               {...(request.loadId ? { chatLoadId: request.loadId } : {})}
             />
+
           </div>
         </section>
 

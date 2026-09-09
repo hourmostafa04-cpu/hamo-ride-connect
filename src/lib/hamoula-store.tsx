@@ -607,7 +607,8 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!ready) return;
+    // ما كنجلبوش الطلبات/العروض قبل ما تتأكد الجلسة — كانت كتعطي 401 عند أول دخول.
+    if (!ready || sessionState !== "authenticated") return;
     void refreshFromDb();
     const channel = supabase
       .channel("hamoula-board")
@@ -621,7 +622,8 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [ready, refreshFromDb]);
+  }, [ready, sessionState, refreshFromDb]);
+
 
   // ---- Unfinished request draft (survives closing the app) -----------------
   const [pendingDraft, setPendingDraft] = useState<Partial<TripRequest> | null>(null);
