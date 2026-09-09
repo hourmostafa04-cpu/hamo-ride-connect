@@ -86,7 +86,7 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
 
   const [pickupPoint, setPickupPoint] = useState<LatLng>(initial.pickupPoint);
   const [destinationPoint, setDestinationPoint] = useState<LatLng>(initial.destinationPoint);
-  const bothPicked = Boolean(pickup.trim() && destination.trim());
+  
   const roadKm = Math.round(roadDistanceKm(pickupPoint, destinationPoint));
   /** الثمن كيعتمد على الإحداثيات ماشي على كتابة اسم المدينة. */
   const hasRoute = roadKm > 0;
@@ -466,7 +466,7 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
               />
             </Suspense>
           </ClientOnly>
-          {bothPicked && (
+          {hasRoute && (
             <div className="mt-2 flex items-center justify-between rounded-2xl border-2 border-border bg-secondary px-3 py-2 text-xs font-bold">
               <span className="text-primary">المسافة التقريبية: {roadKm} كلم</span>
               <span className="text-foreground">مدة الطريق: {travelTimeLabel(roadKm)}</span>
