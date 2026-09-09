@@ -1,4 +1,6 @@
-/* مول طرانسبور — service worker للإشعارات فقط (بلا كاش باش ما نبدلوش سلوك التطبيق). */
+/* مول طرانسبور — service worker للإشعارات فقط (بلا كاش باش ما نبدلوش سلوك التطبيق).
+   SW_VERSION: 2026-09-09-truck-form-gps — تحديث الإصدار باش التطبيق المثبت يجلب آخر نسخة. */
+self.__MOL_SW_VERSION = "2026-09-09-truck-form-gps";
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
 
