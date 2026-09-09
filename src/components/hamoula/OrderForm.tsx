@@ -517,7 +517,9 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
           <p className="mt-2 text-xs text-muted-foreground">
             {priceLocked
               ? "هادا هو الثمن ديالك — ما غنبدلوهش."
-              : `ثمن تقديري فقط وقابل للتفاوض — محسوب حسب المسافة (${roadKm} كلم) والشاحنة (${suggested.label} — ${suggested.hint}).`}
+              : suggested
+                ? `ثمن تقديري فقط وقابل للتفاوض — محسوب حسب المسافة (${roadKm} كلم) والشاحنة (${suggested.label} — ${suggested.hint}).`
+                : "ثمن تقديري فقط وقابل للتفاوض — اختر نوع الشاحنة باش يبان الثمن."}
           </p>
           <p className="mt-1 text-[11px] font-bold text-primary">
             ⚠️ الثمن تقديري فقط وقابل للتفاوض مع صاحب الشاحنة.
