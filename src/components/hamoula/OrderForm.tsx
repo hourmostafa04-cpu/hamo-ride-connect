@@ -372,6 +372,9 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
         className="flex-1 space-y-6 px-5 py-6"
         onSubmit={async (e) => {
           e.preventDefault();
+          // Block autosave before publish resets the store, otherwise this render can
+          // write the previously selected truck back into the fresh draft.
+          resettingFormRef.current = true;
           try {
             await publishLoad({
               pickup,
@@ -384,6 +387,7 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
               price: Number(price) || 0,
             });
           } catch (err) {
+            resettingFormRef.current = false;
             console.error("[hamoula] إرسال الطلب فشل", err);
             toast.error("ما تسجلش الطلب", {
               description: "وقع مشكل فالحفظ. عاود المحاولة من فضلك.",
