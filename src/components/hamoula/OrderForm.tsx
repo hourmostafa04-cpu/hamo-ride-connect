@@ -86,7 +86,8 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
   const [destinationPoint, setDestinationPoint] = useState<LatLng>(initial.destinationPoint);
   const bothPicked = Boolean(pickup.trim() && destination.trim());
   const roadKm = Math.round(roadDistanceKm(pickupPoint, destinationPoint));
-  const cargoKg = capacityKg(capacity);
+  // التقدير يعتمد على طوناج الشاحنة المختارة (مثال: كونتير = 8 طن) إلا إذا حدّد المستخدم حمولة أدق.
+  const cargoKg = capacityKg(capacity) ?? truckMaxKg(truck);
   const estimated = estimatePrice(roadKm, truck, cargoKg);
 
   /**

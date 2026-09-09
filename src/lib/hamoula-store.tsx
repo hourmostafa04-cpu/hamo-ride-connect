@@ -729,12 +729,20 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
         await saveLoad(created);
       } catch (err) {
         console.error("[hamoula] publishLoad: حفظ الطلب فشل، ما غاديش يتنشر", err);
+        publishingRef.current = false;
         throw err;
       }
-      setBoard((b) => ({ request: req, loads: [created, ...b.loads], bids: b.bids }));
+      // The published request never lingers in the form state: start from a
+      // brand-new empty request so reopening the page shows empty fields.
+      setBoard((b) => ({
+        request: { ...defaultRequest, updatedAt: Date.now() },
+        loads: [created, ...b.loads],
+        bids: b.bids,
+      }));
       void notifyEvent("new-load");
       if (accountPhone) void clearDraft(accountPhone);
       setPendingDraft(null);
+      publishingRef.current = false;
       return created;
     },
     [account, accountPhone, sessionState],
