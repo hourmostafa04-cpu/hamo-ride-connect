@@ -140,6 +140,7 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
     setPickupPoint(empty.pickupPoint);
     setDestinationPoint(empty.destinationPoint);
     updateRequest(resetRequestPatch());
+    discardDraft();
   };
 
   /**
@@ -397,7 +398,6 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
           playSfx("success");
           // Clear the on-screen draft AND the stored one so the next request starts empty.
           resetForm();
-          discardDraft();
 
           toast.success("تم إرسال الطلب", { description: "كنقلبو على شاحنات قريبة منك" });
           navigate({ to: "/offers" });
