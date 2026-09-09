@@ -143,9 +143,10 @@ const defaultRequest: TripRequest = {
   cargo: "",
   pickupPoint: defaultPickup,
   destinationPoint: defaultDestination,
-  truck: "medium",
+  // No default truck: the shipper must choose one of the 8 vehicle cards.
+  truck: "",
   capacity: "",
-  price: 1200,
+  price: 0,
   status: "draft",
   acceptedOffer: null,
   voiceNote: null,
