@@ -87,8 +87,9 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
   const bothPicked = Boolean(pickup.trim() && destination.trim());
   const roadKm = Math.round(roadDistanceKm(pickupPoint, destinationPoint));
   // التقدير يعتمد على طوناج الشاحنة المختارة (مثال: كونتير = 8 طن) إلا إذا حدّد المستخدم حمولة أدق.
-  const cargoKg = capacityKg(capacity) ?? truckMaxKg(truck);
-  const estimated = estimatePrice(roadKm, truck, cargoKg);
+  // When no truck is selected yet, keep the estimate empty so the user picks a vehicle first.
+  const cargoKg = capacityKg(capacity) ?? (truck ? truckMaxKg(truck) : 0);
+  const estimated = truck ? estimatePrice(roadKm, truck, cargoKg) : null;
 
   /**
    * The stored draft is read from localStorage after the first render, so the
