@@ -4,7 +4,32 @@ import { toast } from "sonner";
 import { Bell, LogOut, Package, Pencil, Phone, Power, Truck, User } from "lucide-react";
 import { PhoneFrame, AppHeader, StickyActions } from "@/components/hamoula/PhoneFrame";
 import { useHamoula, type RoleId } from "@/lib/hamoula-store";
-import { capacityOptions, driverTruckKinds } from "@/lib/hamoula-data";
+import { capacityOptions, capacityKg, driverTruckKinds, truckTypes } from "@/lib/hamoula-data";
+import triporteurImg from "@/assets/trucks/triporteur.png";
+import hondaImg from "@/assets/trucks/honda.png";
+import pickupImg from "@/assets/trucks/pickup.png";
+import staffitImg from "@/assets/trucks/staffit.png";
+import kontiriImg from "@/assets/trucks/kontiri.png";
+import camionImg from "@/assets/trucks/camion.png";
+import remorqueImg from "@/assets/trucks/remorque.png";
+import benneImg from "@/assets/trucks/benne.png";
+
+/** نفس صور الشاحنات المستعملة فطلب صاحب البضاعة. */
+const TRUCK_IMAGES: Record<string, string> = {
+  triporteur: triporteurImg,
+  honda: hondaImg,
+  pickup: pickupImg,
+  staffit: staffitImg,
+  kontiri: kontiriImg,
+  camion: camionImg,
+  remorque: remorqueImg,
+  benne: benneImg,
+};
+
+/** أقرب سعة (نفس لائحة السعات) للحمولة القصوى ديال الشاحنة. */
+const tonsChipForKg = (maxKg: number) =>
+  capacityOptions.find((c) => (capacityKg(c) ?? 0) >= maxKg) ??
+  capacityOptions[capacityOptions.length - 1]!;
 
 export const Route = createFileRoute("/account")({
   head: () => ({
@@ -122,34 +147,43 @@ function AccountPage() {
             {role === "driver" && (
               <div className="space-y-3">
                 <p className="text-sm font-bold">الشاحنة ديالك</p>
-                <div className="flex flex-wrap gap-2">
-                  {capacityOptions.map((t) => (
-                    <button
-                      key={t}
-                      onClick={() => setTons(t)}
-                      className={`min-h-12 rounded-2xl border-2 text-sm font-bold ${
-                        tons === t ? "border-primary bg-primary text-primary-foreground" : "border-border"
-                      }`}
-                    >
-                      {t}
-                    </button>
-                  ))}
-                </div>
-                <div className="space-y-2">
-                  {driverTruckKinds.map((k) => (
-                    <button
-                      key={k}
-                      onClick={() => setKind(k)}
-                      className={`min-h-12 w-full rounded-2xl border-2 text-sm font-bold ${
-                        kind === k ? "border-primary bg-primary text-primary-foreground" : "border-border"
-                      }`}
-                    >
-                      {k}
-                    </button>
-                  ))}
+                <div className="grid grid-cols-4 gap-2">
+                  {truckTypes.map((t) => {
+                    const active = kind === t.label;
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        aria-pressed={active}
+                        onClick={() => {
+                          setKind(t.label);
+                          setTons(tonsChipForKg(t.maxKg));
+                        }}
+                        className={`relative overflow-hidden rounded-2xl border-2 p-1.5 text-center transition active:scale-[0.97] ${
+                          active
+                            ? "border-primary bg-primary-soft shadow-soft ring-2 ring-primary/25"
+                            : "border-border bg-card"
+                        }`}
+                      >
+                        <img
+                          src={TRUCK_IMAGES[t.id]}
+                          alt={t.label}
+                          loading="lazy"
+                          className="mx-auto h-12 w-full object-contain"
+                        />
+                        <span className="mt-1 block text-[10px] font-extrabold leading-tight text-foreground">
+                          {t.label}
+                        </span>
+                        <span className="mt-0.5 block text-[9px] font-bold text-muted-foreground">
+                          {t.hint}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
+
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={save}

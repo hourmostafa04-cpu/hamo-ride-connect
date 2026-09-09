@@ -100,27 +100,51 @@ export default function CityField({
       return;
     }
     setLocating(true);
+    const onOk = async (pos: GeolocationPosition) => {
+      const point = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      let name = "";
+      try {
+        name = (await reverseGeocodePoint({ data: point })).label;
+      } catch {
+        name = "";
+      }
+      setLocating(false);
+      const finalName = name || nearestCityName(point);
+      onPick(finalName, point);
+      toast.success(`موقعك الحالي: ${finalName}`);
+    };
+    const onErr = (err: GeolocationPositionError) => {
+      setLocating(false);
+      if (err.code === err.PERMISSION_DENIED) {
+        toast.error("الإذن ديال الموقع مرفوض", {
+          description: "فعّل الموقع/Localisation لهاد الموقع من إعدادات الهاتف ثم عاود جرب.",
+        });
+        return;
+      }
+      if (err.code === err.TIMEOUT) {
+        toast.error("ما وصلناش للموقع فالوقت", { description: "خرج لبرا شوية ولا عاود جرب." });
+        return;
+      }
+      toast.error("ما قدرناش نجيبو موقعك دابا", { description: "تأكد أن GPS مفعّل وعاود جرب." });
+    };
+    // نطلبو موقع دقيق أولاً، وإلا كنعاودو بدقة عادية (بلا أي موقع تجريبي).
     navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const point = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        let name = "";
-        try {
-          name = (await reverseGeocodePoint({ data: point })).label;
-        } catch {
-          name = "";
+      onOk,
+      (err) => {
+        if (err.code === err.PERMISSION_DENIED) {
+          onErr(err);
+          return;
         }
-        setLocating(false);
-        const finalName = name || nearestCityName(point);
-        onPick(finalName, point);
-        toast.success(`موقعك الحالي: ${finalName}`);
+        navigator.geolocation.getCurrentPosition(onOk, onErr, {
+          enableHighAccuracy: false,
+          timeout: 20000,
+          maximumAge: 60000,
+        });
       },
-      () => {
-        setLocating(false);
-        toast.error("ما قدرناش نجيبو موقعك — فعّل الإذن ديال الموقع");
-      },
-      { enableHighAccuracy: true, timeout: 10000 },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 },
     );
   };
+
 
   // Place-name mic: the spoken text feeds the same autocomplete — no auto-guessing.
   const dictation = useAiDictation({

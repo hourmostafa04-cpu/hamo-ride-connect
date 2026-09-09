@@ -43,13 +43,7 @@ import { Mic, Loader2 } from "lucide-react";
 import { useAiDictation } from "@/hooks/use-ai-dictation";
 import { findTruck, truckTypes, capacityKg } from "@/lib/hamoula-data";
 import { useHamoula } from "@/lib/hamoula-store";
-import {
-  defaultDestination,
-  defaultPickup,
-  roadDistanceKm,
-  travelTimeLabel,
-  type LatLng,
-} from "@/lib/hamoula-geo";
+import { roadDistanceKm, travelTimeLabel, type LatLng } from "@/lib/hamoula-geo";
 import { estimatePrice } from "@/lib/hamoula-pricing";
 import {
   extractNegatedCities,
@@ -386,17 +380,10 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
             return;
           }
           playSfx("success");
-          // Clear the on-screen draft so the next request starts empty.
-          setPickup("");
-          setDestination("");
-          setCargo("");
-          setNotes("");
-          setCapacity("");
-          setTruck(emptyOrderForm().truck);
-                setPrice("");
-          setPriceLocked(false);
-          setPickupPoint(defaultPickup);
-          setDestinationPoint(defaultDestination);
+          // Clear the on-screen draft AND the stored one so the next request starts empty.
+          resetForm();
+          discardDraft();
+
           toast.success("تم إرسال الطلب", { description: "كنقلبو على شاحنات قريبة منك" });
           navigate({ to: "/offers" });
         }}
