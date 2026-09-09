@@ -81,6 +81,8 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
   const [price, setPrice] = useState(initial.price);
   /** True once the price came from voice or manual typing — estimates never override it. */
   const [priceLocked, setPriceLocked] = useState(false);
+  /** Blocks the previous render's autosave from restoring a truck while the form is resetting. */
+  const resettingFormRef = useRef(false);
 
   const [pickupPoint, setPickupPoint] = useState<LatLng>(initial.pickupPoint);
   const [destinationPoint, setDestinationPoint] = useState<LatLng>(initial.destinationPoint);
@@ -125,6 +127,7 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
 
   /** Fresh empty request: clears the form, the map route and the stored draft. */
   const resetForm = () => {
+    resettingFormRef.current = true;
     const empty = emptyOrderForm();
     setPickup(empty.pickup);
     setDestination(empty.destination);
@@ -137,6 +140,7 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
     setPickupPoint(empty.pickupPoint);
     setDestinationPoint(empty.destinationPoint);
     updateRequest(resetRequestPatch());
+    discardDraft();
   };
 
   /**
@@ -146,6 +150,11 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
   const requestStatus = request.status;
   useEffect(() => {
     if (requestStatus !== "draft") return;
+    if (resettingFormRef.current) {
+      const resetFinished = !pickup && !destination && !cargo && !capacity && !truck && !price;
+      if (resetFinished) resettingFormRef.current = false;
+      return;
+    }
     if (!pickup && !destination && !cargo) return;
     updateRequest({
       pickup,
@@ -364,6 +373,9 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
         className="flex-1 space-y-6 px-5 py-6"
         onSubmit={async (e) => {
           e.preventDefault();
+          // Block autosave before publish resets the store, otherwise this render can
+          // write the previously selected truck back into the fresh draft.
+          resettingFormRef.current = true;
           try {
             await publishLoad({
               pickup,
@@ -376,6 +388,7 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
               price: Number(price) || 0,
             });
           } catch (err) {
+            resettingFormRef.current = false;
             console.error("[hamoula] إرسال الطلب فشل", err);
             toast.error("ما تسجلش الطلب", {
               description: "وقع مشكل فالحفظ. عاود المحاولة من فضلك.",
@@ -385,7 +398,6 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
           playSfx("success");
           // Clear the on-screen draft AND the stored one so the next request starts empty.
           resetForm();
-          discardDraft();
 
           toast.success("تم إرسال الطلب", { description: "كنقلبو على شاحنات قريبة منك" });
           navigate({ to: "/offers" });

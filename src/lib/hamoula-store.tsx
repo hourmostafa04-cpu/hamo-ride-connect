@@ -625,12 +625,14 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
 
   // ---- Unfinished request draft (survives closing the app) -----------------
   const [pendingDraft, setPendingDraft] = useState<Partial<TripRequest> | null>(null);
+  const draftVersionRef = useRef(0);
 
   useEffect(() => {
     if (!ready || !accountPhone || account?.role !== "shipper") return;
     let stale = false;
+    const version = draftVersionRef.current;
     void fetchDraft(accountPhone).then((d) => {
-      if (stale || !d) return;
+      if (stale || version !== draftVersionRef.current || !d) return;
       if (d.pickup || d.destination || d.cargo) setPendingDraft(d);
     });
     return () => {
@@ -662,6 +664,7 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
   }, [pendingDraft, updateRequest]);
 
   const discardDraft = useCallback(() => {
+    draftVersionRef.current += 1;
     setPendingDraft(null);
     if (accountPhone) void clearDraft(accountPhone);
   }, [accountPhone]);
