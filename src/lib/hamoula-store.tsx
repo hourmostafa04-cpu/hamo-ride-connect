@@ -310,6 +310,8 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
   const hydrated = useRef(false);
   const boardRef = useRef(board);
   boardRef.current = board;
+  /** True while a publish is in flight — blocks the draft autosave race. */
+  const publishingRef = useRef(false);
 
   const requestLocation = useCallback(() => {
     if (typeof navigator === "undefined" || !navigator.geolocation) {
