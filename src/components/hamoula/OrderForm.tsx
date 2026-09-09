@@ -386,17 +386,10 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
             return;
           }
           playSfx("success");
-          // Clear the on-screen draft so the next request starts empty.
-          setPickup("");
-          setDestination("");
-          setCargo("");
-          setNotes("");
-          setCapacity("");
-          setTruck(emptyOrderForm().truck);
-                setPrice("");
-          setPriceLocked(false);
-          setPickupPoint(defaultPickup);
-          setDestinationPoint(defaultDestination);
+          // Clear the on-screen draft AND the stored one so the next request starts empty.
+          resetForm();
+          discardDraft();
+
           toast.success("تم إرسال الطلب", { description: "كنقلبو على شاحنات قريبة منك" });
           navigate({ to: "/offers" });
         }}

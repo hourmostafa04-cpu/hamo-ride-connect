@@ -949,14 +949,8 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
                 />
               </div>
             )}
-            <div>
-              <p className="text-sm font-bold">الوزن / الحمولة القصوى</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {tonOptions.map((t) => (
-                  <Chip key={t} active={tons === t} onClick={() => setTons(t)} label={t} />
-                ))}
-              </div>
-            </div>
+            {/* الحمولة القصوى كتجي مباشرة من نوع الشاحنة المختار (بلا أزرار طوناج). */}
+
             <div>
               <p className="text-sm font-bold">الموقع ديالك دابا (GPS)</p>
               <button
