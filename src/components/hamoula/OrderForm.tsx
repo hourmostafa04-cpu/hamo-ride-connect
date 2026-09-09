@@ -43,13 +43,7 @@ import { Mic, Loader2 } from "lucide-react";
 import { useAiDictation } from "@/hooks/use-ai-dictation";
 import { findTruck, truckTypes, capacityKg } from "@/lib/hamoula-data";
 import { useHamoula } from "@/lib/hamoula-store";
-import {
-  defaultDestination,
-  defaultPickup,
-  roadDistanceKm,
-  travelTimeLabel,
-  type LatLng,
-} from "@/lib/hamoula-geo";
+import { roadDistanceKm, travelTimeLabel, type LatLng } from "@/lib/hamoula-geo";
 import { estimatePrice } from "@/lib/hamoula-pricing";
 import {
   extractNegatedCities,
