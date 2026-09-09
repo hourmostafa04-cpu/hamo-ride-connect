@@ -87,8 +87,9 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
   const bothPicked = Boolean(pickup.trim() && destination.trim());
   const roadKm = Math.round(roadDistanceKm(pickupPoint, destinationPoint));
   // التقدير يعتمد على طوناج الشاحنة المختارة (مثال: كونتير = 8 طن) إلا إذا حدّد المستخدم حمولة أدق.
-  const cargoKg = capacityKg(capacity) ?? truckMaxKg(truck);
-  const estimated = estimatePrice(roadKm, truck, cargoKg);
+  // When no truck is selected yet, keep the estimate empty so the user picks a vehicle first.
+  const cargoKg = capacityKg(capacity) ?? (truck ? truckMaxKg(truck) : 0);
+  const estimated = truck ? estimatePrice(roadKm, truck, cargoKg) : null;
 
   /**
    * The stored draft is read from localStorage after the first render, so the
@@ -115,9 +116,10 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
   }, [ready, request]);
 
   // Auto-estimate follows distance + truck tier, but never overrides a locked price.
+  // No estimate is shown until the user selects a truck.
   useEffect(() => {
     if (priceLocked) return;
-    setPrice(bothPicked ? String(estimated) : "");
+    setPrice(bothPicked && estimated != null ? String(estimated) : "");
   }, [estimated, priceLocked, bothPicked]);
 
 
@@ -170,8 +172,8 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
 
 
 
-  const suggested = findTruck(truck);
-  const suggestedLabel = `${suggested.label} (${suggested.hint})`;
+  const suggested = truck ? findTruck(truck) : null;
+  const suggestedLabel = suggested ? `${suggested.label} (${suggested.hint})` : "اختر نوع الشاحنة";
 
   /**
    * Merge a spoken transcript into the form: only the fields mentioned in this
@@ -515,7 +517,9 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
           <p className="mt-2 text-xs text-muted-foreground">
             {priceLocked
               ? "هادا هو الثمن ديالك — ما غنبدلوهش."
-              : `ثمن تقديري فقط وقابل للتفاوض — محسوب حسب المسافة (${roadKm} كلم) والشاحنة (${suggested.label} — ${suggested.hint}).`}
+              : suggested
+                ? `ثمن تقديري فقط وقابل للتفاوض — محسوب حسب المسافة (${roadKm} كلم) والشاحنة (${suggested.label} — ${suggested.hint}).`
+                : "ثمن تقديري فقط وقابل للتفاوض — اختر نوع الشاحنة باش يبان الثمن."}
           </p>
           <p className="mt-1 text-[11px] font-bold text-primary">
             ⚠️ الثمن تقديري فقط وقابل للتفاوض مع صاحب الشاحنة.

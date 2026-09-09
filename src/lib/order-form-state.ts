@@ -33,8 +33,8 @@ export function emptyOrderForm(): OrderFormValues {
     destination: "",
     cargo: "",
     capacity: "",
-    // Canonical vehicle id (legacy "medium" resolves to the same tier).
-    truck: "kontiri",
+    // No truck selected by default; user must pick one of the 8 cards.
+    truck: "",
     price: "",
     pickupPoint: defaultPickup,
     destinationPoint: defaultDestination,
