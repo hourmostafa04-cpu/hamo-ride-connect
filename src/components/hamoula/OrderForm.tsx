@@ -116,9 +116,10 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
   }, [ready, request]);
 
   // Auto-estimate follows distance + truck tier, but never overrides a locked price.
+  // No estimate is shown until the user selects a truck.
   useEffect(() => {
     if (priceLocked) return;
-    setPrice(bothPicked ? String(estimated) : "");
+    setPrice(bothPicked && estimated != null ? String(estimated) : "");
   }, [estimated, priceLocked, bothPicked]);
 
 
@@ -171,8 +172,8 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
 
 
 
-  const suggested = findTruck(truck);
-  const suggestedLabel = `${suggested.label} (${suggested.hint})`;
+  const suggested = truck ? findTruck(truck) : null;
+  const suggestedLabel = suggested ? `${suggested.label} (${suggested.hint})` : "اختر نوع الشاحنة";
 
   /**
    * Merge a spoken transcript into the form: only the fields mentioned in this
