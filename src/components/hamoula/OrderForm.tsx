@@ -88,10 +88,13 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
   const [destinationPoint, setDestinationPoint] = useState<LatLng>(initial.destinationPoint);
   const bothPicked = Boolean(pickup.trim() && destination.trim());
   const roadKm = Math.round(roadDistanceKm(pickupPoint, destinationPoint));
+  /** الثمن كيعتمد على الإحداثيات ماشي على كتابة اسم المدينة. */
+  const hasRoute = roadKm > 0;
   // التقدير يعتمد على طوناج الشاحنة المختارة (مثال: كونتير = 8 طن) إلا إذا حدّد المستخدم حمولة أدق.
   // When no truck is selected yet, keep the estimate empty so the user picks a vehicle first.
   const cargoKg = capacityKg(capacity) ?? (truck ? truckMaxKg(truck) : 0);
-  const estimated = truck ? estimatePrice(roadKm, truck, cargoKg) : null;
+  const estimated = truck && hasRoute ? estimatePrice(roadKm, truck, cargoKg) : null;
+
 
   /**
    * The stored draft is read from localStorage after the first render, so the
@@ -118,11 +121,12 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
   }, [ready, request]);
 
   // Auto-estimate follows distance + truck tier, but never overrides a locked price.
-  // No estimate is shown until the user selects a truck.
+  // No estimate is shown until the user selects a truck (city names are NOT required).
   useEffect(() => {
     if (priceLocked) return;
-    setPrice(bothPicked && estimated != null ? String(estimated) : "");
-  }, [estimated, priceLocked, bothPicked]);
+    setPrice(estimated != null ? String(estimated) : "");
+  }, [estimated, priceLocked]);
+
 
 
   /** Fresh empty request: clears the form, the map route and the stored draft. */
