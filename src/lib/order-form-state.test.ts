@@ -62,7 +62,7 @@ describe("OrderForm state persistence", () => {
       destination: "",
       cargo: "",
       capacity: "",
-      truck: "kontiri",
+      truck: "",
       price: 0,
       voiceNote: null,
       status: "draft",

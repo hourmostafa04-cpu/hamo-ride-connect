@@ -81,6 +81,8 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
   const [price, setPrice] = useState(initial.price);
   /** True once the price came from voice or manual typing — estimates never override it. */
   const [priceLocked, setPriceLocked] = useState(false);
+  /** Blocks the previous render's autosave from restoring a truck while the form is resetting. */
+  const resettingFormRef = useRef(false);
 
   const [pickupPoint, setPickupPoint] = useState<LatLng>(initial.pickupPoint);
   const [destinationPoint, setDestinationPoint] = useState<LatLng>(initial.destinationPoint);
@@ -125,6 +127,7 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
 
   /** Fresh empty request: clears the form, the map route and the stored draft. */
   const resetForm = () => {
+    resettingFormRef.current = true;
     const empty = emptyOrderForm();
     setPickup(empty.pickup);
     setDestination(empty.destination);
@@ -146,6 +149,11 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
   const requestStatus = request.status;
   useEffect(() => {
     if (requestStatus !== "draft") return;
+    if (resettingFormRef.current) {
+      const resetFinished = !pickup && !destination && !cargo && !capacity && !truck && !price;
+      if (resetFinished) resettingFormRef.current = false;
+      return;
+    }
     if (!pickup && !destination && !cargo) return;
     updateRequest({
       pickup,
