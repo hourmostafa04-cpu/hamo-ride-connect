@@ -41,7 +41,7 @@ import { ResumeWhereYouLeft } from "@/components/hamoula/ResumeWhereYouLeft";
 import { VoiceNotePlayer } from "@/components/hamoula/Voice";
 import { Mic, Loader2 } from "lucide-react";
 import { useAiDictation } from "@/hooks/use-ai-dictation";
-import { findTruck, truckTypes, capacityKg } from "@/lib/hamoula-data";
+import { findTruck, truckTypes, capacityKg, truckMaxKg } from "@/lib/hamoula-data";
 import { useHamoula } from "@/lib/hamoula-store";
 import { roadDistanceKm, travelTimeLabel, type LatLng } from "@/lib/hamoula-geo";
 import { estimatePrice } from "@/lib/hamoula-pricing";
@@ -86,7 +86,8 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
   const [destinationPoint, setDestinationPoint] = useState<LatLng>(initial.destinationPoint);
   const bothPicked = Boolean(pickup.trim() && destination.trim());
   const roadKm = Math.round(roadDistanceKm(pickupPoint, destinationPoint));
-  const cargoKg = capacityKg(capacity);
+  // التقدير يعتمد على طوناج الشاحنة المختارة (مثال: كونتير = 8 طن) إلا إذا حدّد المستخدم حمولة أدق.
+  const cargoKg = capacityKg(capacity) ?? truckMaxKg(truck);
   const estimated = estimatePrice(roadKm, truck, cargoKg);
 
   /**
@@ -514,7 +515,7 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
           <p className="mt-2 text-xs text-muted-foreground">
             {priceLocked
               ? "هادا هو الثمن ديالك — ما غنبدلوهش."
-              : `ثمن تقديري فقط وقابل للتفاوض — محسوب حسب المسافة (${roadKm} كلم) ونوع الشاحنة (${suggested.label}).`}
+              : `ثمن تقديري فقط وقابل للتفاوض — محسوب حسب المسافة (${roadKm} كلم) والشاحنة (${suggested.label} — ${suggested.hint}).`}
           </p>
           <p className="mt-1 text-[11px] font-bold text-primary">
             ⚠️ الثمن تقديري فقط وقابل للتفاوض مع صاحب الشاحنة.

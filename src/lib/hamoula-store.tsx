@@ -310,6 +310,8 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
   const hydrated = useRef(false);
   const boardRef = useRef(board);
   boardRef.current = board;
+  /** True while a publish is in flight — blocks the draft autosave race. */
+  const publishingRef = useRef(false);
 
   const requestLocation = useCallback(() => {
     if (typeof navigator === "undefined" || !navigator.geolocation) {
@@ -643,6 +645,8 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
       currentRequest.pickup || currentRequest.destination || currentRequest.cargo,
     );
     const t = setTimeout(() => {
+      // Never re-save a draft while/after a publish is being finalized.
+      if (publishingRef.current) return;
       if (hasContent) void saveDraft(accountPhone, currentRequest);
       else void clearDraft(accountPhone);
     }, 700);
@@ -690,6 +694,7 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
       if (sessionState !== "authenticated") {
         throw new Error("الجلسة غير متاحة حالياً. تحقق من الاتصال ثم أعد المحاولة.");
       }
+      publishingRef.current = true;
       const id = `L-${Date.now()}`;
       // Build the new load explicitly, outside any React state update.
       const base = boardRef.current.request;
@@ -724,12 +729,20 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
         await saveLoad(created);
       } catch (err) {
         console.error("[hamoula] publishLoad: حفظ الطلب فشل، ما غاديش يتنشر", err);
+        publishingRef.current = false;
         throw err;
       }
-      setBoard((b) => ({ request: req, loads: [created, ...b.loads], bids: b.bids }));
+      // The published request never lingers in the form state: start from a
+      // brand-new empty request so reopening the page shows empty fields.
+      setBoard((b) => ({
+        request: { ...defaultRequest, updatedAt: Date.now() },
+        loads: [created, ...b.loads],
+        bids: b.bids,
+      }));
       void notifyEvent("new-load");
       if (accountPhone) void clearDraft(accountPhone);
       setPendingDraft(null);
+      publishingRef.current = false;
       return created;
     },
     [account, accountPhone, sessionState],
