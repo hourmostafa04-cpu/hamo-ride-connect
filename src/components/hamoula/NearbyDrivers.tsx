@@ -1,8 +1,10 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
-import { Truck, Star, MapPin, Map as MapIcon, List } from "lucide-react";
+import { Star, MapPin, Map as MapIcon, List } from "lucide-react";
 import { activeDrivers } from "@/lib/hamoula-drivers";
 import { distanceKm, type LatLng } from "@/lib/hamoula-geo";
 import { isSameCity, kmText, nearestCityName, pickupProximityLabel } from "@/lib/hamoula-location";
+import { findTruck, resolveTruckId, truckTypes } from "@/lib/hamoula-data";
+import { TRUCK_IMAGES } from "@/lib/truck-images";
 import { useHamoula } from "@/lib/hamoula-store";
 import { ContactActions } from "./ContactActions";
 
@@ -20,6 +22,7 @@ const MODES: { id: Mode; label: string }[] = [
 export function NearbyDrivers({ pickup, truckId }: { pickup: LatLng; truckId?: string }) {
   const [view, setView] = useState<"list" | "map">("list");
   const [mode, setMode] = useState<Mode>(truckId ? "type" : "all");
+  const [typeFilter, setTypeFilter] = useState<string>(() => resolveTruckId(truckId));
 
   const { myLocation, geoStatus, requestLocation } = useHamoula();
 
@@ -35,12 +38,12 @@ export function NearbyDrivers({ pickup, truckId }: { pickup: LatLng; truckId?: s
 
   const drivers = useMemo(() => {
     const list = activeDrivers
-      .filter((d) => (mode === "type" && truckId ? d.truckId === truckId : true))
+      .filter((d) => (mode === "type" ? resolveTruckId(d.truckId) === typeFilter : true))
       .map((d) => ({ ...d, km: distanceKm(base, d.point) }))
       // Stable tie-break by id so the order never shuffles without a real GPS change.
       .sort((a, b) => a.km - b.km || a.id.localeCompare(b.id));
     return mode === "all" ? list : list.slice(0, 6);
-  }, [base.lat, base.lng, truckId, mode]);
+  }, [base.lat, base.lng, typeFilter, mode]);
 
   return (
     <section className="space-y-3 rounded-3xl border-2 border-border bg-card p-4">
