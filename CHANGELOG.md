@@ -145,3 +145,11 @@
 - حذف رقم الطلب الثابت #HM-20841 واستعمال رقم حقيقي من `load.id` عبر `src/lib/trip-ref.ts` (tracking / trip-details / ShareTrip).
 - حذف `mockChat` والردود التجريبية من صفحة تتبع الرحلة؛ الشات كيبدا فارغ بحالة «ابدأ المحادثة».
 - إصلاح خطأ `_leaflet_pos`: إلغاء مؤقت invalidateSize عند unmount وحماية fitBounds/panTo/setIcon قبل جاهزية الخريطة (TripMap / MapPicker / NearbyDriversMap).
+
+## 2026-09-10 — توحيد أنواع الشاحنات في صفحة أصحاب الشاحنات
+- صفحة «أصحاب الشاحنات» كتستعمل دائماً الأنواع الثمانية المعتمدة بنفس الأسماء والصور والسعات؛ تحيدو التسميات العامة (صغيرة/متوسطة/كبيرة/ثقيلة).
+- كرت السائق كيبين صورة نوع الشاحنة الحقيقي + الاسم والسعة من `truckTypes` عبر `truckId` (مع resolveTruckId للقيم القديمة).
+- فلتر «نفس نوع الشاحنة» كيبين الثمانية كخانات صور قابلة للضغط وكيصفّي حسب النوع المختار.
+- `hamoula-drivers.ts`: truckId موحّد على المعرفات الثمانية (camion, benne, remorque, triporteur...).
+- صور الشاحنات المشتركة خرجات لـ `src/lib/truck-images.ts` (TRUCK_IMAGES).
+- بلا تغيير Backend/GPS/عروض/Auth؛ tsgo ناجح.

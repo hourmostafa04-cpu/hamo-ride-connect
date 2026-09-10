@@ -1,8 +1,10 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
-import { Truck, Star, MapPin, Map as MapIcon, List } from "lucide-react";
+import { Star, MapPin, Map as MapIcon, List } from "lucide-react";
 import { activeDrivers } from "@/lib/hamoula-drivers";
 import { distanceKm, type LatLng } from "@/lib/hamoula-geo";
 import { isSameCity, kmText, nearestCityName, pickupProximityLabel } from "@/lib/hamoula-location";
+import { findTruck, resolveTruckId, truckTypes } from "@/lib/hamoula-data";
+import { TRUCK_IMAGES } from "@/lib/truck-images";
 import { useHamoula } from "@/lib/hamoula-store";
 import { ContactActions } from "./ContactActions";
 
@@ -20,6 +22,7 @@ const MODES: { id: Mode; label: string }[] = [
 export function NearbyDrivers({ pickup, truckId }: { pickup: LatLng; truckId?: string }) {
   const [view, setView] = useState<"list" | "map">("list");
   const [mode, setMode] = useState<Mode>(truckId ? "type" : "all");
+  const [typeFilter, setTypeFilter] = useState<string>(() => resolveTruckId(truckId));
 
   const { myLocation, geoStatus, requestLocation } = useHamoula();
 
@@ -35,12 +38,12 @@ export function NearbyDrivers({ pickup, truckId }: { pickup: LatLng; truckId?: s
 
   const drivers = useMemo(() => {
     const list = activeDrivers
-      .filter((d) => (mode === "type" && truckId ? d.truckId === truckId : true))
+      .filter((d) => (mode === "type" ? resolveTruckId(d.truckId) === typeFilter : true))
       .map((d) => ({ ...d, km: distanceKm(base, d.point) }))
       // Stable tie-break by id so the order never shuffles without a real GPS change.
       .sort((a, b) => a.km - b.km || a.id.localeCompare(b.id));
     return mode === "all" ? list : list.slice(0, 6);
-  }, [base.lat, base.lng, truckId, mode]);
+  }, [base.lat, base.lng, typeFilter, mode]);
 
   return (
     <section className="space-y-3 rounded-3xl border-2 border-border bg-card p-4">
@@ -58,7 +61,7 @@ export function NearbyDrivers({ pickup, truckId }: { pickup: LatLng; truckId?: s
       </div>
 
       <div className="scroll-row -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-        {MODES.filter((m) => m.id !== "type" || truckId).map((m) => (
+        {MODES.map((m) => (
           <button
             key={m.id}
             type="button"
@@ -74,6 +77,26 @@ export function NearbyDrivers({ pickup, truckId }: { pickup: LatLng; truckId?: s
           </button>
         ))}
       </div>
+
+      {mode === "type" && (
+        <div className="scroll-row -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+          {truckTypes.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              aria-pressed={typeFilter === t.id}
+              onClick={() => setTypeFilter(t.id)}
+              className={`flex w-20 shrink-0 flex-col items-center gap-1 rounded-2xl border-2 p-2 transition active:scale-95 ${
+                typeFilter === t.id ? "border-primary bg-primary-soft" : "border-border"
+              }`}
+            >
+              <img src={TRUCK_IMAGES[t.id]} alt={t.label} className="h-9 w-14 object-contain" />
+              <span className="text-[10px] font-bold leading-tight">{t.label}</span>
+              <span className="text-[9px] font-semibold text-muted-foreground">{t.hint}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       <p className="text-[11px] font-bold text-muted-foreground">
         {drivers.length} شاحنة ·{" "}
@@ -93,16 +116,18 @@ export function NearbyDrivers({ pickup, truckId }: { pickup: LatLng; truckId?: s
         </p>
       ) : (
         <ul className="space-y-2">
-          {drivers.map((d) => (
+          {drivers.map((d) => {
+            const truckType = findTruck(d.truckId);
+            return (
             <li key={d.id} className="space-y-3 rounded-2xl border-2 border-border p-3">
               <div className="flex items-center gap-3">
-                <span className="flex size-11 items-center justify-center rounded-2xl bg-primary-soft text-primary">
-                  <Truck className="size-6" />
+                <span className="flex size-14 items-center justify-center rounded-2xl bg-primary-soft p-1.5">
+                  <img src={TRUCK_IMAGES[truckType.id]} alt={truckType.label} className="h-full w-full object-contain" />
                 </span>
                 <div className="flex-1">
                   <div className="text-sm font-extrabold">{d.name}</div>
                   <div className="text-xs font-semibold text-muted-foreground">
-                    {d.truck} · {d.plate}
+                    {truckType.label} · {truckType.hint} · {d.plate}
                   </div>
                 </div>
                 <div className="text-left">
@@ -126,7 +151,8 @@ export function NearbyDrivers({ pickup, truckId }: { pickup: LatLng; truckId?: s
               </div>
               <ContactActions seed={d.id} phone={d.phone} name={d.name} compact />
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
     </section>
