@@ -15,10 +15,10 @@ export const Route = createFileRoute("/api/public/vonage-messages-status")({
         if (payload && typeof payload === "object") {
           const p = payload as Record<string, unknown>;
           console.log("[vonage-status]", {
-            message_uuid: p.message_uuid,
-            status: p.status,
-            to: p.to,
-            timestamp: p.timestamp,
+            message_uuid: p["message_uuid"],
+            status: p["status"],
+            to: p["to"],
+            timestamp: p["timestamp"],
           });
         }
         return new Response(JSON.stringify({ ok: true }), {

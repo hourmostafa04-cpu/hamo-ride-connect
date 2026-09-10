@@ -16,11 +16,11 @@ export const Route = createFileRoute("/api/public/vonage-messages-inbound")({
         if (payload && typeof payload === "object") {
           const p = payload as Record<string, unknown>;
           console.log("[vonage-inbound]", {
-            message_uuid: p.message_uuid,
-            from: p.from,
-            to: p.to,
-            channel: p.channel,
-            message_type: p.message_type,
+            message_uuid: p["message_uuid"],
+            from: p["from"],
+            to: p["to"],
+            channel: p["channel"],
+            message_type: p["message_type"],
           });
         }
         return new Response(JSON.stringify({ ok: true }), {
