@@ -14,7 +14,7 @@ function statusTone(s: TripStatus) {
 }
 
 /** عروض أصحاب الشاحنات على هاد الطلب مع قبول/رفض. */
-function LoadOffers({ bids, onAccept, onDecline }: { bids: Bid[]; onAccept: (b: Bid) => void; onDecline: (b: Bid) => void }) {
+function LoadOffers({ bids, busy, onAccept, onDecline }: { bids: Bid[]; busy: string | null; onAccept: (b: Bid) => void; onDecline: (b: Bid) => void }) {
   const pending = bids.filter((b) => b.status === "pending");
   if (pending.length === 0) return null;
   return (
@@ -36,16 +36,18 @@ function LoadOffers({ bids, onAccept, onDecline }: { bids: Bid[]; onAccept: (b: 
           <div className="mt-2 flex gap-2">
             <button
               type="button"
+              disabled={busy !== null}
               onClick={() => onAccept(b)}
-              className="flex h-11 flex-1 items-center justify-center gap-1 rounded-xl bg-primary text-sm font-extrabold text-primary-foreground"
+              className="flex h-11 flex-1 items-center justify-center gap-1 rounded-xl bg-primary text-sm font-extrabold text-primary-foreground disabled:opacity-60"
             >
               <Check className="size-4" />
-              قبول
+              {busy === b.id ? "كنعالجو…" : "قبول"}
             </button>
             <button
               type="button"
+              disabled={busy !== null}
               onClick={() => onDecline(b)}
-              className="flex h-11 flex-1 items-center justify-center gap-1 rounded-xl border-2 border-border text-sm font-extrabold text-destructive"
+              className="flex h-11 flex-1 items-center justify-center gap-1 rounded-xl border-2 border-border text-sm font-extrabold text-destructive disabled:opacity-60"
             >
               <X className="size-4" />
               رفض
