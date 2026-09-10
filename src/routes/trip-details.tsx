@@ -19,6 +19,8 @@ const statusByStep: TripStatus[] = ["matched", "enroute", "loaded", "delivered"]
 import { lerp, distanceKm } from "@/lib/hamoula-geo";
 import { playSfx } from "@/lib/sfx";
 
+import { tripRefLabel } from "@/lib/trip-ref";
+
 const TripMap = lazy(() => import("@/components/hamoula/TripMap"));
 
 function MapSkeleton() {
@@ -101,7 +103,7 @@ function TripDetailsPage() {
 
   return (
     <PhoneFrame>
-      <AppHeader title="تفاصيل الرحلة" subtitle="رقم الطلب #HM-20841" showBack backTo="/tracking">
+      <AppHeader title="تفاصيل الرحلة" subtitle={tripRefLabel(request.loadId)} showBack backTo="/tracking">
         <ShareTrip compact />
       </AppHeader>
 

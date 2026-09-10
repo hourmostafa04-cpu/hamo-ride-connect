@@ -8,7 +8,9 @@ import { ContactActions } from "@/components/hamoula/ContactActions";
 import { ShareTrip } from "@/components/hamoula/ShareTrip";
 import { Mic } from "lucide-react";
 import { VoiceBanner, VoiceNotePlayer, VoiceRecorderSheet } from "@/components/hamoula/Voice";
-import { tripSteps, mockChat, driverVoiceReplies } from "@/lib/hamoula-data";
+import { tripSteps } from "@/lib/hamoula-data";
+import { tripRefLabel } from "@/lib/trip-ref";
+
 import { useHamoula, type TripStatus } from "@/lib/hamoula-store";
 import { type LatLng } from "@/lib/hamoula-geo";
 import { useLiveLocation, FIX_INTERVAL_MS } from "@/lib/hamoula-live-location";
@@ -39,12 +41,6 @@ export const Route = createFileRoute("/tracking")({
 
 const statusByStep: TripStatus[] = ["matched", "enroute", "loaded", "delivered"];
 
-const driverReplies = [
-  "أنا فالطريق دابا.",
-  "وصلت لنقطة التحميل.",
-  "البضاعة تحملات، غادي نتحرك.",
-  "قربت نوصل للوجهة، الحمد لله.",
-];
 
 function nowTime() {
   return new Date().toLocaleTimeString("fr-MA", { hour: "2-digit", minute: "2-digit" });
@@ -72,20 +68,10 @@ function TrackingPage() {
   const [eta, setEta] = useState(24 * 60);
   const [messages, setMessages] = useState<
     { id: number; from: "me" | "driver"; text: string; time: string; voice?: number }[]
-  >(mockChat.map((m) => ({ ...m })));
+  >([]);
   const [draft, setDraft] = useState("");
   const [recording, setRecording] = useState(false);
 
-  // Mirror every status change into the chat as a driver update.
-  const lastStep = useRef(current);
-  useEffect(() => {
-    if (current === lastStep.current) return;
-    lastStep.current = current;
-    setMessages((m) => [
-      ...m,
-      { id: Date.now(), from: "driver" as const, text: driverReplies[current]!, time: nowTime() },
-    ]);
-  }, [current]);
 
   // ETA countdown while the trip is in progress.
   useEffect(() => {
@@ -140,17 +126,12 @@ function TrackingPage() {
     if (!draft.trim()) return;
     setMessages((m) => [...m, { id: Date.now(), from: "me", text: draft.trim(), time: nowTime() }]);
     setDraft("");
-    setTimeout(() => {
-      setMessages((m) => [
-        ...m,
-        { id: Date.now(), from: "driver", text: "واخا أ صاحبي، مفهوم.", time: nowTime() },
-      ]);
-    }, 1600);
   };
+
 
   return (
     <PhoneFrame>
-      <AppHeader title="تتبع الرحلة" subtitle="رقم الطلب #HM-20841" showBack backTo="/">
+      <AppHeader title="تتبع الرحلة" subtitle={tripRefLabel(request.loadId)} showBack backTo="/">
         <ShareTrip compact />
       </AppHeader>
 
@@ -307,7 +288,13 @@ function TrackingPage() {
           </div>
 
           <div className="max-h-64 space-y-2 overflow-y-auto">
+            {messages.length === 0 && (
+              <p className="rounded-2xl bg-secondary/60 p-3 text-center text-xs font-semibold text-muted-foreground">
+                ما كاين حتى رسالة — بدا المحادثة دابا.
+              </p>
+            )}
             {messages.map((m) => (
+
               <div
                 key={m.id}
                 className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
@@ -369,20 +356,9 @@ function TrackingPage() {
               ]);
               playSfx("send");
               toast.success("تبعتات الرسالة الصوتية");
-              setTimeout(() => {
-                setMessages((m) => [
-                  ...m,
-                  {
-                    id: Date.now(),
-                    from: "driver",
-                    text: driverVoiceReplies[0]!,
-                    time: nowTime(),
-                    voice: 8,
-                  },
-                ]);
-              }, 1800);
             }}
           />
+
         </section>
 
         <Link to={homePath} className="block py-2 text-center text-sm font-semibold text-muted-foreground">

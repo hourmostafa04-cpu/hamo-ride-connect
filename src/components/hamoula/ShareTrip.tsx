@@ -5,6 +5,7 @@ import { playSfx } from "@/lib/sfx";
 import { useHamoula, statusLabels } from "@/lib/hamoula-store";
 import { openExternal } from "@/lib/hamoula-contact";
 import { TripQr } from "./TripQr";
+import { tripRefOf } from "@/lib/trip-ref";
 
 /** Builds the public tracking link for the active trip. */
 export function tripShareUrl(params: {
@@ -26,19 +27,20 @@ export function tripShareUrl(params: {
  * through the native share sheet, WhatsApp, or the clipboard.
  */
 export function ShareTrip({
-  tripRef = "HM-20841",
+  tripRef,
   compact = false,
 }: {
   tripRef?: string;
   compact?: boolean;
 }) {
   const { request } = useHamoula();
+  const ref = tripRef || tripRefOf(request.loadId) || "TRIP";
   const [copied, setCopied] = useState(false);
 
   const pickup = request.pickup || "نقطة التحميل";
   const destination = request.destination || "الوجهة";
-  const url = tripShareUrl({ pickup, destination, ref: tripRef });
-  const text = `تتبع الرحلة ديال حمولة #${tripRef}
+  const url = tripShareUrl({ pickup, destination, ref: ref });
+  const text = `تتبع الرحلة ديال حمولة #${ref}
 من: ${pickup}
 إلى: ${destination}
 الحالة: ${statusLabels[request.status]}
@@ -60,7 +62,7 @@ ${url}`;
     playSfx("tap");
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
-        await navigator.share({ title: `تتبع الرحلة #${tripRef}`, text, url });
+        await navigator.share({ title: `تتبع الرحلة #${ref}`, text, url });
         return;
       } catch {
         /* user cancelled or unsupported → fall back */
@@ -123,7 +125,7 @@ ${url}`;
       <p className="truncate rounded-xl bg-secondary px-3 py-2 text-left text-[11px] font-semibold text-muted-foreground" dir="ltr">
         {url}
       </p>
-      <TripQr url={url} tripRef={tripRef} />
+      <TripQr url={url} tripRef={ref} />
     </div>
   );
 }
