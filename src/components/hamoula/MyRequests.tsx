@@ -126,7 +126,7 @@ function RequestCard({
         </span>
       </div>
       {active && load.status !== "assigned" && (
-        <LoadOffers bids={bids} onAccept={onAccept} onDecline={onDecline} />
+        <LoadOffers bids={bids} busy={busy} onAccept={onAccept} onDecline={onDecline} />
       )}
     </div>
   );
@@ -134,7 +134,9 @@ function RequestCard({
 
 
 export function MyRequests() {
-  const { myLoads, bids, cancelRequest, acceptBid, declineBid } = useHamoula();
+  const { myLoads, bids, cancelRequest, acceptBid, declineBid, refreshBoard, boardLoading, boardError } =
+    useHamoula();
+  const [busy, setBusy] = useState<string | null>(null);
   const active = myLoads.filter((l) => ACTIVE.includes((l.tripStatus ?? "searching") as TripStatus));
   const history = myLoads.filter((l) => !ACTIVE.includes((l.tripStatus ?? "searching") as TripStatus));
   const bidsFor = (id: string) => bids.filter((b) => b.loadId === id).sort((a, b) => a.price - b.price);
@@ -145,13 +147,24 @@ export function MyRequests() {
   };
 
   const onAccept = (b: Bid) => {
+    // منع الضغط المتكرر على نفس العرض.
+    if (busy) return;
+    setBusy(b.id);
     acceptBid(b.id);
     toast.success("تقبل صاحب الشاحنة ✅", { description: `${b.driver || "صاحب الشاحنة"} · ${b.price} درهم` });
+    void refreshBoard()
+      .catch(() => {})
+      .finally(() => setBusy(null));
   };
 
   const onDecline = (b: Bid) => {
+    if (busy) return;
+    setBusy(b.id);
     declineBid(b.id);
     toast("تفض العرض", { description: `${b.driver || "صاحب الشاحنة"} · ${b.price} درهم` });
+    void refreshBoard()
+      .catch(() => {})
+      .finally(() => setBusy(null));
   };
 
   return (
