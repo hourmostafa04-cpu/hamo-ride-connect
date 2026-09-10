@@ -87,17 +87,23 @@ export default function TripMap({
 
   // Marker follows every animated frame; the trail only records real movement.
   useEffect(() => {
+    const m = map.current;
+    if (!m || !m.getContainer()?.isConnected) return;
     truck.current?.setLatLng([driver.lat, driver.lng]);
     if (distanceKm(lastTrail.current, driver) > 0.35) {
       lastTrail.current = driver;
       trail.current?.addLatLng([driver.lat, driver.lng]);
     }
-    if (follow && map.current) map.current.panTo([driver.lat, driver.lng], { animate: true });
+    try {
+      if (follow) m.panTo([driver.lat, driver.lng], { animate: true });
+    } catch {
+      /* الخريطة تسدات قبل التحديث */
+    }
   }, [driver, follow]);
 
   // Rotate the truck toward its heading.
   useEffect(() => {
-    if (!truck.current) return;
+    if (!truck.current || !map.current?.getContainer()?.isConnected) return;
     if (Math.abs(bearing - lastBearing.current) < 2) return;
     lastBearing.current = bearing;
     truck.current.setIcon(makeTruckIcon(bearing));

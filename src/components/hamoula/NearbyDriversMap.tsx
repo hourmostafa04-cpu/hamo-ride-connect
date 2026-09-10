@@ -62,7 +62,7 @@ export default function NearbyDriversMap({
   useEffect(() => {
     const m = map.current;
     const g = layer.current;
-    if (!m || !g) return;
+    if (!m || !g || !m.getContainer()?.isConnected) return;
     g.clearLayers();
     L.marker([pickup.lat, pickup.lng], { icon: pickupIcon }).addTo(g);
     L.circle([pickup.lat, pickup.lng], {
@@ -80,7 +80,11 @@ export default function NearbyDriversMap({
       [pickup.lat, pickup.lng],
       ...drivers.map((d) => [d.point.lat, d.point.lng] as L.LatLngExpression),
     ];
-    if (pts.length > 1) m.fitBounds(L.latLngBounds(pts), { padding: [40, 40] });
+    try {
+      if (pts.length > 1) m.fitBounds(L.latLngBounds(pts), { padding: [40, 40] });
+    } catch {
+      /* الخريطة مازال ما وجداتش — كنتجاهلو */
+    }
   }, [pickup, drivers]);
 
   return <div ref={el} dir="ltr" className="h-64 w-full rounded-2xl" />;

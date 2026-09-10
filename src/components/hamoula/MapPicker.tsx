@@ -100,13 +100,17 @@ export default function MapPicker({
     ]);
     // Keep both cities and the route line inside the viewport.
     const m = map.current;
-    if (!m) return;
+    if (!m || !m.getContainer()?.isConnected) return;
     const bounds = L.latLngBounds([
       [pickup.lat, pickup.lng],
       [destination.lat, destination.lng],
     ]);
-    if (distanceKm(pickup, destination) < 1) m.setView([pickup.lat, pickup.lng], 12);
-    else m.fitBounds(bounds, { padding: [45, 45], maxZoom: 13 });
+    try {
+      if (distanceKm(pickup, destination) < 1) m.setView([pickup.lat, pickup.lng], 12);
+      else m.fitBounds(bounds, { padding: [45, 45], maxZoom: 13 });
+    } catch {
+      /* الخريطة مازال ما وجداتش */
+    }
   }, [pickup, destination]);
 
   const locate = () => {
