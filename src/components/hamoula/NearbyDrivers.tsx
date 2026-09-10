@@ -151,7 +151,8 @@ export function NearbyDrivers({ pickup, truckId }: { pickup: LatLng; truckId?: s
               </div>
               <ContactActions seed={d.id} phone={d.phone} name={d.name} compact />
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
     </section>
