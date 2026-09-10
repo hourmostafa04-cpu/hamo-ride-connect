@@ -19,22 +19,16 @@ export type NewRating = {
   comment?: string;
 };
 
-const table = () => supabase.from("trip_ratings" as never) as never as {
-  select: (c: string, o?: unknown) => never;
-  insert: (v: unknown) => never;
-};
-
 /** واش هاد المستخدم قيّم هاد الرحلة من قبل. */
 export async function hasRatedTrip(loadId: string): Promise<boolean> {
   const userId = await currentUserId();
   if (!userId || !loadId) return false;
-  const q = supabase
-    .from("trip_ratings" as never)
+  const { data } = await supabase
+    .from("trip_ratings")
     .select("id")
     .eq("load_id", loadId)
     .eq("user_id", userId)
     .maybeSingle();
-  const { data } = (await q) as { data: unknown };
   return Boolean(data);
 }
 
@@ -47,9 +41,7 @@ export async function submitRating(r: NewRating): Promise<void> {
   if (!ratee) throw new Error("ما لقيناش حساب الطرف الآخر ديال هاد الرحلة");
   if (rater && rater === ratee) throw new Error("ما يمكنش تقيّم راسك");
   const stars = Math.max(1, Math.min(5, Math.round(r.stars)));
-  const { error } = await (supabase.from("trip_ratings" as never) as never as {
-    insert: (v: unknown) => Promise<{ error: { code?: string; message: string } | null }>;
-  }).insert({
+  const { error } = await supabase.from("trip_ratings").insert({
     load_id: r.loadId,
     user_id: userId,
     rater_phone: rater,
@@ -69,11 +61,11 @@ export async function submitRating(r: NewRating): Promise<void> {
 export async function fetchRatingSummary(phone: string): Promise<RatingSummary> {
   const key = phoneKey(phone);
   if (!key) return { average: 0, count: 0 };
-  const { data } = (await supabase
-    .from("trip_ratings" as never)
+  const { data } = await supabase
+    .from("trip_ratings")
     .select("stars")
     .eq("ratee_phone", key)
-    .limit(500)) as { data: { stars: number }[] | null };
+    .limit(500);
   const rows = data ?? [];
   if (!rows.length) return { average: 0, count: 0 };
   const sum = rows.reduce((a, r) => a + (r.stars ?? 0), 0);
