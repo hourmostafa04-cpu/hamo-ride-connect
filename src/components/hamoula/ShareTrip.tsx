@@ -34,7 +34,7 @@ export function ShareTrip({
   compact?: boolean;
 }) {
   const { request } = useHamoula();
-  const ref = ref || tripRefOf(request.loadId) || "TRIP";
+  const ref = tripRef || tripRefOf(request.loadId) || "TRIP";
   const [copied, setCopied] = useState(false);
 
   const pickup = request.pickup || "نقطة التحميل";
