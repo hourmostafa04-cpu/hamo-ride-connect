@@ -80,8 +80,11 @@ export default function MapPicker({
     });
 
     map.current = m;
-    setTimeout(() => m.invalidateSize(), 200);
+    const sizeTimer = window.setTimeout(() => {
+      if (map.current === m) m.invalidateSize();
+    }, 200);
     return () => {
+      window.clearTimeout(sizeTimer);
       m.remove();
       map.current = null;
     };
