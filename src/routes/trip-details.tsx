@@ -20,6 +20,7 @@ import { lerp, distanceKm } from "@/lib/hamoula-geo";
 import { playSfx } from "@/lib/sfx";
 
 import { tripRefLabel } from "@/lib/trip-ref";
+import { TripRating } from "@/components/hamoula/TripRating";
 
 const TripMap = lazy(() => import("@/components/hamoula/TripMap"));
 
@@ -55,7 +56,7 @@ function nowTime() {
 }
 
 function TripDetailsPage() {
-  const { profile, request, tripLive, setTripLive, activeLoad } = useHamoula();
+  const { profile, request, tripLive, setTripLive, activeLoad, account, bids } = useHamoula();
   const driver = request.acceptedOffer;
   // أسماء الطرفين من الطلب/العرض الحقيقي فقط — بلا بيانات تجريبية.
   const counterpartName =
@@ -98,6 +99,14 @@ function TripDetailsPage() {
     () => lerp(request.pickupPoint, request.destinationPoint, progress),
     [request.pickupPoint, request.destinationPoint, progress],
   );
+  // التقييم المتبادل: الرحلة الحقيقية + رقم الطرف الآخر الحقيقي (بلا بيانات تجريبية).
+  const ratingLoadId = request.loadId ?? activeLoad?.id ?? "";
+  const acceptedBid = bids.find((b) => b.id === driver?.id);
+  const rateePhone =
+    account?.role === "driver"
+      ? (activeLoad?.shipperPhone ?? "")
+      : (acceptedBid?.driverPhone ?? "");
+
   const remainingKm = distanceKm(driverPoint, request.destinationPoint);
   const totalKm = distanceKm(request.pickupPoint, request.destinationPoint);
 
@@ -205,6 +214,17 @@ function TripDetailsPage() {
             ))}
           </ol>
         </section>
+
+        {done && ratingLoadId && rateePhone && account && (
+          <TripRating
+            loadId={ratingLoadId}
+            raterPhone={account.phone}
+            raterRole={account.role}
+            rateePhone={rateePhone}
+            rateeRole={account.role === "driver" ? "shipper" : "driver"}
+            counterpartName={counterpartName}
+          />
+        )}
 
         <ShareTrip />
 
