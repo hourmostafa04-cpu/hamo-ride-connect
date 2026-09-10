@@ -81,6 +81,8 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
   const [price, setPrice] = useState(initial.price);
   /** True once the price came from voice or manual typing — estimates never override it. */
   const [priceLocked, setPriceLocked] = useState(false);
+  /** True while the request is being published — blocks a second submit. */
+  const [submitting, setSubmitting] = useState(false);
   /** Blocks the previous render's autosave from restoring a truck while the form is resetting. */
   const resettingFormRef = useRef(false);
 
