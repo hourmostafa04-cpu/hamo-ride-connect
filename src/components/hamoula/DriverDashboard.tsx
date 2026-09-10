@@ -437,6 +437,8 @@ function LoadCard({
   const [counter, setCounter] = useState(String(load.price + 100));
   const [sheet, setSheet] = useState(false);
   const [recording, setRecording] = useState(false);
+  /** منع الضغط المتكرر: عرض واحد فقط لكل ضغطة. */
+  const [sending, setSending] = useState(false);
   const truck = findTruck(load.truck);
   const truckLabel = truck.label;
   const tripKm = roadDistanceKm(load.pickupPoint, load.destinationPoint);
