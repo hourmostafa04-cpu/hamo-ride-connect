@@ -23,6 +23,7 @@ import { Route as RequestRouteImport } from './routes/request'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as TrackingRouteImport } from './routes/tracking'
 import { Route as TripDetailsRouteImport } from './routes/trip-details'
+import { Route as ApiPublicAuthSendSmsRouteImport } from './routes/api/public/auth-send-sms'
 import { Route as ApiPublicVonageMessagesInboundRouteImport } from './routes/api/public/vonage-messages-inbound'
 import { Route as ApiPublicVonageMessagesStatusRouteImport } from './routes/api/public/vonage-messages-status'
 
@@ -96,6 +97,11 @@ const TripDetailsRoute = TripDetailsRouteImport.update({
   path: '/trip-details',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAuthSendSmsRoute = ApiPublicAuthSendSmsRouteImport.update({
+  id: '/api/public/auth-send-sms',
+  path: '/api/public/auth-send-sms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicVonageMessagesInboundRoute =
   ApiPublicVonageMessagesInboundRouteImport.update({
     id: '/api/public/vonage-messages-inbound',
@@ -124,6 +130,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/tracking': typeof TrackingRoute
   '/trip-details': typeof TripDetailsRoute
+  '/api/public/auth-send-sms': typeof ApiPublicAuthSendSmsRoute
   '/api/public/vonage-messages-inbound': typeof ApiPublicVonageMessagesInboundRoute
   '/api/public/vonage-messages-status': typeof ApiPublicVonageMessagesStatusRoute
 }
@@ -142,6 +149,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/tracking': typeof TrackingRoute
   '/trip-details': typeof TripDetailsRoute
+  '/api/public/auth-send-sms': typeof ApiPublicAuthSendSmsRoute
   '/api/public/vonage-messages-inbound': typeof ApiPublicVonageMessagesInboundRoute
   '/api/public/vonage-messages-status': typeof ApiPublicVonageMessagesStatusRoute
 }
@@ -161,6 +169,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/tracking': typeof TrackingRoute
   '/trip-details': typeof TripDetailsRoute
+  '/api/public/auth-send-sms': typeof ApiPublicAuthSendSmsRoute
   '/api/public/vonage-messages-inbound': typeof ApiPublicVonageMessagesInboundRoute
   '/api/public/vonage-messages-status': typeof ApiPublicVonageMessagesStatusRoute
 }
@@ -181,6 +190,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tracking'
     | '/trip-details'
+    | '/api/public/auth-send-sms'
     | '/api/public/vonage-messages-inbound'
     | '/api/public/vonage-messages-status'
   fileRoutesByTo: FileRoutesByTo
@@ -199,6 +209,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tracking'
     | '/trip-details'
+    | '/api/public/auth-send-sms'
     | '/api/public/vonage-messages-inbound'
     | '/api/public/vonage-messages-status'
   id:
@@ -217,6 +228,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tracking'
     | '/trip-details'
+    | '/api/public/auth-send-sms'
     | '/api/public/vonage-messages-inbound'
     | '/api/public/vonage-messages-status'
   fileRoutesById: FileRoutesById
@@ -236,6 +248,7 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   TrackingRoute: typeof TrackingRoute
   TripDetailsRoute: typeof TripDetailsRoute
+  ApiPublicAuthSendSmsRoute: typeof ApiPublicAuthSendSmsRoute
   ApiPublicVonageMessagesInboundRoute: typeof ApiPublicVonageMessagesInboundRoute
   ApiPublicVonageMessagesStatusRoute: typeof ApiPublicVonageMessagesStatusRoute
 }
@@ -340,6 +353,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TripDetailsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/auth-send-sms': {
+      id: '/api/public/auth-send-sms'
+      path: '/api/public/auth-send-sms'
+      fullPath: '/api/public/auth-send-sms'
+      preLoaderRoute: typeof ApiPublicAuthSendSmsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/vonage-messages-inbound': {
       id: '/api/public/vonage-messages-inbound'
       path: '/api/public/vonage-messages-inbound'
@@ -372,6 +392,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   TrackingRoute: TrackingRoute,
   TripDetailsRoute: TripDetailsRoute,
+  ApiPublicAuthSendSmsRoute: ApiPublicAuthSendSmsRoute,
   ApiPublicVonageMessagesInboundRoute: ApiPublicVonageMessagesInboundRoute,
   ApiPublicVonageMessagesStatusRoute: ApiPublicVonageMessagesStatusRoute,
 }

@@ -158,3 +158,8 @@
 - جدول جديد `trip_ratings` (load_id, user_id, rater_phone/role, ratee_phone/role, stars 1-5, comment) مع RLS: إدراج للمشاركين فقط، تقييم واحد لكل رحلة لكل مستخدم، ممنوع تقييم النفس.
 - ملفات: `src/lib/hamoula-ratings.ts`، `src/components/hamoula/TripRating.tsx`، `src/routes/trip-details.tsx` (كارت التقييم بعد انتهاء الرحلة)، `src/routes/account.tsx` (متوسط التقييم وعدد التقييمات).
 - بلا أي تغيير في Auth/OTP/GPS/Chat/الطلبات/العروض.
+
+## 2026-09-11 — ربط Supabase Send SMS Hook مع Bird WhatsApp
+- إضافة src/routes/api/public/auth-send-sms.ts: يستقبل نفس OTP من Supabase ويرسله عبر Bird (eu1, bird_otp, ar) ثم Vonage SMS كـ fallback.
+- بدون تغيير verifyOtp/Session/Auth، وبدون توليد أي OTP جديد. لم يتم النشر.
+- ملاحظة: مفاتيح Vonage (VONAGE_API_KEY/SECRET) غير محفوظة بعد، لذا fallback غير قابل للاختبار حالياً.
