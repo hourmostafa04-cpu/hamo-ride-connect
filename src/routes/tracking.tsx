@@ -369,20 +369,9 @@ function TrackingPage() {
               ]);
               playSfx("send");
               toast.success("تبعتات الرسالة الصوتية");
-              setTimeout(() => {
-                setMessages((m) => [
-                  ...m,
-                  {
-                    id: Date.now(),
-                    from: "driver",
-                    text: driverVoiceReplies[0]!,
-                    time: nowTime(),
-                    voice: 8,
-                  },
-                ]);
-              }, 1800);
             }}
           />
+
         </section>
 
         <Link to={homePath} className="block py-2 text-center text-sm font-semibold text-muted-foreground">
