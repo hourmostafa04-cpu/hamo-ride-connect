@@ -153,3 +153,8 @@
 - `hamoula-drivers.ts`: truckId موحّد على المعرفات الثمانية (camion, benne, remorque, triporteur...).
 - صور الشاحنات المشتركة خرجات لـ `src/lib/truck-images.ts` (TRUCK_IMAGES).
 - بلا تغيير Backend/GPS/عروض/Auth؛ tsgo ناجح.
+
+## 2026-09-10 — التقييم المتبادل بعد الرحلة
+- جدول جديد `trip_ratings` (load_id, user_id, rater_phone/role, ratee_phone/role, stars 1-5, comment) مع RLS: إدراج للمشاركين فقط، تقييم واحد لكل رحلة لكل مستخدم، ممنوع تقييم النفس.
+- ملفات: `src/lib/hamoula-ratings.ts`، `src/components/hamoula/TripRating.tsx`، `src/routes/trip-details.tsx` (كارت التقييم بعد انتهاء الرحلة)، `src/routes/account.tsx` (متوسط التقييم وعدد التقييمات).
+- بلا أي تغيير في Auth/OTP/GPS/Chat/الطلبات/العروض.
