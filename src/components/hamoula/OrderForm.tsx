@@ -587,9 +587,11 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
         <StickyActions>
           <button
             type="submit"
-            className="gradient-primary min-h-14 w-full rounded-2xl py-4 text-lg font-extrabold text-primary-foreground shadow-soft active:opacity-90"
+            disabled={submitting}
+            aria-busy={submitting}
+            className="gradient-primary min-h-14 w-full rounded-2xl py-4 text-lg font-extrabold text-primary-foreground shadow-soft active:opacity-90 disabled:opacity-60"
           >
-            إرسال الطلب
+            {submitting ? "كنسيفطو الطلب…" : "إرسال الطلب"}
           </button>
 
           {!isHome && (
