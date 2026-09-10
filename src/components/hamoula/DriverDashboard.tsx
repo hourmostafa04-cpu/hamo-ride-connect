@@ -58,6 +58,8 @@ export function DriverDashboard() {
     geoStatus,
     requestLocation,
     refreshBoard,
+    boardLoading,
+    boardError,
     profile,
     account,
     updateAccount,
@@ -92,8 +94,18 @@ export function DriverDashboard() {
   /** Max payload of the signed-in driver's truck, in kg (null when unknown). */
   const myMaxKg = capacityKg(account?.truckTons);
 
+  /** بيانات ناقصة: طلب قديم بثمن 0 أو بلا مدن — ما كيتعرضش كطلب عادي. */
+  const isIncomplete = (l: Load) =>
+    !l.pickup?.trim() || !l.destination?.trim() || !(l.price > 0);
+
+  const openLoads = useMemo(() => loads.filter((l) => l.status === "open"), [loads]);
+  const incompleteCount = useMemo(
+    () => openLoads.filter(isIncomplete).length,
+    [openLoads],
+  );
+
   const withDistance = useMemo(() => {
-    const open = loads.filter((l) => l.status === "open");
+    const open = openLoads.filter((l) => !isIncomplete(l));
     return open
       .map((l) => {
         const loadKg = capacityKg(l.capacity);
@@ -107,7 +119,7 @@ export function DriverDashboard() {
         if (a.km === null || b.km === null) return b.load.createdAt - a.load.createdAt;
         return a.km - b.km || b.load.createdAt - a.load.createdAt;
       });
-  }, [loads, base?.lat, base?.lng, myMaxKg]);
+  }, [openLoads, base?.lat, base?.lng, myMaxKg]);
   const max = distanceFilters.find((f) => f.id === filter)?.max ?? Infinity;
   const q = cargoQuery.trim();
   const visible = withDistance.filter(
