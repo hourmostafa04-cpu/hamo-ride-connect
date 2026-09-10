@@ -195,9 +195,37 @@ export function DriverDashboard() {
         <VoiceBanner message="سمع الطلب الصوتي، وجاوب بضغطة وحدة: قبول الثمن ولا عرض مضاد" />
 
         <div className="flex items-center justify-between rounded-2xl bg-primary-soft px-4 py-3">
-          <span className="text-sm font-bold text-accent-foreground">{visible.length} طلب قريب منك</span>
+          <span className="text-sm font-bold text-accent-foreground">
+            {boardLoading ? "كنجيبو الطلبات…" : `${visible.length} طلب قريب منك`}
+          </span>
           <LiveBadge label="مباشر" />
         </div>
+
+        {boardLoading && (
+          <div className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border px-4 py-3 text-sm font-bold text-muted-foreground">
+            <RefreshCw className="size-4 animate-spin" />
+            كنحدثو لائحة الطلبات…
+          </div>
+        )}
+
+        {boardError && !boardLoading && (
+          <div className="space-y-2 rounded-2xl border-2 border-destructive bg-destructive/10 px-4 py-3 text-sm font-extrabold text-destructive">
+            <p>{boardError}</p>
+            <button
+              type="button"
+              onClick={() => void refreshBoard().catch(() => {})}
+              className="min-h-10 w-full rounded-xl border-2 border-destructive px-4 text-sm font-extrabold"
+            >
+              عاود المحاولة
+            </button>
+          </div>
+        )}
+
+        {incompleteCount > 0 && (
+          <div className="rounded-2xl border-2 border-dashed border-border px-4 py-3 text-center text-xs font-bold text-muted-foreground">
+            {incompleteCount} طلب فيه بيانات ناقصة (بلا مدن ولا بثمن 0) — مخبّي حتى يتصحح
+          </div>
+        )}
 
         {!available && (
           <div className="rounded-2xl border-2 border-dashed border-border px-4 py-3 text-center text-xs font-bold text-muted-foreground">
