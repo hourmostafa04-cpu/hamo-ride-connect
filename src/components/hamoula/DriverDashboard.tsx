@@ -332,7 +332,7 @@ export function DriverDashboard() {
           </div>
         )}
 
-        {visible.length === 0 && (
+        {visible.length === 0 && !boardLoading && !boardError && (
           <div className="rounded-2xl border-2 border-dashed border-border p-8 text-center">
             <Package className="mx-auto size-10 text-muted-foreground" />
             <p className="mt-3 text-sm font-bold text-muted-foreground">
