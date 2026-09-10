@@ -515,7 +515,11 @@ function LoadCard({
       ) : (
         <>
           <button
+            disabled={sending}
+            aria-busy={sending}
             onClick={() => {
+              if (sending) return;
+              setSending(true);
               onBid(load.price, "accepted-price", null);
               playSfx("success");
               toast.success("قبلتي الثمن المقترح", {
@@ -523,10 +527,10 @@ function LoadCard({
               });
               setTimeout(() => navigate({ to: "/tracking" }), 700);
             }}
-            className="flex w-full items-center justify-center gap-3 rounded-2xl bg-primary py-4 text-lg font-extrabold text-primary-foreground active:opacity-90"
+            className="flex w-full items-center justify-center gap-3 rounded-2xl bg-primary py-4 text-lg font-extrabold text-primary-foreground active:opacity-90 disabled:opacity-60"
           >
             <Check className="size-7" />
-            قبول بالسعر المقترح {load.price} درهم
+            {sending ? "كنسيفطو العرض…" : `قبول بالسعر المقترح ${load.price} درهم`}
           </button>
 
           <button
