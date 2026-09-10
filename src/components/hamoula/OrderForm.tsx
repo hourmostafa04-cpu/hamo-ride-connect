@@ -379,6 +379,8 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
         className="flex-1 space-y-6 px-5 py-6"
         onSubmit={async (e) => {
           e.preventDefault();
+          // منع الضغط المتكرر: ما كنسمحوش بإرسال ثاني قبل ما يكمل الأول.
+          if (submitting) return;
           // تحقق قبل الإرسال: ما كنسجلوش طلب ناقص ولا بثمن 0.
           const finalPrice = Number(price) || 0;
           const missing: string[] = [];
