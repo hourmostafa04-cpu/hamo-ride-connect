@@ -23,6 +23,8 @@ import { Route as RequestRouteImport } from './routes/request'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as TrackingRouteImport } from './routes/tracking'
 import { Route as TripDetailsRouteImport } from './routes/trip-details'
+import { Route as ApiPublicVonageMessagesInboundRouteImport } from './routes/api/public/vonage-messages-inbound'
+import { Route as ApiPublicVonageMessagesStatusRouteImport } from './routes/api/public/vonage-messages-status'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -94,6 +96,18 @@ const TripDetailsRoute = TripDetailsRouteImport.update({
   path: '/trip-details',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicVonageMessagesInboundRoute =
+  ApiPublicVonageMessagesInboundRouteImport.update({
+    id: '/api/public/vonage-messages-inbound',
+    path: '/api/public/vonage-messages-inbound',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicVonageMessagesStatusRoute =
+  ApiPublicVonageMessagesStatusRouteImport.update({
+    id: '/api/public/vonage-messages-status',
+    path: '/api/public/vonage-messages-status',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -110,6 +124,8 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/tracking': typeof TrackingRoute
   '/trip-details': typeof TripDetailsRoute
+  '/api/public/vonage-messages-inbound': typeof ApiPublicVonageMessagesInboundRoute
+  '/api/public/vonage-messages-status': typeof ApiPublicVonageMessagesStatusRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -126,6 +142,8 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/tracking': typeof TrackingRoute
   '/trip-details': typeof TripDetailsRoute
+  '/api/public/vonage-messages-inbound': typeof ApiPublicVonageMessagesInboundRoute
+  '/api/public/vonage-messages-status': typeof ApiPublicVonageMessagesStatusRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -143,6 +161,8 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/tracking': typeof TrackingRoute
   '/trip-details': typeof TripDetailsRoute
+  '/api/public/vonage-messages-inbound': typeof ApiPublicVonageMessagesInboundRoute
+  '/api/public/vonage-messages-status': typeof ApiPublicVonageMessagesStatusRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -161,6 +181,8 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tracking'
     | '/trip-details'
+    | '/api/public/vonage-messages-inbound'
+    | '/api/public/vonage-messages-status'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -177,6 +199,8 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tracking'
     | '/trip-details'
+    | '/api/public/vonage-messages-inbound'
+    | '/api/public/vonage-messages-status'
   id:
     | '__root__'
     | '/'
@@ -193,6 +217,8 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tracking'
     | '/trip-details'
+    | '/api/public/vonage-messages-inbound'
+    | '/api/public/vonage-messages-status'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -210,6 +236,8 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   TrackingRoute: typeof TrackingRoute
   TripDetailsRoute: typeof TripDetailsRoute
+  ApiPublicVonageMessagesInboundRoute: typeof ApiPublicVonageMessagesInboundRoute
+  ApiPublicVonageMessagesStatusRoute: typeof ApiPublicVonageMessagesStatusRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -312,6 +340,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TripDetailsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/vonage-messages-inbound': {
+      id: '/api/public/vonage-messages-inbound'
+      path: '/api/public/vonage-messages-inbound'
+      fullPath: '/api/public/vonage-messages-inbound'
+      preLoaderRoute: typeof ApiPublicVonageMessagesInboundRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/vonage-messages-status': {
+      id: '/api/public/vonage-messages-status'
+      path: '/api/public/vonage-messages-status'
+      fullPath: '/api/public/vonage-messages-status'
+      preLoaderRoute: typeof ApiPublicVonageMessagesStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -330,6 +372,8 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   TrackingRoute: TrackingRoute,
   TripDetailsRoute: TripDetailsRoute,
+  ApiPublicVonageMessagesInboundRoute: ApiPublicVonageMessagesInboundRoute,
+  ApiPublicVonageMessagesStatusRoute: ApiPublicVonageMessagesStatusRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
