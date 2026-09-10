@@ -81,6 +81,8 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
   const [price, setPrice] = useState(initial.price);
   /** True once the price came from voice or manual typing — estimates never override it. */
   const [priceLocked, setPriceLocked] = useState(false);
+  /** True while the request is being published — blocks a second submit. */
+  const [submitting, setSubmitting] = useState(false);
   /** Blocks the previous render's autosave from restoring a truck while the form is resetting. */
   const resettingFormRef = useRef(false);
 
@@ -377,6 +379,8 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
         className="flex-1 space-y-6 px-5 py-6"
         onSubmit={async (e) => {
           e.preventDefault();
+          // منع الضغط المتكرر: ما كنسمحوش بإرسال ثاني قبل ما يكمل الأول.
+          if (submitting) return;
           // تحقق قبل الإرسال: ما كنسجلوش طلب ناقص ولا بثمن 0.
           const finalPrice = Number(price) || 0;
           const missing: string[] = [];
@@ -400,6 +404,7 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
           // Block autosave before publish resets the store, otherwise this render can
           // write the previously selected truck back into the fresh draft.
           resettingFormRef.current = true;
+          setSubmitting(true);
 
           try {
             await publishLoad({
@@ -414,12 +419,14 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
             });
           } catch (err) {
             resettingFormRef.current = false;
+            setSubmitting(false);
             console.error("[hamoula] إرسال الطلب فشل", err);
             toast.error("ما تسجلش الطلب", {
               description: "وقع مشكل فالحفظ. عاود المحاولة من فضلك.",
             });
             return;
           }
+          setSubmitting(false);
           playSfx("success");
           // Clear the on-screen draft AND the stored one so the next request starts empty.
           resetForm();
@@ -580,9 +587,11 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
         <StickyActions>
           <button
             type="submit"
-            className="gradient-primary min-h-14 w-full rounded-2xl py-4 text-lg font-extrabold text-primary-foreground shadow-soft active:opacity-90"
+            disabled={submitting}
+            aria-busy={submitting}
+            className="gradient-primary min-h-14 w-full rounded-2xl py-4 text-lg font-extrabold text-primary-foreground shadow-soft active:opacity-90 disabled:opacity-60"
           >
-            إرسال الطلب
+            {submitting ? "كنسيفطو الطلب…" : "إرسال الطلب"}
           </button>
 
           {!isHome && (

@@ -253,6 +253,10 @@ type Ctx = {
   requestLocation: () => void;
   /** Pull the latest loads and bids from the shared backend. */
   refreshBoard: () => Promise<void>;
+  /** True while the board (loads + bids) is being fetched. */
+  boardLoading: boolean;
+  /** Human message when the last board fetch failed (null when fine). */
+  boardError: string | null;
 
 };
 
@@ -596,20 +600,33 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
   const accountPhone = account ? phoneKey(account.phone) : "";
   const driverKey = account?.role === "driver" ? `d-${accountPhone}` : profiles[1]!.id;
 
+  const [boardLoading, setBoardLoading] = useState(false);
+  const [boardError, setBoardError] = useState<string | null>(null);
+
   /** Pull requests + offers from the shared database (keeps demo/mock rows). */
   const refreshFromDb = useCallback(async () => {
-    const remote = await fetchBoard();
-    setBoard((b) => ({
-      ...b,
-      loads: remote.loads,
-      bids: [...remote.bids, ...b.bids.filter((x) => !isRealBid(x.driverId))],
-    }));
+    setBoardLoading(true);
+    try {
+      const remote = await fetchBoard();
+      setBoard((b) => ({
+        ...b,
+        loads: remote.loads,
+        bids: [...remote.bids, ...b.bids.filter((x) => !isRealBid(x.driverId))],
+      }));
+      setBoardError(null);
+    } catch (err) {
+      console.error("[hamoula] refreshBoard فشل", err);
+      setBoardError("ما قدرناش نجيبو الطلبات. تحقق من الاتصال بالإنترنت وعاود المحاولة.");
+      throw err;
+    } finally {
+      setBoardLoading(false);
+    }
   }, []);
 
   useEffect(() => {
     // ما كنجلبوش الطلبات/العروض قبل ما تتأكد الجلسة — كانت كتعطي 401 عند أول دخول.
     if (!ready || sessionState !== "authenticated") return;
-    void refreshFromDb();
+    void refreshFromDb().catch(() => {});
     const channel = supabase
       .channel("hamoula-board")
       .on("postgres_changes", { event: "*", schema: "public", table: "loads" }, () => {
@@ -1019,6 +1036,8 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
       geoStatus,
       requestLocation,
       refreshBoard: refreshFromDb,
+      boardLoading,
+      boardError,
     }),
     [
       profile,
@@ -1054,6 +1073,9 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
       myLocation,
       geoStatus,
       requestLocation,
+      refreshFromDb,
+      boardLoading,
+      boardError,
     ],
   );
 

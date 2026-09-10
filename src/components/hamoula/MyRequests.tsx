@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { Boxes, Check, MapPin, Navigation, Star, Truck, X, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { PhoneFrame, AppHeader } from "@/components/hamoula/PhoneFrame";
@@ -14,7 +15,7 @@ function statusTone(s: TripStatus) {
 }
 
 /** عروض أصحاب الشاحنات على هاد الطلب مع قبول/رفض. */
-function LoadOffers({ bids, onAccept, onDecline }: { bids: Bid[]; onAccept: (b: Bid) => void; onDecline: (b: Bid) => void }) {
+function LoadOffers({ bids, busy, onAccept, onDecline }: { bids: Bid[]; busy: string | null; onAccept: (b: Bid) => void; onDecline: (b: Bid) => void }) {
   const pending = bids.filter((b) => b.status === "pending");
   if (pending.length === 0) return null;
   return (
@@ -36,16 +37,18 @@ function LoadOffers({ bids, onAccept, onDecline }: { bids: Bid[]; onAccept: (b: 
           <div className="mt-2 flex gap-2">
             <button
               type="button"
+              disabled={busy !== null}
               onClick={() => onAccept(b)}
-              className="flex h-11 flex-1 items-center justify-center gap-1 rounded-xl bg-primary text-sm font-extrabold text-primary-foreground"
+              className="flex h-11 flex-1 items-center justify-center gap-1 rounded-xl bg-primary text-sm font-extrabold text-primary-foreground disabled:opacity-60"
             >
               <Check className="size-4" />
-              قبول
+              {busy === b.id ? "كنعالجو…" : "قبول"}
             </button>
             <button
               type="button"
+              disabled={busy !== null}
               onClick={() => onDecline(b)}
-              className="flex h-11 flex-1 items-center justify-center gap-1 rounded-xl border-2 border-border text-sm font-extrabold text-destructive"
+              className="flex h-11 flex-1 items-center justify-center gap-1 rounded-xl border-2 border-border text-sm font-extrabold text-destructive disabled:opacity-60"
             >
               <X className="size-4" />
               رفض
@@ -60,12 +63,14 @@ function LoadOffers({ bids, onAccept, onDecline }: { bids: Bid[]; onAccept: (b: 
 function RequestCard({
   load,
   bids,
+  busy,
   onCancel,
   onAccept,
   onDecline,
 }: {
   load: Load;
   bids: Bid[];
+  busy: string | null;
   onCancel: (id: string) => void;
   onAccept: (b: Bid) => void;
   onDecline: (b: Bid) => void;
@@ -122,7 +127,7 @@ function RequestCard({
         </span>
       </div>
       {active && load.status !== "assigned" && (
-        <LoadOffers bids={bids} onAccept={onAccept} onDecline={onDecline} />
+        <LoadOffers bids={bids} busy={busy} onAccept={onAccept} onDecline={onDecline} />
       )}
     </div>
   );
@@ -130,7 +135,9 @@ function RequestCard({
 
 
 export function MyRequests() {
-  const { myLoads, bids, cancelRequest, acceptBid, declineBid } = useHamoula();
+  const { myLoads, bids, cancelRequest, acceptBid, declineBid, refreshBoard, boardLoading, boardError } =
+    useHamoula();
+  const [busy, setBusy] = useState<string | null>(null);
   const active = myLoads.filter((l) => ACTIVE.includes((l.tripStatus ?? "searching") as TripStatus));
   const history = myLoads.filter((l) => !ACTIVE.includes((l.tripStatus ?? "searching") as TripStatus));
   const bidsFor = (id: string) => bids.filter((b) => b.loadId === id).sort((a, b) => a.price - b.price);
@@ -141,19 +148,47 @@ export function MyRequests() {
   };
 
   const onAccept = (b: Bid) => {
+    // منع الضغط المتكرر على نفس العرض.
+    if (busy) return;
+    setBusy(b.id);
     acceptBid(b.id);
     toast.success("تقبل صاحب الشاحنة ✅", { description: `${b.driver || "صاحب الشاحنة"} · ${b.price} درهم` });
+    void refreshBoard()
+      .catch(() => {})
+      .finally(() => setBusy(null));
   };
 
   const onDecline = (b: Bid) => {
+    if (busy) return;
+    setBusy(b.id);
     declineBid(b.id);
     toast("تفض العرض", { description: `${b.driver || "صاحب الشاحنة"} · ${b.price} درهم` });
+    void refreshBoard()
+      .catch(() => {})
+      .finally(() => setBusy(null));
   };
 
   return (
     <PhoneFrame>
       <AppHeader title="طلباتي" subtitle="كل الطلبات ديالك محفوظة" showBack backTo="/" />
       <div className="flex-1 space-y-6 px-5 py-6">
+        {boardLoading && (
+          <p className="rounded-2xl border-2 border-dashed border-border p-3 text-center text-sm font-bold text-muted-foreground">
+            كنحدثو الطلبات والعروض…
+          </p>
+        )}
+        {boardError && !boardLoading && (
+          <div className="space-y-2 rounded-2xl border-2 border-destructive bg-destructive/10 p-3 text-sm font-extrabold text-destructive">
+            <p>{boardError}</p>
+            <button
+              type="button"
+              onClick={() => void refreshBoard().catch(() => {})}
+              className="min-h-10 w-full rounded-xl border-2 border-destructive px-4 text-sm font-extrabold"
+            >
+              عاود المحاولة
+            </button>
+          </div>
+        )}
         <section className="space-y-3">
           <h2 className="text-sm font-extrabold">طلبات نشيطة</h2>
           {active.length === 0 ? (
@@ -166,6 +201,7 @@ export function MyRequests() {
                 key={l.id}
                 load={l}
                 bids={bidsFor(l.id)}
+                busy={busy}
                 onCancel={onCancel}
                 onAccept={onAccept}
                 onDecline={onDecline}
@@ -186,6 +222,7 @@ export function MyRequests() {
                 key={l.id}
                 load={l}
                 bids={bidsFor(l.id)}
+                busy={busy}
                 onCancel={onCancel}
                 onAccept={onAccept}
                 onDecline={onDecline}

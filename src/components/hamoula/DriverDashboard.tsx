@@ -58,6 +58,8 @@ export function DriverDashboard() {
     geoStatus,
     requestLocation,
     refreshBoard,
+    boardLoading,
+    boardError,
     profile,
     account,
     updateAccount,
@@ -92,8 +94,18 @@ export function DriverDashboard() {
   /** Max payload of the signed-in driver's truck, in kg (null when unknown). */
   const myMaxKg = capacityKg(account?.truckTons);
 
+  /** بيانات ناقصة: طلب قديم بثمن 0 أو بلا مدن — ما كيتعرضش كطلب عادي. */
+  const isIncomplete = (l: Load) =>
+    !l.pickup?.trim() || !l.destination?.trim() || !(l.price > 0);
+
+  const openLoads = useMemo(() => loads.filter((l) => l.status === "open"), [loads]);
+  const incompleteCount = useMemo(
+    () => openLoads.filter(isIncomplete).length,
+    [openLoads],
+  );
+
   const withDistance = useMemo(() => {
-    const open = loads.filter((l) => l.status === "open");
+    const open = openLoads.filter((l) => !isIncomplete(l));
     return open
       .map((l) => {
         const loadKg = capacityKg(l.capacity);
@@ -107,7 +119,7 @@ export function DriverDashboard() {
         if (a.km === null || b.km === null) return b.load.createdAt - a.load.createdAt;
         return a.km - b.km || b.load.createdAt - a.load.createdAt;
       });
-  }, [loads, base?.lat, base?.lng, myMaxKg]);
+  }, [openLoads, base?.lat, base?.lng, myMaxKg]);
   const max = distanceFilters.find((f) => f.id === filter)?.max ?? Infinity;
   const q = cargoQuery.trim();
   const visible = withDistance.filter(
@@ -183,9 +195,37 @@ export function DriverDashboard() {
         <VoiceBanner message="سمع الطلب الصوتي، وجاوب بضغطة وحدة: قبول الثمن ولا عرض مضاد" />
 
         <div className="flex items-center justify-between rounded-2xl bg-primary-soft px-4 py-3">
-          <span className="text-sm font-bold text-accent-foreground">{visible.length} طلب قريب منك</span>
+          <span className="text-sm font-bold text-accent-foreground">
+            {boardLoading ? "كنجيبو الطلبات…" : `${visible.length} طلب قريب منك`}
+          </span>
           <LiveBadge label="مباشر" />
         </div>
+
+        {boardLoading && (
+          <div className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border px-4 py-3 text-sm font-bold text-muted-foreground">
+            <RefreshCw className="size-4 animate-spin" />
+            كنحدثو لائحة الطلبات…
+          </div>
+        )}
+
+        {boardError && !boardLoading && (
+          <div className="space-y-2 rounded-2xl border-2 border-destructive bg-destructive/10 px-4 py-3 text-sm font-extrabold text-destructive">
+            <p>{boardError}</p>
+            <button
+              type="button"
+              onClick={() => void refreshBoard().catch(() => {})}
+              className="min-h-10 w-full rounded-xl border-2 border-destructive px-4 text-sm font-extrabold"
+            >
+              عاود المحاولة
+            </button>
+          </div>
+        )}
+
+        {incompleteCount > 0 && (
+          <div className="rounded-2xl border-2 border-dashed border-border px-4 py-3 text-center text-xs font-bold text-muted-foreground">
+            {incompleteCount} طلب فيه بيانات ناقصة (بلا مدن ولا بثمن 0) — مخبّي حتى يتصحح
+          </div>
+        )}
 
         {!available && (
           <div className="rounded-2xl border-2 border-dashed border-border px-4 py-3 text-center text-xs font-bold text-muted-foreground">
@@ -292,7 +332,7 @@ export function DriverDashboard() {
           </div>
         )}
 
-        {visible.length === 0 && (
+        {visible.length === 0 && !boardLoading && !boardError && (
           <div className="rounded-2xl border-2 border-dashed border-border p-8 text-center">
             <Package className="mx-auto size-10 text-muted-foreground" />
             <p className="mt-3 text-sm font-bold text-muted-foreground">
@@ -397,6 +437,8 @@ function LoadCard({
   const [counter, setCounter] = useState(String(load.price + 100));
   const [sheet, setSheet] = useState(false);
   const [recording, setRecording] = useState(false);
+  /** منع الضغط المتكرر: عرض واحد فقط لكل ضغطة. */
+  const [sending, setSending] = useState(false);
   const truck = findTruck(load.truck);
   const truckLabel = truck.label;
   const tripKm = roadDistanceKm(load.pickupPoint, load.destinationPoint);
@@ -473,7 +515,11 @@ function LoadCard({
       ) : (
         <>
           <button
+            disabled={sending}
+            aria-busy={sending}
             onClick={() => {
+              if (sending) return;
+              setSending(true);
               onBid(load.price, "accepted-price", null);
               playSfx("success");
               toast.success("قبلتي الثمن المقترح", {
@@ -481,10 +527,10 @@ function LoadCard({
               });
               setTimeout(() => navigate({ to: "/tracking" }), 700);
             }}
-            className="flex w-full items-center justify-center gap-3 rounded-2xl bg-primary py-4 text-lg font-extrabold text-primary-foreground active:opacity-90"
+            className="flex w-full items-center justify-center gap-3 rounded-2xl bg-primary py-4 text-lg font-extrabold text-primary-foreground active:opacity-90 disabled:opacity-60"
           >
             <Check className="size-7" />
-            قبول بالسعر المقترح {load.price} درهم
+            {sending ? "كنسيفطو العرض…" : `قبول بالسعر المقترح ${load.price} درهم`}
           </button>
 
           <button
@@ -547,16 +593,20 @@ function LoadCard({
                 </div>
 
                 <button
+                  disabled={sending}
+                  aria-busy={sending}
                   onClick={() => {
+                    if (sending) return;
+                    setSending(true);
                     const price = Number(counter) || load.price;
                     onBid(price, "counter", null);
                     setSheet(false);
                     playSfx("send");
                     toast.success("تبعت العرض المضاد", { description: `${price} درهم` });
                   }}
-                  className="w-full rounded-2xl bg-primary py-4 text-lg font-extrabold text-primary-foreground"
+                  className="w-full rounded-2xl bg-primary py-4 text-lg font-extrabold text-primary-foreground disabled:opacity-60"
                 >
-                  بعت العرض المضاد
+                  {sending ? "كنسيفطو…" : "بعت العرض المضاد"}
                 </button>
               </div>
             </div>
@@ -569,6 +619,8 @@ function LoadCard({
             hint="قول الثمن ديالك ووقت الوصول"
             transcript={driverVoiceReplies[1]!}
             onSend={(note) => {
+              if (sending) return;
+              setSending(true);
               setRecording(false);
               onBid(Number(counter) || load.price, "counter", note);
               toast.success("تبعتات الرسالة الصوتية مع العرض");
