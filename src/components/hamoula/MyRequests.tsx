@@ -222,6 +222,7 @@ export function MyRequests() {
                 key={l.id}
                 load={l}
                 bids={bidsFor(l.id)}
+                busy={busy}
                 onCancel={onCancel}
                 onAccept={onAccept}
                 onDecline={onDecline}

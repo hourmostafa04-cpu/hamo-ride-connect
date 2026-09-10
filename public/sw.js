@@ -1,6 +1,6 @@
 /* مول طرانسبور — service worker للإشعارات فقط (بلا كاش باش ما نبدلوش سلوك التطبيق).
-   SW_VERSION: 2026-09-10-publish — تحديث الإصدار باش التطبيق المثبت يجلب آخر نسخة. */
-self.__MOL_SW_VERSION = "2026-09-10-publish";
+   SW_VERSION: 2026-09-10-qa-6-11 — تحديث الإصدار باش التطبيق المثبت يجلب آخر نسخة. */
+self.__MOL_SW_VERSION = "2026-09-10-qa-6-11";
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
 
