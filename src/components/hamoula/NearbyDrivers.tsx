@@ -61,7 +61,7 @@ export function NearbyDrivers({ pickup, truckId }: { pickup: LatLng; truckId?: s
       </div>
 
       <div className="scroll-row -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-        {MODES.filter((m) => m.id !== "type" || truckId).map((m) => (
+        {MODES.map((m) => (
           <button
             key={m.id}
             type="button"
@@ -77,6 +77,26 @@ export function NearbyDrivers({ pickup, truckId }: { pickup: LatLng; truckId?: s
           </button>
         ))}
       </div>
+
+      {mode === "type" && (
+        <div className="scroll-row -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+          {truckTypes.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              aria-pressed={typeFilter === t.id}
+              onClick={() => setTypeFilter(t.id)}
+              className={`flex w-20 shrink-0 flex-col items-center gap-1 rounded-2xl border-2 p-2 transition active:scale-95 ${
+                typeFilter === t.id ? "border-primary bg-primary-soft" : "border-border"
+              }`}
+            >
+              <img src={TRUCK_IMAGES[t.id]} alt={t.label} className="h-9 w-14 object-contain" />
+              <span className="text-[10px] font-bold leading-tight">{t.label}</span>
+              <span className="text-[9px] font-semibold text-muted-foreground">{t.hint}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       <p className="text-[11px] font-bold text-muted-foreground">
         {drivers.length} شاحنة ·{" "}
