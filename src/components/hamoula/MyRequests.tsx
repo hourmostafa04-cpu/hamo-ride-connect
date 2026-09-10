@@ -62,12 +62,14 @@ function LoadOffers({ bids, busy, onAccept, onDecline }: { bids: Bid[]; busy: st
 function RequestCard({
   load,
   bids,
+  busy,
   onCancel,
   onAccept,
   onDecline,
 }: {
   load: Load;
   bids: Bid[];
+  busy: string | null;
   onCancel: (id: string) => void;
   onAccept: (b: Bid) => void;
   onDecline: (b: Bid) => void;
