@@ -52,12 +52,11 @@ export function TripRating({
         loadId,
         raterPhone,
         raterRole,
-        ratePhoneFix: undefined,
         rateePhone,
         rateeRole,
         stars,
         comment,
-      } as never);
+      });
       setDone(true);
       toast.success("شكراً، تسجل التقييم ديالك");
     } catch (e) {
