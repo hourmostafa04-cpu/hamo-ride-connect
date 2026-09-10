@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Bell, LogOut, Package, Pencil, Phone, Power, Truck, User } from "lucide-react";
+import { Bell, LogOut, Package, Pencil, Phone, Power, Star, Truck, User } from "lucide-react";
+import { fetchRatingSummary, type RatingSummary } from "@/lib/hamoula-ratings";
 import { PhoneFrame, AppHeader, StickyActions } from "@/components/hamoula/PhoneFrame";
 import { useHamoula, type RoleId } from "@/lib/hamoula-store";
 import { capacityOptions, capacityKg, driverTruckKinds, truckTypes } from "@/lib/hamoula-data";
@@ -60,6 +61,19 @@ function AccountPage() {
   const role: RoleId = account?.role ?? "shipper";
   const [tons, setTons] = useState(account?.truckTons ?? capacityOptions[1]!);
   const [kind, setKind] = useState(account?.truckType ?? driverTruckKinds[1]!);
+  // متوسط التقييم وعدد التقييمات الحقيقية ديال هاد الحساب.
+  const [rating, setRating] = useState<RatingSummary>({ average: 0, count: 0 });
+  const accountPhone = account?.phone ?? "";
+  useEffect(() => {
+    if (!accountPhone) return;
+    let alive = true;
+    fetchRatingSummary(accountPhone)
+      .then((r) => alive && setRating(r))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [accountPhone]);
 
   if (!account) {
     return (
@@ -122,6 +136,12 @@ function AccountPage() {
             <p className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-primary-soft px-2.5 py-1 text-[11px] font-extrabold text-primary">
               {account.role === "driver" ? <Truck className="size-3.5" /> : <Package className="size-3.5" />}
               {account.role === "driver" ? "سائق / صاحب شاحنة" : "صاحب بضاعة"}
+            </p>
+            <p className="mt-1 flex items-center gap-1.5 text-[11px] font-extrabold text-primary">
+              <Star className="size-3.5 fill-primary" />
+              {rating.count > 0
+                ? `${rating.average.toFixed(1)} / 5 · ${rating.count} تقييم`
+                : "ما زال بلا تقييمات"}
             </p>
             {account.role === "driver" && (account.truckType || account.truckTons) && (
               <p className="mt-1 text-[11px] font-bold text-muted-foreground">

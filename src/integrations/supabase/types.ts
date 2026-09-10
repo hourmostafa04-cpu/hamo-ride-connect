@@ -283,6 +283,56 @@ export type Database = {
         }
         Relationships: []
       }
+      trip_ratings: {
+        Row: {
+          comment: string
+          created_at: string
+          id: string
+          load_id: string
+          ratee_phone: string
+          ratee_role: string
+          rater_phone: string
+          rater_role: string
+          stars: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comment?: string
+          created_at?: string
+          id?: string
+          load_id: string
+          ratee_phone: string
+          ratee_role?: string
+          rater_phone?: string
+          rater_role?: string
+          stars: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comment?: string
+          created_at?: string
+          id?: string
+          load_id?: string
+          ratee_phone?: string
+          ratee_role?: string
+          rater_phone?: string
+          rater_role?: string
+          stars?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_ratings_load_id_fkey"
+            columns: ["load_id"]
+            isOneToOne: false
+            referencedRelation: "loads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
