@@ -593,16 +593,20 @@ function LoadCard({
                 </div>
 
                 <button
+                  disabled={sending}
+                  aria-busy={sending}
                   onClick={() => {
+                    if (sending) return;
+                    setSending(true);
                     const price = Number(counter) || load.price;
                     onBid(price, "counter", null);
                     setSheet(false);
                     playSfx("send");
                     toast.success("تبعت العرض المضاد", { description: `${price} درهم` });
                   }}
-                  className="w-full rounded-2xl bg-primary py-4 text-lg font-extrabold text-primary-foreground"
+                  className="w-full rounded-2xl bg-primary py-4 text-lg font-extrabold text-primary-foreground disabled:opacity-60"
                 >
-                  بعت العرض المضاد
+                  {sending ? "كنسيفطو…" : "بعت العرض المضاد"}
                 </button>
               </div>
             </div>
@@ -615,6 +619,8 @@ function LoadCard({
             hint="قول الثمن ديالك ووقت الوصول"
             transcript={driverVoiceReplies[1]!}
             onSend={(note) => {
+              if (sending) return;
+              setSending(true);
               setRecording(false);
               onBid(Number(counter) || load.price, "counter", note);
               toast.success("تبعتات الرسالة الصوتية مع العرض");
