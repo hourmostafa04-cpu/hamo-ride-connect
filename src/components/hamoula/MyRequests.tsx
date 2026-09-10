@@ -172,6 +172,23 @@ export function MyRequests() {
     <PhoneFrame>
       <AppHeader title="طلباتي" subtitle="كل الطلبات ديالك محفوظة" showBack backTo="/" />
       <div className="flex-1 space-y-6 px-5 py-6">
+        {boardLoading && (
+          <p className="rounded-2xl border-2 border-dashed border-border p-3 text-center text-sm font-bold text-muted-foreground">
+            كنحدثو الطلبات والعروض…
+          </p>
+        )}
+        {boardError && !boardLoading && (
+          <div className="space-y-2 rounded-2xl border-2 border-destructive bg-destructive/10 p-3 text-sm font-extrabold text-destructive">
+            <p>{boardError}</p>
+            <button
+              type="button"
+              onClick={() => void refreshBoard().catch(() => {})}
+              className="min-h-10 w-full rounded-xl border-2 border-destructive px-4 text-sm font-extrabold"
+            >
+              عاود المحاولة
+            </button>
+          </div>
+        )}
         <section className="space-y-3">
           <h2 className="text-sm font-extrabold">طلبات نشيطة</h2>
           {active.length === 0 ? (
@@ -184,6 +201,7 @@ export function MyRequests() {
                 key={l.id}
                 load={l}
                 bids={bidsFor(l.id)}
+                busy={busy}
                 onCancel={onCancel}
                 onAccept={onAccept}
                 onDecline={onDecline}
