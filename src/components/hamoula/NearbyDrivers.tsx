@@ -116,16 +116,18 @@ export function NearbyDrivers({ pickup, truckId }: { pickup: LatLng; truckId?: s
         </p>
       ) : (
         <ul className="space-y-2">
-          {drivers.map((d) => (
+          {drivers.map((d) => {
+            const truckType = findTruck(d.truckId);
+            return (
             <li key={d.id} className="space-y-3 rounded-2xl border-2 border-border p-3">
               <div className="flex items-center gap-3">
-                <span className="flex size-11 items-center justify-center rounded-2xl bg-primary-soft text-primary">
-                  <Truck className="size-6" />
+                <span className="flex size-14 items-center justify-center rounded-2xl bg-primary-soft p-1.5">
+                  <img src={TRUCK_IMAGES[truckType.id]} alt={truckType.label} className="h-full w-full object-contain" />
                 </span>
                 <div className="flex-1">
                   <div className="text-sm font-extrabold">{d.name}</div>
                   <div className="text-xs font-semibold text-muted-foreground">
-                    {d.truck} · {d.plate}
+                    {truckType.label} · {truckType.hint} · {d.plate}
                   </div>
                 </div>
                 <div className="text-left">
