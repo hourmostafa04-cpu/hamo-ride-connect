@@ -115,6 +115,10 @@
 11. عدم إرجاع صفحة العروض القديمة.
 12. ملفات Lovable Cloud المولّدة تلقائياً (`src/integrations/supabase/*`, `.env`).
 
+## 12. Send SMS Hook
+- نقطة `auth-send-sms` ترفض أي طلب بلا توقيع Standard Webhooks صحيح أو بتوقيت أقدم من 5 دقائق، ولا تسجل OTP أو الأسرار.
+- ترجع 200 فقط بعد قبول Bird أو Vonage للرسالة؛ فشل القناتين يرجع خطأ 502 واضح.
+
 ## 11. طريقة العمل
 - قبل أي تعديل: قراءة `PROJECT_MEMORY.md` و`CHANGELOG.md` وProject Knowledge.
 - بعد كل تعديل ناجح: تحديث الذاكرة وCHANGELOG.

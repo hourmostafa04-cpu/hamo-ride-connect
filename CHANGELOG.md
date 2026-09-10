@@ -163,3 +163,5 @@
 - إضافة src/routes/api/public/auth-send-sms.ts: يستقبل نفس OTP من Supabase ويرسله عبر Bird (eu1, bird_otp, ar) ثم Vonage SMS كـ fallback.
 - بدون تغيير verifyOtp/Session/Auth، وبدون توليد أي OTP جديد. لم يتم النشر.
 - ملاحظة: مفاتيح Vonage (VONAGE_API_KEY/SECRET) غير محفوظة بعد، لذا fallback غير قابل للاختبار حالياً.
+- حماية Standard Webhooks أصبحت إلزامية مع رفض التوقيع المفقود/الخاطئ/القديم بـ401، ومهلات قصيرة لـBird وVonage، و502 إذا فشلت القناتان، وبدون تسجيل OTP أو الأسرار.
+- `SEND_SMS_HOOK_SECRET` ما زال غير محفوظ لأن بطاقة الإدخال الآمنة رُفضت؛ الربط لن يقبل الطلبات قبل حفظه.

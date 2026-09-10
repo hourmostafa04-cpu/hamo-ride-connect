@@ -10,6 +10,9 @@ import { createHmac, timingSafeEqual } from "crypto";
 const BIRD_URL = "https://eu1.platform.bird.com/v1/whatsapp/messages";
 const BIRD_TEMPLATE = "bird_otp";
 const BIRD_LANGUAGE = "ar";
+const SIGNATURE_TOLERANCE_SECONDS = 5 * 60;
+const BIRD_TIMEOUT_MS = 2_500;
+const VONAGE_TIMEOUT_MS = 2_000;
 
 type HookPayload = {
   user?: { phone?: string };
@@ -19,19 +22,26 @@ type HookPayload = {
 /** Standard-Webhooks signature check (Supabase auth hook secret: v1,whsec_<base64>). */
 function verifySignature(rawBody: string, headers: Headers): boolean {
   const secret = process.env["SEND_SMS_HOOK_SECRET"];
-  if (!secret) return true; // hook not configured with a secret yet
+  if (!secret) return false;
   const id = headers.get("webhook-id");
   const timestamp = headers.get("webhook-timestamp");
   const signatureHeader = headers.get("webhook-signature");
   if (!id || !timestamp || !signatureHeader) return false;
 
+  const timestampSeconds = Number(timestamp);
+  if (!Number.isFinite(timestampSeconds)) return false;
+  const ageSeconds = Math.abs(Date.now() / 1_000 - timestampSeconds);
+  if (ageSeconds > SIGNATURE_TOLERANCE_SECONDS) return false;
+
   const base64Secret = secret.replace(/^v1,?/, "").replace(/^whsec_/, "");
+  if (!base64Secret) return false;
   const expected = createHmac("sha256", Buffer.from(base64Secret, "base64"))
     .update(`${id}.${timestamp}.${rawBody}`)
     .digest("base64");
 
   return signatureHeader.split(" ").some((part) => {
-    const value = part.includes(",") ? part.split(",")[1] ?? "" : part;
+    const [version, value = ""] = part.split(",");
+    if (version !== "v1" || !value) return false;
     const a = Buffer.from(value);
     const b = Buffer.from(expected);
     return a.length === b.length && timingSafeEqual(a, b);
@@ -64,6 +74,7 @@ async function sendViaBird(phone: string, otp: string) {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify(body),
+      signal: AbortSignal.timeout(BIRD_TIMEOUT_MS),
     });
     const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
     if (res.ok) return { ok: true as const, id: data["id"], status: data["status"] };
@@ -89,6 +100,7 @@ async function sendViaVonage(phone: string, otp: string) {
         to: phone.replace(/^\+/, ""),
         text: `MOL TRANSPORT: ${otp}`,
       }),
+      signal: AbortSignal.timeout(VONAGE_TIMEOUT_MS),
     });
     const data = (await res.json().catch(() => ({}))) as { messages?: Array<Record<string, unknown>> };
     const first = data.messages?.[0];
@@ -136,27 +148,28 @@ export const Route = createFileRoute("/api/public/auth-send-sms")({
         const phone = toE164(phoneRaw);
         const bird = await sendViaBird(phone, otp);
         if (bird.ok) {
-          console.log("[send-sms] whatsapp ok", { id: bird.id, status: bird.status });
           return new Response(JSON.stringify({}), {
             status: 200,
             headers: { "Content-Type": "application/json" },
           });
         }
 
-        console.warn("[send-sms] whatsapp failed, falling back to sms", { reason: bird.reason });
         const sms = await sendViaVonage(phone, otp);
         if (sms.ok) {
-          console.log("[send-sms] sms fallback ok", { id: sms.id });
           return new Response(JSON.stringify({}), {
             status: 200,
             headers: { "Content-Type": "application/json" },
           });
         }
 
-        console.error("[send-sms] both channels failed", { bird: bird.reason, sms: sms.reason });
         return new Response(
-          JSON.stringify({ error: { http_code: 500, message: "delivery failed" } }),
-          { status: 500, headers: { "Content-Type": "application/json" } },
+          JSON.stringify({
+            error: {
+              http_code: 502,
+              message: `delivery failed: whatsapp=${bird.reason}, sms=${sms.reason}`,
+            },
+          }),
+          { status: 502, headers: { "Content-Type": "application/json" } },
         );
       },
       GET: async () => new Response("Method Not Allowed", { status: 405 }),
