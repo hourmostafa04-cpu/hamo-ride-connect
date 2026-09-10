@@ -404,6 +404,7 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
           // Block autosave before publish resets the store, otherwise this render can
           // write the previously selected truck back into the fresh draft.
           resettingFormRef.current = true;
+          setSubmitting(true);
 
           try {
             await publishLoad({
@@ -418,12 +419,14 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
             });
           } catch (err) {
             resettingFormRef.current = false;
+            setSubmitting(false);
             console.error("[hamoula] إرسال الطلب فشل", err);
             toast.error("ما تسجلش الطلب", {
               description: "وقع مشكل فالحفظ. عاود المحاولة من فضلك.",
             });
             return;
           }
+          setSubmitting(false);
           playSfx("success");
           // Clear the on-screen draft AND the stored one so the next request starts empty.
           resetForm();
