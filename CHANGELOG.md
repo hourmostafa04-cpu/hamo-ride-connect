@@ -2,6 +2,14 @@
 
 سجل التغييرات المهمة (من الأقدم إلى الأحدث). التواريخ تقريبية حسب مسار العمل.
 
+## 2026-09-11 — تشديد صلاحيات الطلبات والعروض وخصوصية الشات
+- نزع UPDATE المباشر عن `loads` و`bids` لدور `authenticated`؛ لا سياسات UPDATE.
+- دوال آمنة جديدة: `set_trip_status`, `update_own_load`, `update_own_bid`, `respond_to_bid`, `is_chat_party` (SECURITY DEFINER, search_path ثابت, تنفيذ لـ authenticated فقط).
+- `respond_to_bid` atomic مع `FOR UPDATE` يمنع قبول عرضين لنفس الطلب ويقبل `accepted`/`rejected` فقط.
+- الشات: القراءة لصاحب الطلب والسائق المقبول فقط، ومنع INSERT من العميل نهائياً؛ الإرسال عبر Server Function `sendChatMessage` بهوية `auth.uid()`.
+- إشعار الشات صار للطرف الآخر فقط بدل جميع أصحاب العروض.
+- الملفات: `src/lib/chat.functions.ts` (جديد)، `hamoula-chat.ts`، `hamoula-sync.ts`، `hamoula-store.tsx`، `push.server.ts`، `src/routes/chat.tsx`.
+
 ## 2026-09-11 — إغلاق Demo والمحاكاة في Production
 - Demo Login أصبح مقفولاً افتراضياً، محصوراً في local development بتفعيل صريح من الواجهة والخادم، وServer Function ترفض Production قبل إرجاع أي credentials.
 - حذف مؤقت إنشاء عروض السائقين الوهمية وتنظيف أي bids محلية `mock-*`؛ العروض المعروضة والح محفوظة حقيقية فقط.
