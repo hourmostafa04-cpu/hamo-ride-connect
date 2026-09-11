@@ -33,7 +33,7 @@ export default function TripMap({
 }: {
   pickup: LatLng;
   destination: LatLng;
-  driver: LatLng;
+  driver: LatLng | null;
   bearing?: number;
   follow?: boolean;
 }) {
@@ -64,7 +64,9 @@ export default function TripMap({
     trail.current = L.polyline([[pickup.lat, pickup.lng]], { color: "#f97316", weight: 5 }).addTo(
       m,
     );
-    truck.current = L.marker([driver.lat, driver.lng], { icon: makeTruckIcon(bearing) }).addTo(m);
+    if (driver) {
+      truck.current = L.marker([driver.lat, driver.lng], { icon: makeTruckIcon(bearing) }).addTo(m);
+    }
 
     m.fitBounds(
       L.latLngBounds([
@@ -88,8 +90,12 @@ export default function TripMap({
   // Marker follows every animated frame; the trail only records real movement.
   useEffect(() => {
     const m = map.current;
-    if (!m || !m.getContainer()?.isConnected) return;
-    truck.current?.setLatLng([driver.lat, driver.lng]);
+    if (!m || !m.getContainer()?.isConnected || !driver) return;
+    if (!truck.current) {
+      truck.current = L.marker([driver.lat, driver.lng], { icon: makeTruckIcon(bearing) }).addTo(m);
+    } else {
+      truck.current.setLatLng([driver.lat, driver.lng]);
+    }
     if (distanceKm(lastTrail.current, driver) > 0.35) {
       lastTrail.current = driver;
       trail.current?.addLatLng([driver.lat, driver.lng]);

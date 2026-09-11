@@ -3,14 +3,14 @@ import type { Account, RoleId } from "@/lib/hamoula-store";
 /**
  * وضع الاختبار المؤقت (Test Mode).
  *
- * ⚠️ قبل الإطلاق: بدّل القيمة إلى false (أو حط VITE_DEMO_LOGIN=false ف .env)
- * وغادي يختفي زر "دخول تجريبي" بالكامل، ويبقى دخول OTP الحقيقي هو الوحيد.
+ * مقفول افتراضياً، ولا يشتغل إلا في local development عند ضبط
+ * VITE_DEMO_LOGIN=true صراحة. Production يبقى دائماً بلا Demo Login.
  *
  * هاد الوضع كيخص حساب واحد فقط (DEMO_PHONE). أي رقم آخر خاصو OTP حقيقي.
  */
-const FLAG = (import.meta.env["VITE_DEMO_LOGIN"] as string | undefined) ?? "true";
+const FLAG = (import.meta.env["VITE_DEMO_LOGIN"] as string | undefined) ?? "false";
 
-export const DEMO_LOGIN_ENABLED = FLAG !== "false";
+export const DEMO_LOGIN_ENABLED = import.meta.env.DEV && FLAG === "true";
 
 /** الرقم الوحيد المسموح ليه بتجاوز الـ SMS. */
 export const DEMO_PHONE = "0600000000";
