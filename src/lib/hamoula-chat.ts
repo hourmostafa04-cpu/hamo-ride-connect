@@ -59,32 +59,23 @@ export async function fetchMessages(loadId: string): Promise<ChatMessage[]> {
   return ((data ?? []) as Row[]).map(rowToMessage);
 }
 
+/**
+ * الإرسال كيمر إجبارياً عبر السيرفر: العميل ما عندو INSERT، والهوية كتتحدد
+ * فالسيرفر من auth.uid() — أي اسم/هاتف/دور جاي من العميل كيتجاهل.
+ */
 export async function sendMessage(input: {
   loadId: string;
-  shipperPhone: string;
-  driverPhone: string;
-  senderPhone: string;
-  senderRole: "shipper" | "driver";
-  senderName: string;
   body?: string;
   voice?: ChatVoice | null;
 }) {
   const userId = await currentUserId();
   if (!userId) throw new Error("خاصك تكون داخل بحسابك باش تصيفط رسالة");
-  const { error } = await db.from("chat_messages").insert({
-    user_id: userId,
-    load_id: input.loadId,
-    shipper_phone: input.shipperPhone,
-    driver_phone: input.driverPhone,
-    sender_phone: input.senderPhone,
-    sender_role: input.senderRole,
-    sender_name: input.senderName,
-    body: input.body ?? "",
-    voice: input.voice ?? null,
+  await sendChatMessage({
+    data: { loadId: input.loadId, body: input.body ?? "", voice: input.voice ?? null },
   });
-  if (error) throw error;
   notifyEvent("chat", { loadId: input.loadId });
 }
+
 
 /** Live updates for one conversation — no refresh needed. */
 export function subscribeMessages(loadId: string, onInsert: (m: ChatMessage) => void) {
