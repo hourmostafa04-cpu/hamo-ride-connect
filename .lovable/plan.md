@@ -51,8 +51,8 @@
 ## التفاصيل التقنية
 
 قاعدة البيانات (Migration واحدة). ملاحظة: `loads.id` و`bids.id` نوعهم `text` فعلياً، و`user_id` نوعو `uuid` — الدوال غادي تستعمل نفس الأنواع الحقيقية بلا افتراض.
-- `loads`: DROP/CREATE `loads_update` → صاحب الطلب فقط. دالة `public.set_trip_status(_load_id text, _status text)`.
-- `bids`: DROP `bids_update` الواسعة → سياسة UPDATE محدودة للسائق صاحب العرض فقط (والتعديل الفعلي عبر RPC). دالتان: `public.update_own_bid(...)` و`public.respond_to_bid(_bid_id text, _decision text)`.
+- `loads`: DROP `loads_update` بلا تعويض + `REVOKE UPDATE ON public.loads FROM authenticated`. دالتان: `public.set_trip_status(_load_id text, _status text)` و`public.update_own_load(...)` للأعمدة العادية فقط.
+- `bids`: DROP `bids_update` + `REVOKE UPDATE ON public.bids FROM authenticated`. دالتان: `public.update_own_bid(...)` و`public.respond_to_bid(_bid_id text, _decision text)`.
 - `respond_to_bid`: عملية atomic كاملة داخل الدالة — `SELECT ... FOR UPDATE` على الطلب وعلى العرض، رفض إذا الطلب فيه عرض مقبول من قبل أو العرض ماشي `pending`، قبول القيم `accepted` / `rejected` فقط، ثم تحديث العرض والطلب ورفض باقي العروض في نفس المعاملة (منع قبول عرضين في نفس الوقت).
 - `chat_messages`: DROP/CREATE سياسة SELECT مبنية على دالة جديدة `public.is_chat_party(_load_id text)` = صاحب الطلب أو السائق المقبول. حذف سياسة INSERT للعميل.
 - تحديث `public.can_access_chat_load` لتعتمد `is_chat_party`.
