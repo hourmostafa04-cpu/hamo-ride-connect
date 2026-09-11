@@ -165,3 +165,7 @@
 - ملاحظة: مفاتيح Vonage (VONAGE_API_KEY/SECRET) غير محفوظة بعد، لذا fallback غير قابل للاختبار حالياً.
 - حماية Standard Webhooks أصبحت إلزامية مع رفض التوقيع المفقود/الخاطئ/القديم بـ401، ومهلات قصيرة لـBird وVonage، و502 إذا فشلت القناتان، وبدون تسجيل OTP أو الأسرار.
 - `SEND_SMS_HOOK_SECRET` ما زال غير محفوظ لأن بطاقة الإدخال الآمنة رُفضت؛ الربط لن يقبل الطلبات قبل حفظه.
+
+## 2026-09-11 — تأمين قراءة التقييمات
+- حذف policy `trip_ratings_select_authenticated` (USING true) واستبدالها بـ `trip_ratings_select_participant`: القراءة فقط لصاحب التقييم أو المقيَّم (عبر `current_user_phone_key()` SECURITY INVOKER) أو طرفي الرحلة (`owns_load`/`has_bid_on_load`).
+- Scan بعد الإصلاح: 0 Critical، باقي فقط warn SECURITY DEFINER (owns_load / has_bid_on_load / can_access_chat_load) — بلا Ignore بقرار المالك.
