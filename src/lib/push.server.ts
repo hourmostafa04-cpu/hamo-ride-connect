@@ -142,15 +142,21 @@ export async function resolveRecipients(input: {
     return { ids: [row.user_id], status: row.status };
   }
 
-  // chat → الطرف الآخر فنفس الطلب فقط
+  // chat → الطرف الآخر فالمحادثة الخاصة فقط: صاحب الطلب أو السائق المقبول.
   if (!input.loadId) return { ids: [] };
   const [{ data: load }, { data: bids }] = await Promise.all([
     supabaseAdmin.from("loads").select("user_id").eq("id", input.loadId).maybeSingle(),
-    supabaseAdmin.from("bids").select("user_id").eq("load_id", input.loadId).limit(100),
+    supabaseAdmin
+      .from("bids")
+      .select("user_id")
+      .eq("load_id", input.loadId)
+      .eq("status", "accepted")
+      .limit(1),
   ]);
   const ids = [
     (load as { user_id: string | null } | null)?.user_id ?? null,
     ...((bids ?? []) as { user_id: string | null }[]).map((b) => b.user_id),
   ].filter((id): id is string => !!id && id !== input.senderId);
   return { ids };
+
 }
