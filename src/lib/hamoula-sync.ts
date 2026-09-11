@@ -111,7 +111,7 @@ export async function saveLoad(load: Load) {
     console.error("[hamoula] saveLoad: no authenticated user, load NOT saved", load.id);
     throw new Error("لا يمكن حفظ الطلب بدون تسجيل الدخول");
   }
-  const { error } = await supabase.from("loads").upsert({
+  const { error } = await supabase.from("loads").insert({
     id: load.id,
     user_id: userId,
     shipper: load.shipper,
@@ -128,7 +128,6 @@ export async function saveLoad(load: Load) {
     status: load.status,
     trip_status: load.tripStatus ?? "searching",
     accepted_offer: load.acceptedOffer ?? null,
-    updated_at: new Date().toISOString(),
   } as never);
   if (error) {
     console.error("[hamoula] saveLoad failed:", error.message, load.id);
@@ -136,25 +135,48 @@ export async function saveLoad(load: Load) {
   }
 }
 
-/** Lifecycle update for one request (منشور → مقبول → في الطريق → تم التسليم / ملغى). */
-export async function saveLoadStatus(
+/**
+ * تغيير حالة الرحلة فقط، عبر دالة آمنة فالسيرفر:
+ * السائق المقبول = enroute/loaded/delivered، صاحب الطلب = searching/matched/cancelled.
+ * ما كاين حتى UPDATE مباشر على الأعمدة الحساسة.
+ */
+export async function saveLoadStatus(loadId: string, patch: { tripStatus?: TripStatus }) {
+  if (!isRealLoad(loadId) || !patch.tripStatus) return;
+  const { error } = await supabase.rpc("set_trip_status", {
+    _load_id: loadId,
+    _status: patch.tripStatus,
+  } as never);
+  if (error) console.warn("[hamoula] set_trip_status:", error.message);
+}
+
+/** تعديل بيانات الطلب العادية من صاحبه فقط (قبل قبول أي عرض). */
+export async function updateOwnLoad(
   loadId: string,
-  patch: { tripStatus?: TripStatus; status?: Load["status"]; acceptedOffer?: Offer | null; price?: number },
+  patch: Partial<Pick<Load, "pickup" | "destination" | "cargo" | "truck" | "capacity" | "price">> & {
+    pickupPoint?: LatLng;
+    destinationPoint?: LatLng;
+  },
 ) {
   if (!isRealLoad(loadId)) return;
-  const row: Record<string, unknown> = { updated_at: new Date().toISOString() };
-  if (patch.tripStatus) row["trip_status"] = patch.tripStatus;
-  if (patch.status) row["status"] = patch.status;
-  if (patch.acceptedOffer !== undefined) row["accepted_offer"] = patch.acceptedOffer;
-  if (patch.price !== undefined) row["price"] = patch.price;
-  await supabase.from("loads").update(row as never).eq("id", loadId);
+  const { error } = await supabase.rpc("update_own_load", {
+    _load_id: loadId,
+    _pickup: patch.pickup ?? null,
+    _destination: patch.destination ?? null,
+    _cargo: patch.cargo ?? null,
+    _truck: patch.truck ?? null,
+    _capacity: patch.capacity ?? null,
+    _price: patch.price ?? null,
+    _pickup_point: patch.pickupPoint ?? null,
+    _destination_point: patch.destinationPoint ?? null,
+  } as never);
+  if (error) throw new Error(error.message);
 }
 
 export async function saveBid(bid: Bid) {
   if (!isRealBid(bid.driverId) || !isRealLoad(bid.loadId)) return;
   const userId = await currentUserId();
   if (!userId) return;
-  await supabase.from("bids").upsert({
+  await supabase.from("bids").insert({
     id: bid.id,
     user_id: userId,
     load_id: bid.loadId,
@@ -171,20 +193,36 @@ export async function saveBid(bid: Bid) {
     voice_note: bid.voiceNote,
     shipper_reply: bid.shipperReply,
     status: bid.status,
-    updated_at: new Date().toISOString(),
   } as never);
 }
 
-export async function saveBidStatus(bidId: string, patch: { status?: Bid["status"]; price?: number }) {
-  const row: Record<string, unknown> = { updated_at: new Date().toISOString() };
-  if (patch.status) row["status"] = patch.status;
-  if (patch.price !== undefined) row["price"] = patch.price;
-  await supabase.from("bids").update(row as never).eq("id", bidId);
+/** السائق كيعدّل عرضه هو فقط، وفقط ما دام pending — بلا أي مساس بالهوية. */
+export async function updateOwnBid(
+  bidId: string,
+  patch: { price?: number; etaMin?: number; voiceNote?: VoiceNote | null },
+) {
+  const { error } = await supabase.rpc("update_own_bid", {
+    _bid_id: bidId,
+    _price: patch.price ?? null,
+    _eta_min: patch.etaMin ?? null,
+    _voice_note: patch.voiceNote ?? null,
+  } as never);
+  if (error) throw new Error(error.message);
+}
+
+/** قبول/رفض عرض من صاحب الطلب فقط — عملية واحدة atomic فالسيرفر. */
+export async function respondToBid(bidId: string, decision: "accepted" | "rejected") {
+  const { error } = await supabase.rpc("respond_to_bid", {
+    _bid_id: bidId,
+    _decision: decision,
+  } as never);
+  if (error) throw new Error(error.message);
 }
 
 export async function removeBid(bidId: string) {
   await supabase.from("bids").delete().eq("id", bidId);
 }
+
 
 /** The unfinished request form of one phone number — survives app restarts. */
 export async function saveDraft(phone: string, data: Partial<TripRequest>) {
