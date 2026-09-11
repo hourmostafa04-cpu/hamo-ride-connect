@@ -84,12 +84,11 @@ function TrackingPage() {
     [request.destinationPoint.lat, request.destinationPoint.lng],
   );
   const {
-    position: driverPoint,
+    position: simulatedDriverPoint,
     bearing,
     speedKmh,
     remainingKm,
     etaMinutes,
-    lastFixAt,
   } = useLiveLocation(pickupPoint, destinationPoint, {
     active: SIMULATED_GPS_ENABLED && tripLive,
     done,
@@ -176,9 +175,9 @@ function TrackingPage() {
               <span className="rounded-full bg-primary-soft px-3 py-1 text-xs font-bold text-accent-foreground">
                 مكتملة
               </span>
-            ) : (
-              locationAvailable ? <LiveBadge label="الموقع الحي متوفر" /> : null
-            )}
+            ) : locationAvailable ? (
+              <LiveBadge label="الموقع الحي متوفر" />
+            ) : null}
           </div>
 
           <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">

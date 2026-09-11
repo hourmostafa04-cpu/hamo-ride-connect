@@ -68,7 +68,7 @@ function TripDetailsPage() {
       ? "صاحب البضاعة"
       : [driver?.truck, driver?.plate].filter(Boolean).join(" · ") || "شاحنة";
 
-  // Status comes from the global trip engine so it stays in sync everywhere.
+  // Status comes from persisted participant actions; this screen never advances it.
   const step = Math.max(0, statusByStep.indexOf(request.status));
   const [events, setEvents] = useState<Event[]>([
     { id: 1, label: tripSteps[0]!, time: nowTime() },
@@ -105,13 +105,13 @@ function TripDetailsPage() {
         <section className="overflow-hidden rounded-3xl border-2 border-border bg-card p-2 shadow-soft">
           <div className="flex items-center justify-between px-2 pb-2">
             <h2 className="font-extrabold">مسار السير</h2>
-            {!done ? (
-              remainingKm !== null ? <LiveBadge label={`باقي ${remainingKm.toFixed(0)} كلم`} /> : null
-            ) : (
+            {!done && remainingKm !== null ? (
+              <LiveBadge label={`باقي ${remainingKm.toFixed(0)} كلم`} />
+            ) : done ? (
               <span className="rounded-full bg-primary-soft px-3 py-1 text-xs font-extrabold text-accent-foreground">
                 وصلات
               </span>
-            )}
+            ) : null}
           </div>
           <ClientOnly fallback={<MapSkeleton />}>
             <Suspense fallback={<MapSkeleton />}>
@@ -124,7 +124,7 @@ function TripDetailsPage() {
           </ClientOnly>
           <div className="grid grid-cols-3 gap-2 p-2">
             <Metric label="المسافة الكاملة" value={`${totalKm.toFixed(0)} كلم`} />
-             <Metric label="باقي" value={remainingKm === null ? "غير متوفر" : `${remainingKm.toFixed(0)} كلم`} />
+            <Metric label="باقي" value={remainingKm === null ? "غير متوفر" : `${remainingKm.toFixed(0)} كلم`} />
             <Metric label="الثمن" value={`${request.price} درهم`} />
           </div>
         </section>
