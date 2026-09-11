@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { currentUserId } from "./hamoula-auth";
+import { sendChatMessage } from "./chat.functions";
 import { notifyEvent } from "./push-client";
 
 /**
