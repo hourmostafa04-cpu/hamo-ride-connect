@@ -100,6 +100,12 @@
 - لا صلاحية SELECT لـ anon على `push_subscriptions`.
 - بيانات وهمية مكتوبة في الكود (`hamoula-demo-loads.ts`) معطّلة — تظهر البيانات الحقيقية فقط.
 - ممنوع توليد عروض وهمية أو انتقال حالة الرحلة بمؤقت. الحالات تتغير فقط بإجراء حقيقي من الدور المناسب، و`delivered` لا تقع تلقائياً.
+- ممنوع UPDATE مباشر من العميل على `loads` و`bids` (الصلاحية منزوعة). كل تعديل حساس يمر عبر دوال آمنة: `set_trip_status`, `update_own_load`, `update_own_bid`, `respond_to_bid`.
+- `set_trip_status`: `enroute/loaded/delivered` للسائق المقبول فقط؛ `searching/matched/cancelled` لصاحب الطلب فقط.
+- `respond_to_bid` عملية atomic بـ `FOR UPDATE`: قبول عرض واحد فقط لكل طلب، القيم المسموحة `accepted`/`rejected` فقط.
+- الشات خاص بصاحب الطلب + السائق المقبول فقط (`is_chat_party`). العميل ما عندو INSERT؛ الإرسال عبر `sendChatMessage` والهوية من `auth.uid()`.
+- إشعار الشات يذهب للطرف الآخر في المحادثة فقط، وليس لجميع أصحاب العروض.
+- كل الدوال `SECURITY DEFINER` بـ `search_path=public` ثابت، تنفيذها لـ `authenticated` فقط بدون anon/PUBLIC.
 - نسخة احتياطية سابقة: `/mnt/documents/hamoula-backup-20260828/`.
 
 ## 10. ممنوع تغييره بدون طلب صريح

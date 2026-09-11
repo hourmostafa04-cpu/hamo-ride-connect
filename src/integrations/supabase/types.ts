@@ -341,7 +341,39 @@ export type Database = {
       can_access_chat_load: { Args: { _load_id: string }; Returns: boolean }
       current_user_phone_key: { Args: never; Returns: string }
       has_bid_on_load: { Args: { _load_id: string }; Returns: boolean }
+      is_chat_party: { Args: { _load_id: string }; Returns: boolean }
       owns_load: { Args: { _load_id: string }; Returns: boolean }
+      respond_to_bid: {
+        Args: { _bid_id: string; _decision: string }
+        Returns: undefined
+      }
+      set_trip_status: {
+        Args: { _load_id: string; _status: string }
+        Returns: undefined
+      }
+      update_own_bid: {
+        Args: {
+          _bid_id: string
+          _eta_min: number
+          _price: number
+          _voice_note: Json
+        }
+        Returns: undefined
+      }
+      update_own_load: {
+        Args: {
+          _capacity: string
+          _cargo: string
+          _destination: string
+          _destination_point: Json
+          _load_id: string
+          _pickup: string
+          _pickup_point: Json
+          _price: number
+          _truck: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

@@ -101,16 +101,8 @@ function ChatPage() {
       if (!loadId || !account) return;
       setSending(true);
       try {
-        await sendMessage({
-          loadId,
-          shipperPhone,
-          driverPhone,
-          senderPhone: myPhone,
-          senderRole: account.role,
-          senderName: account.name,
-          body,
-          voice,
-        });
+        await sendMessage({ loadId, body, voice });
+
         markRead(loadId);
       } catch {
         toast.error("ما تبعتاتش الرسالة — عاود المحاولة");
