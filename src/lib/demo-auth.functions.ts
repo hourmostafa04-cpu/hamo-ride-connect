@@ -2,9 +2,14 @@ import { createServerFn } from "@tanstack/react-start";
 
 /**
  * وضع الاختبار: كيتأكد بلي المستخدم التجريبي كاين بصح داخل Auth (عندو auth.uid()).
- * كيخدم غير مع البريد/الرقم التجريبي الوحيد، وكيتعطل ملي VITE_DEMO_LOGIN=false.
+ * كيخدم غير في local development ملي DEMO_LOGIN_ENABLED=true من جهة الخادم.
+ * Production وأي بيئة ما فعلاتوش صراحة كيرفضو الطلب قبل لمس Auth.
  */
 export const ensureDemoAuthUser = createServerFn({ method: "POST" }).handler(async () => {
+  const demoEnabled =
+    process.env["NODE_ENV"] !== "production" && process.env["DEMO_LOGIN_ENABLED"] === "true";
+  if (!demoEnabled) throw new Error("Demo login is disabled");
+
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const email = "demo0600000000@hamoula.test";
   const password = "hamoula-demo-0600000000";

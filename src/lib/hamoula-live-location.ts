@@ -3,6 +3,9 @@ import { lerp, distanceKm, roadDistanceKm, type LatLng } from "@/lib/hamoula-geo
 
 /** How often a new GPS fix arrives from the truck (ms). */
 export const FIX_INTERVAL_MS = 4000;
+const SIMULATION_FLAG = (import.meta.env["VITE_SIMULATED_GPS"] as string | undefined) ?? "false";
+/** Explicit local-development switch. This can never enable simulated GPS in Production. */
+export const SIMULATED_GPS_ENABLED = import.meta.env.DEV && SIMULATION_FLAG === "true";
 
 /** Bearing in degrees (0 = north) from a to b. */
 export function bearingDeg(a: LatLng, b: LatLng) {
@@ -81,7 +84,7 @@ export function useLiveLocation(
 
   // Periodic location updates.
   useEffect(() => {
-    if (!active || done) return;
+    if (!SIMULATED_GPS_ENABLED || !active || done) return;
     const t = setInterval(() => {
       progress.current = Math.min(1, progress.current + 0.035);
       const raw = lerp(pickup, destination, progress.current);
@@ -107,7 +110,7 @@ export function useLiveLocation(
 
   // Smooth interpolation between fixes.
   useEffect(() => {
-    if (done) return;
+    if (!SIMULATED_GPS_ENABLED || done) return;
     let raf = 0;
     const tick = () => {
       const t = Math.min(1, (Date.now() - fixAt.current) / FIX_INTERVAL_MS);

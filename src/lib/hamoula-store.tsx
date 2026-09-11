@@ -9,9 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import type { Offer, VoiceNote } from "./hamoula-data";
-import { mockOffers, offerVoiceNotes } from "./hamoula-data";
-import { defaultDestination, defaultPickup, roadDistanceKm, type LatLng } from "./hamoula-geo";
-import { counterOfferPrice } from "./hamoula-pricing";
+import { defaultDestination, defaultPickup, type LatLng } from "./hamoula-geo";
 import { supabase } from "@/integrations/supabase/client";
 import {
   clearDraft,
@@ -294,13 +292,6 @@ const GEO_KEY = "hamoula-location";
 
 const shipperName = profiles[0]!.name;
 
-/** Ordered live-trip progression used by the global trip engine. */
-export const tripFlow: Partial<Record<TripStatus, TripStatus>> = {
-  matched: "enroute",
-  enroute: "loaded",
-  loaded: "delivered",
-};
-
 export const tripOrder: TripStatus[] = ["matched", "enroute", "loaded", "delivered"];
 
 export function HamoulaProvider({ children }: { children: ReactNode }) {
@@ -384,8 +375,12 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
     if (raw) {
       try {
         const parsed = JSON.parse(raw) as Board;
-        // Demo/mock loads are disabled: only real database rows are shown.
-        setBoard({ ...parsed, loads: parsed.loads.filter((l) => isRealLoad(l.id)) });
+        // Demo/mock rows are disabled: only real database rows are shown.
+        setBoard({
+          ...parsed,
+          loads: parsed.loads.filter((l) => isRealLoad(l.id)),
+          bids: parsed.bids.filter((b) => isRealBid(b.driverId)),
+        });
       } catch {
         /* ignore corrupt board; DB sync will fill real loads */
       }
@@ -598,12 +593,12 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
 
   // ---- Shared backend sync -------------------------------------------------
   const accountPhone = account ? phoneKey(account.phone) : "";
-  const driverKey = account?.role === "driver" ? `d-${accountPhone}` : profiles[1]!.id;
+  const driverKey = account?.role === "driver" && accountPhone ? `d-${accountPhone}` : "";
 
   const [boardLoading, setBoardLoading] = useState(false);
   const [boardError, setBoardError] = useState<string | null>(null);
 
-  /** Pull requests + offers from the shared database (keeps demo/mock rows). */
+  /** Pull requests + offers from the shared database. */
   const refreshFromDb = useCallback(async () => {
     setBoardLoading(true);
     try {
@@ -611,7 +606,7 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
       setBoard((b) => ({
         ...b,
         loads: remote.loads,
-        bids: [...remote.bids, ...b.bids.filter((x) => !isRealBid(x.driverId))],
+        bids: remote.bids.filter((bid) => isRealBid(bid.driverId)),
       }));
       setBoardError(null);
     } catch (err) {
@@ -688,18 +683,10 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
     if (accountPhone) void clearDraft(accountPhone);
   }, [accountPhone]);
 
-  // ---- Global trip engine: the active trip advances wherever the user is ----
-  const [tripLive, setTripLive] = useState(true);
+  // Live tracking is only an on/off display preference. Trip state never advances by timer.
+  const [tripLive, setTripLive] = useState(false);
   const tripStatus = board.request.status;
   const currentLoadId = board.request.loadId ?? null;
-
-  useEffect(() => {
-    if (!ready || !tripLive) return;
-    const next = tripFlow[tripStatus as keyof typeof tripFlow];
-    if (!next) return;
-    const t = setTimeout(() => updateRequest({ status: next }), 9000);
-    return () => clearTimeout(t);
-  }, [ready, tripLive, tripStatus, updateRequest]);
 
   // Persist every lifecycle change of the active trip.
   useEffect(() => {
@@ -773,17 +760,19 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
 
   const addBid = useCallback<Ctx["addBid"]>(
     ({ loadId, price, kind, voiceNote = null }) => {
+      if (sessionState !== "authenticated" || account?.role !== "driver" || !driverKey) {
+        throw new Error("خاص حساب سائق مسجل باش تقدم عرض");
+      }
       const bid: Bid = {
         id: `B-${Date.now()}`,
         loadId,
         driverId: driverKey,
-        driver: account?.role === "driver" ? account.name : profiles[1]!.name,
-        driverPhone: account?.role === "driver" ? account.phone : undefined,
-        truck:
-          account?.role === "driver" && account.truckType ? account.truckType : "شاحنة متوسطة",
-        plate: account?.truckPlate?.trim() || "12345 - أ - 20",
-        rating: profiles[1]!.rating,
-        trips: 214,
+        driver: account.name,
+        driverPhone: account.phone,
+        truck: account.truckType ?? "",
+        plate: account.truckPlate?.trim() ?? "",
+        rating: 0,
+        trips: 0,
         price,
         etaMin: 20,
         kind,
@@ -799,7 +788,7 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
       void saveBid(bid).then(() => notifyEvent("new-bid", { loadId }));
       return bid;
     },
-    [account, driverKey],
+    [account, driverKey, sessionState],
   );
 
   const acceptBid = useCallback((bidId: string) => {
@@ -909,57 +898,6 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const activeLoad = board.loads.find((l) => l.status === "open") ?? board.loads[0] ?? null;
-
-  // Simulated competing drivers bidding on the freshest open load.
-  const activeLoadId = activeLoad?.id ?? null;
-  const activeLoadStatus = activeLoad?.status ?? null;
-  const activeLoadPrice = activeLoad?.price ?? 0;
-  const activeLoadTruck = activeLoad?.truck;
-  const routeKm = activeLoad
-    ? roadDistanceKm(activeLoad.pickupPoint, activeLoad.destinationPoint)
-    : 0;
-  useEffect(() => {
-    if (!activeLoadId || activeLoadStatus !== "open") return;
-    const pool = mockOffers.filter((o) => o.driver !== profiles[1]!.name);
-    let i = 0;
-    const t = setInterval(() => {
-      const next = pool[i];
-      i += 1;
-      if (!next) {
-        clearInterval(t);
-        return;
-      }
-      setBoard((b) => {
-        if (b.bids.some((x) => x.loadId === activeLoadId && x.driverId === `mock-${next.id}`)) {
-          return b;
-        }
-        // Deterministic per-driver spread so prices stay stable across renders.
-        const variance = ((Number(next.id) * 37) % 100) / 100;
-        const price = counterOfferPrice(routeKm, activeLoadTruck, activeLoadPrice, variance);
-        const etaMin = Math.max(8, Math.round(10 + i * 8));
-        const bid: Bid = {
-          id: `B-${next.id}-${activeLoadId}`,
-          loadId: activeLoadId,
-          driverId: `mock-${next.id}`,
-          driver: next.driver,
-          truck: next.truck,
-          plate: next.plate,
-          rating: next.rating,
-          trips: next.trips,
-          price,
-          etaMin,
-          kind: price === activeLoadPrice ? "accepted-price" : "counter",
-          voiceNote: offerVoiceNotes[next.id] ?? null,
-          shipperReply: null,
-          status: "pending",
-          createdAt: Date.now(),
-        };
-        return { ...b, bids: [...b.bids, bid] };
-      });
-    }, 4000);
-    return () => clearInterval(t);
-  }, [activeLoadId, activeLoadStatus, activeLoadPrice, activeLoadTruck, routeKm]);
-
 
   const myBidFor = useCallback(
     (loadId: string) =>

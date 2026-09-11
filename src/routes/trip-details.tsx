@@ -1,5 +1,5 @@
 import { createFileRoute, Link, ClientOnly } from "@tanstack/react-router";
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import {
   Check,
   Clock,
@@ -16,7 +16,7 @@ import { tripSteps } from "@/lib/hamoula-data";
 import { useHamoula, type TripStatus } from "@/lib/hamoula-store";
 
 const statusByStep: TripStatus[] = ["matched", "enroute", "loaded", "delivered"];
-import { lerp, distanceKm } from "@/lib/hamoula-geo";
+import { distanceKm } from "@/lib/hamoula-geo";
 import { playSfx } from "@/lib/sfx";
 
 import { tripRefLabel } from "@/lib/trip-ref";
@@ -56,7 +56,7 @@ function nowTime() {
 }
 
 function TripDetailsPage() {
-  const { profile, request, tripLive, setTripLive, activeLoad, account, bids } = useHamoula();
+  const { profile, request, activeLoad, account, bids, myLocation } = useHamoula();
   const driver = request.acceptedOffer;
   // أسماء الطرفين من الطلب/العرض الحقيقي فقط — بلا بيانات تجريبية.
   const counterpartName =
@@ -70,8 +70,6 @@ function TripDetailsPage() {
 
   // Status comes from the global trip engine so it stays in sync everywhere.
   const step = Math.max(0, statusByStep.indexOf(request.status));
-  const live = tripLive;
-  const [progress, setProgress] = useState(0);
   const [events, setEvents] = useState<Event[]>([
     { id: 1, label: tripSteps[0]!, time: nowTime() },
   ]);
@@ -85,20 +83,7 @@ function TripDetailsPage() {
     setEvents((e) => [{ id: Date.now(), label: tripSteps[step]!, time: nowTime() }, ...e]);
   }, [step]);
 
-  useEffect(() => {
-    if (done) {
-      setProgress(1);
-      return;
-    }
-    if (!live) return;
-    const t = setInterval(() => setProgress((p) => Math.min(1, p + 0.01)), 1200);
-    return () => clearInterval(t);
-  }, [live, done]);
-
-  const driverPoint = useMemo(
-    () => lerp(request.pickupPoint, request.destinationPoint, progress),
-    [request.pickupPoint, request.destinationPoint, progress],
-  );
+  const driverPoint = account?.role === "driver" ? myLocation : null;
   // التقييم المتبادل: الرحلة الحقيقية + رقم الطرف الآخر الحقيقي (بلا بيانات تجريبية).
   const ratingLoadId = request.loadId ?? activeLoad?.id ?? "";
   const acceptedBid = bids.find((b) => b.id === driver?.id);
@@ -107,7 +92,7 @@ function TripDetailsPage() {
       ? (activeLoad?.shipperPhone ?? "")
       : (acceptedBid?.driverPhone ?? "");
 
-  const remainingKm = distanceKm(driverPoint, request.destinationPoint);
+  const remainingKm = driverPoint ? distanceKm(driverPoint, request.destinationPoint) : null;
   const totalKm = distanceKm(request.pickupPoint, request.destinationPoint);
 
   return (
@@ -121,7 +106,7 @@ function TripDetailsPage() {
           <div className="flex items-center justify-between px-2 pb-2">
             <h2 className="font-extrabold">مسار السير</h2>
             {!done ? (
-              <LiveBadge label={`باقي ${remainingKm.toFixed(0)} كلم`} />
+              remainingKm !== null ? <LiveBadge label={`باقي ${remainingKm.toFixed(0)} كلم`} /> : null
             ) : (
               <span className="rounded-full bg-primary-soft px-3 py-1 text-xs font-extrabold text-accent-foreground">
                 وصلات
@@ -139,7 +124,7 @@ function TripDetailsPage() {
           </ClientOnly>
           <div className="grid grid-cols-3 gap-2 p-2">
             <Metric label="المسافة الكاملة" value={`${totalKm.toFixed(0)} كلم`} />
-            <Metric label="باقي" value={`${remainingKm.toFixed(0)} كلم`} />
+             <Metric label="باقي" value={remainingKm === null ? "غير متوفر" : `${remainingKm.toFixed(0)} كلم`} />
             <Metric label="الثمن" value={`${request.price} درهم`} />
           </div>
         </section>
@@ -178,13 +163,9 @@ function TripDetailsPage() {
               <Radio className="size-5 text-primary" />
               تحديثات لحظة بلحظة
             </h2>
-            <button
-              type="button"
-              onClick={() => setTripLive(!live)}
-              className="rounded-full border-2 border-border px-3 py-1.5 text-xs font-extrabold text-muted-foreground"
-            >
-              {live ? "إيقاف" : "تشغيل"}
-            </button>
+            {!driverPoint && (
+              <span className="text-xs font-extrabold text-muted-foreground">في انتظار تحديث السائق</span>
+            )}
           </div>
 
           <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">

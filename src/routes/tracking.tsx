@@ -1,5 +1,5 @@
 import { createFileRoute, Link, ClientOnly, useNavigate } from "@tanstack/react-router";
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { playSfx } from "@/lib/sfx";
 import { MessageCircle, Truck, Check, MapPin, Navigation, Send } from "lucide-react";
@@ -13,7 +13,7 @@ import { tripRefLabel } from "@/lib/trip-ref";
 
 import { useHamoula, type TripStatus } from "@/lib/hamoula-store";
 import { type LatLng } from "@/lib/hamoula-geo";
-import { useLiveLocation, FIX_INTERVAL_MS } from "@/lib/hamoula-live-location";
+import { SIMULATED_GPS_ENABLED, useLiveLocation } from "@/lib/hamoula-live-location";
 
 const TripMap = lazy(() => import("@/components/hamoula/TripMap"));
 
@@ -48,7 +48,7 @@ function nowTime() {
 
 function TrackingPage() {
   const navigate = useNavigate();
-  const { profile, request, updateRequest, tripLive, setTripLive, activeLoad } = useHamoula();
+  const { profile, account, request, updateRequest, tripLive, setTripLive, activeLoad, myLocation } = useHamoula();
   const homePath = useHomePath();
   const driver = request.acceptedOffer;
   // أسماء الطرفين كتجي دائماً من الطلب/العرض الحقيقي — لا بيانات تجريبية.
@@ -63,9 +63,8 @@ function TrackingPage() {
 
   // Status lives in the store so the trip keeps advancing from any screen.
   const current = Math.max(0, statusByStep.indexOf(request.status));
-  const live = tripLive;
+  const canUpdateTrip = account?.role === "driver";
   const setLive = (fn: (l: boolean) => boolean) => setTripLive(fn(tripLive));
-  const [eta, setEta] = useState(24 * 60);
   const [messages, setMessages] = useState<
     { id: number; from: "me" | "driver"; text: string; time: string; voice?: number }[]
   >([]);
@@ -73,16 +72,7 @@ function TrackingPage() {
   const [recording, setRecording] = useState(false);
 
 
-  // ETA countdown while the trip is in progress.
-  useEffect(() => {
-    if (current >= tripSteps.length - 1) return;
-    const t = setInterval(() => setEta((e) => (e > 0 ? e - 1 : 0)), 1000);
-    return () => clearInterval(t);
-  }, [current]);
-
   const done = current >= tripSteps.length - 1;
-  const mins = Math.floor(eta / 60);
-  const secs = String(eta % 60).padStart(2, "0");
 
   // Live GPS feed: periodic fixes + frame-by-frame smoothing.
   const pickupPoint = useMemo<LatLng>(
@@ -100,22 +90,20 @@ function TrackingPage() {
     remainingKm,
     etaMinutes,
     lastFixAt,
-  } = useLiveLocation(pickupPoint, destinationPoint, { active: live, done });
-
-  // Seconds since the last received location update.
-  const [sinceFix, setSinceFix] = useState(0);
-  useEffect(() => {
-    setSinceFix(0);
-    if (!live || done) return;
-    const t = setInterval(() => setSinceFix(Math.round((Date.now() - lastFixAt) / 1000)), 1000);
-    return () => clearInterval(t);
-  }, [lastFixAt, live, done]);
+  } = useLiveLocation(pickupPoint, destinationPoint, {
+    active: SIMULATED_GPS_ENABLED && tripLive,
+    done,
+  });
+  const realDriverPoint = account?.role === "driver" ? myLocation : null;
+  const driverPoint = SIMULATED_GPS_ENABLED ? simulatedDriverPoint : realDriverPoint;
+  const locationAvailable = driverPoint !== null;
+  const live = tripLive && locationAvailable;
 
   const endTrip = () => {
+    if (!canUpdateTrip) return;
     // Stop the live GPS feed and freeze the marker at its current fix.
     setTripLive(false);
     // Finalize the trip: all steps complete, ETA collapses to zero.
-    setEta(0);
     updateRequest({ status: "delivered" });
     playSfx("success");
     toast.success("تسالات الرحلة، الله يسهل عليكم");
@@ -159,13 +147,13 @@ function TrackingPage() {
         <section className="overflow-hidden rounded-2xl border border-border bg-card p-2">
           <div className="flex items-center justify-between px-2 pb-2">
             <h2 className="font-bold">تتبع الشاحنة على الخريطة</h2>
-            {!done && <LiveBadge label={`باقي ${remainingKm.toFixed(0)} كلم`} />}
+            {!done && locationAvailable && <LiveBadge label={`باقي ${remainingKm.toFixed(0)} كلم`} />}
           </div>
           {!done && (
             <p className="px-2 pb-2 text-[11px] text-muted-foreground">
-              {live
-                ? `آخر تحديث للموقع قبل ${sinceFix} ثانية · السرعة ${speedKmh} كلم/س · الوصول بعد ${etaMinutes} د (كل ${FIX_INTERVAL_MS / 1000} ثوان)`
-                : "التتبع المباشر متوقف — شغّله باش تشوف الشاحنة كتمشي فالوقت الحقيقي"}
+              {locationAvailable
+                ? `الموقع الحقيقي متوفر${SIMULATED_GPS_ENABLED ? ` · السرعة ${speedKmh} كلم/س · الوصول بعد ${etaMinutes} د` : ""}`
+                : "الموقع الحي غير متوفر — في انتظار تحديث الموقع من هاتف السائق"}
             </p>
           )}
           <ClientOnly fallback={<MapSkeleton />}>
@@ -189,7 +177,7 @@ function TrackingPage() {
                 مكتملة
               </span>
             ) : (
-              <LiveBadge label={`الوصول بعد ${mins}:${secs}`} />
+              locationAvailable ? <LiveBadge label="الموقع الحي متوفر" /> : null
             )}
           </div>
 
@@ -222,7 +210,7 @@ function TrackingPage() {
             ))}
           </ol>
 
-          {!done && (
+          {!done && canUpdateTrip && (
             <div className="mt-5 space-y-3">
               <div className="flex gap-3">
                 <button
