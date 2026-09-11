@@ -19,7 +19,8 @@ import {
   isRealLoad,
   removeBid,
   saveBid,
-  saveBidStatus,
+  respondToBid,
+  updateOwnBid,
   saveDraft,
   saveLoad,
   saveLoadStatus,
@@ -799,23 +800,12 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
       accepted = { ...bid, status: "accepted" };
       const offer = bidToOffer(bid);
       // Persist: request becomes "تم قبول سائق", the winning offer is saved.
-      void saveLoadStatus(bid.loadId, {
-        tripStatus: "matched",
-        status: "assigned",
-        acceptedOffer: offer,
-        price: bid.price,
+      // القبول عملية واحدة آمنة فالسيرفر: كتحسم العرض وترفض الباقي وتحدّث الطلب.
+      const others = b.bids.filter((x) => x.loadId === bid.loadId && x.id !== bidId);
+      void respondToBid(bidId, "accepted").then(() => {
+        notifyEvent("bid-answer", { bidId });
+        others.forEach((x) => notifyEvent("bid-answer", { bidId: x.id }));
       });
-      void saveBidStatus(bidId, { status: "accepted" }).then(() =>
-        notifyEvent("bid-answer", { bidId }),
-      );
-      b.bids
-        .filter((x) => x.loadId === bid.loadId && x.id !== bidId)
-        .forEach(
-          (x) =>
-            void saveBidStatus(x.id, { status: "declined" }).then(() =>
-              notifyEvent("bid-answer", { bidId: x.id }),
-            ),
-        );
       return {
         loads: b.loads.map((l) =>
           l.id === bid.loadId
@@ -843,9 +833,7 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const declineBid = useCallback((bidId: string) => {
-    void saveBidStatus(bidId, { status: "declined" }).then(() =>
-      notifyEvent("bid-answer", { bidId }),
-    );
+    void respondToBid(bidId, "rejected").then(() => notifyEvent("bid-answer", { bidId }));
     setBoard((b) => ({
       ...b,
       bids: b.bids.map((x) => (x.id === bidId ? { ...x, status: "declined" as const } : x)),
@@ -861,7 +849,7 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
   const cancelRequest = useCallback(
     (loadId?: string) => {
       const id = loadId ?? board.request.loadId ?? null;
-      if (id) void saveLoadStatus(id, { tripStatus: "cancelled", status: "assigned" });
+      if (id) void saveLoadStatus(id, { tripStatus: "cancelled" });
       setBoard((b) => ({
         ...b,
         loads: id
@@ -878,7 +866,7 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
 
 
   const updateBidPrice = useCallback((bidId: string, price: number) => {
-    void saveBidStatus(bidId, { price, status: "pending" });
+    void updateOwnBid(bidId, { price });
     setBoard((b) => ({
       ...b,
       bids: b.bids.map((x) =>
