@@ -183,3 +183,6 @@
 ## 2026-09-11 — تأمين قراءة التقييمات
 - حذف policy `trip_ratings_select_authenticated` (USING true) واستبدالها بـ `trip_ratings_select_participant`: القراءة فقط لصاحب التقييم أو المقيَّم (عبر `current_user_phone_key()` SECURITY INVOKER) أو طرفي الرحلة (`owns_load`/`has_bid_on_load`).
 - Scan بعد الإصلاح: 0 Critical، باقي فقط warn SECURITY DEFINER (owns_load / has_bid_on_load / can_access_chat_load) — بلا Ignore بقرار المالك.
+
+## 2026-09-11 — ترتيب حالات الرحلة
+- `set_trip_status`: فرض الترتيب matched→enroute→loaded→delivered (قفل الصف، ممنوع القفز/الرجوع، delivered نهائية، حالات المالك ممنوعة أثناء تقدم السائق). اختبار موجّه: 7/7 PASS.
