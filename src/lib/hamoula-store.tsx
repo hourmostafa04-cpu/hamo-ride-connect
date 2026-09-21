@@ -224,8 +224,8 @@ type Ctx = {
     kind: Bid["kind"];
     voiceNote?: VoiceNote | null;
   }) => Bid;
-  acceptBid: (bidId: string) => Bid | null;
-  declineBid: (bidId: string) => void;
+  acceptBid: (bidId: string) => Promise<Bid | null>;
+  declineBid: (bidId: string) => Promise<void>;
   /** Driver pulls back a pending bid. */
   withdrawBid: (bidId: string) => void;
   /** Driver edits the price of a pending bid (counter-offer from history). */
@@ -792,7 +792,9 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
     [account, driverKey, sessionState],
   );
 
-  const acceptBid = useCallback((bidId: string) => {
+  const acceptBid = useCallback(async (bidId: string): Promise<Bid | null> => {
+    // السيرفر أولاً: إلا فشلت العملية فقاعدة البيانات ما كنبدلو حتى شيء فالواجهة.
+    await respondToBid(bidId, "accepted");
     let accepted: Bid | null = null;
     setBoard((b) => {
       const bid = b.bids.find((x) => x.id === bidId);
@@ -802,10 +804,8 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
       // Persist: request becomes "تم قبول سائق", the winning offer is saved.
       // القبول عملية واحدة آمنة فالسيرفر: كتحسم العرض وترفض الباقي وتحدّث الطلب.
       const others = b.bids.filter((x) => x.loadId === bid.loadId && x.id !== bidId);
-      void respondToBid(bidId, "accepted").then(() => {
-        notifyEvent("bid-answer", { bidId });
-        others.forEach((x) => notifyEvent("bid-answer", { bidId: x.id }));
-      });
+      void notifyEvent("bid-answer", { bidId });
+      others.forEach((x) => void notifyEvent("bid-answer", { bidId: x.id }));
       return {
         loads: b.loads.map((l) =>
           l.id === bid.loadId
