@@ -832,12 +832,14 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
     return accepted;
   }, []);
 
-  const declineBid = useCallback((bidId: string) => {
-    void respondToBid(bidId, "rejected").then(() => notifyEvent("bid-answer", { bidId }));
+  const declineBid = useCallback(async (bidId: string): Promise<void> => {
+    // السيرفر أولاً: إلا فشل الـRPC ما كنعلموش العرض كمرفوض فالواجهة.
+    await respondToBid(bidId, "rejected");
     setBoard((b) => ({
       ...b,
       bids: b.bids.map((x) => (x.id === bidId ? { ...x, status: "declined" as const } : x)),
     }));
+    void notifyEvent("bid-answer", { bidId });
   }, []);
 
   const withdrawBid = useCallback((bidId: string) => {
