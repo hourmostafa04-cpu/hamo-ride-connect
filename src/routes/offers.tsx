@@ -104,20 +104,30 @@ function OffersPage() {
   const onAccept = (b: Bid) => {
     if (busy) return;
     setBusy(b.id);
-    acceptBid(b.id);
-    toast.success("تقبل صاحب الشاحنة ✅", { description: `${b.driver || "صاحب الشاحنة"} · ${b.price} درهم` });
-    void refreshBoard()
-      .catch(() => {})
+    void acceptBid(b.id)
+      .then(() => {
+        toast.success("تقبل صاحب الشاحنة ✅", { description: `${b.driver || "صاحب الشاحنة"} · ${b.price} درهم` });
+        return refreshBoard().catch(() => {});
+      })
+      .catch(() => {
+        toast.error("تعذر تنفيذ العملية، حاول مرة أخرى");
+        void refreshBoard().catch(() => {});
+      })
       .finally(() => setBusy(null));
   };
 
   const onDecline = (b: Bid) => {
     if (busy) return;
     setBusy(b.id);
-    declineBid(b.id);
-    toast("تفض العرض", { description: `${b.driver || "صاحب الشاحنة"} · ${b.price} درهم` });
-    void refreshBoard()
-      .catch(() => {})
+    void declineBid(b.id)
+      .then(() => {
+        toast("تفض العرض", { description: `${b.driver || "صاحب الشاحنة"} · ${b.price} درهم` });
+        return refreshBoard().catch(() => {});
+      })
+      .catch(() => {
+        toast.error("تعذر تنفيذ العملية، حاول مرة أخرى");
+        void refreshBoard().catch(() => {});
+      })
       .finally(() => setBusy(null));
   };
 
