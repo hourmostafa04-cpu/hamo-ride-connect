@@ -375,16 +375,33 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
     }
     setError(null);
     setOtpBusy(true);
-    const { error: verifyError } = await supabase.auth.verifyOtp({
-      phone: otpSentTo,
-      token: code,
-      type: "sms",
-    });
-    if (verifyError) {
-      setOtpBusy(false);
-      playSfx("error");
-      setError(`الرمز ماشي صحيح: ${verifyError.message}`);
-      return;
+    if (DEMO_LOGIN_ENABLED) {
+      // وضع الاختبار (المعاينة فقط): الرمز التجريبي كيتقبل بلا ما نمسّو OTP الحقيقي.
+      if (code !== DEMO_OTP_CODE) {
+        setOtpBusy(false);
+        playSfx("error");
+        setError(`فوضع الاختبار الرمز هو ${DEMO_OTP_CODE}`);
+        return;
+      }
+      // كنجيبو جلسة Auth ديال مستخدم الاختبار باش الكتابة فقاعدة البيانات تبقى خدامة.
+      try {
+        const creds = await ensureDemoAuthUser();
+        await supabase.auth.signInWithPassword({ email: creds.email, password: creds.password });
+      } catch {
+        /* الجلسة التجريبية اختيارية — الواجهة كتكمل حتى بلاها */
+      }
+    } else {
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        phone: otpSentTo,
+        token: code,
+        type: "sms",
+      });
+      if (verifyError) {
+        setOtpBusy(false);
+        playSfx("error");
+        setError(`الرمز ماشي صحيح: ${verifyError.message}`);
+        return;
+      }
     }
     // Authenticated — the shared database decides the role.
     const existing = await findAccount(normalized);
