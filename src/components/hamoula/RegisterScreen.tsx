@@ -337,8 +337,18 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
       return;
     }
     setError(null);
-    setOtpBusy(true);
     const e164 = toE164(normalized);
+    // وضع الاختبار (المعاينة فقط): بلا SMS — الرمز التجريبي كيكفي.
+    if (DEMO_LOGIN_ENABLED) {
+      setOtpSentTo(e164);
+      setOtp("");
+      setResendIn(0);
+      setStep("otp");
+      playSfx("success");
+      toast.success("وضع الاختبار", { description: `دخل الرمز ${DEMO_OTP_CODE} بلا SMS` });
+      return;
+    }
+    setOtpBusy(true);
     const { error: sendError } = await supabase.auth.signInWithOtp({ phone: e164 });
     setOtpBusy(false);
     if (sendError) {
