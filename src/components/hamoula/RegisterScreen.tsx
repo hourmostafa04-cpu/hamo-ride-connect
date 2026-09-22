@@ -27,7 +27,7 @@ import {
 } from "@/lib/hamoula-data";
 import { extractTonnage, extractTruckKind, tonChipFor } from "@/lib/voice-order";
 import { smartParse } from "@/lib/smart-parse";
-import { DEMO_LOGIN_ENABLED, DEMO_PHONE, demoAccount } from "@/lib/demo-login";
+import { DEMO_LOGIN_ENABLED, DEMO_OTP_CODE, DEMO_PHONE, demoAccount } from "@/lib/demo-login";
 import { ensureDemoAuthUser } from "@/lib/demo-auth.functions";
 
 import triporteurImg from "@/assets/trucks/triporteur.png";
