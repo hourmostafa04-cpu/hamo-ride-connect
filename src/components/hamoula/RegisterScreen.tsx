@@ -27,7 +27,7 @@ import {
 } from "@/lib/hamoula-data";
 import { extractTonnage, extractTruckKind, tonChipFor } from "@/lib/voice-order";
 import { smartParse } from "@/lib/smart-parse";
-import { DEMO_LOGIN_ENABLED, DEMO_PHONE, demoAccount } from "@/lib/demo-login";
+import { DEMO_LOGIN_ENABLED, DEMO_OTP_CODE, DEMO_PHONE, demoAccount } from "@/lib/demo-login";
 import { ensureDemoAuthUser } from "@/lib/demo-auth.functions";
 
 import triporteurImg from "@/assets/trucks/triporteur.png";
@@ -337,8 +337,18 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
       return;
     }
     setError(null);
-    setOtpBusy(true);
     const e164 = toE164(normalized);
+    // وضع الاختبار (المعاينة فقط): بلا SMS — الرمز التجريبي كيكفي.
+    if (DEMO_LOGIN_ENABLED) {
+      setOtpSentTo(e164);
+      setOtp("");
+      setResendIn(0);
+      setStep("otp");
+      playSfx("success");
+      toast.success("وضع الاختبار", { description: `دخل الرمز ${DEMO_OTP_CODE} بلا SMS` });
+      return;
+    }
+    setOtpBusy(true);
     const { error: sendError } = await supabase.auth.signInWithOtp({ phone: e164 });
     setOtpBusy(false);
     if (sendError) {
@@ -365,16 +375,33 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
     }
     setError(null);
     setOtpBusy(true);
-    const { error: verifyError } = await supabase.auth.verifyOtp({
-      phone: otpSentTo,
-      token: code,
-      type: "sms",
-    });
-    if (verifyError) {
-      setOtpBusy(false);
-      playSfx("error");
-      setError(`الرمز ماشي صحيح: ${verifyError.message}`);
-      return;
+    if (DEMO_LOGIN_ENABLED) {
+      // وضع الاختبار (المعاينة فقط): الرمز التجريبي كيتقبل بلا ما نمسّو OTP الحقيقي.
+      if (code !== DEMO_OTP_CODE) {
+        setOtpBusy(false);
+        playSfx("error");
+        setError(`فوضع الاختبار الرمز هو ${DEMO_OTP_CODE}`);
+        return;
+      }
+      // كنجيبو جلسة Auth ديال مستخدم الاختبار باش الكتابة فقاعدة البيانات تبقى خدامة.
+      try {
+        const creds = await ensureDemoAuthUser();
+        await supabase.auth.signInWithPassword({ email: creds.email, password: creds.password });
+      } catch {
+        /* الجلسة التجريبية اختيارية — الواجهة كتكمل حتى بلاها */
+      }
+    } else {
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        phone: otpSentTo,
+        token: code,
+        type: "sms",
+      });
+      if (verifyError) {
+        setOtpBusy(false);
+        playSfx("error");
+        setError(`الرمز ماشي صحيح: ${verifyError.message}`);
+        return;
+      }
     }
     // Authenticated — the shared database decides the role.
     const existing = await findAccount(normalized);
@@ -590,21 +617,30 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
 
 
             {DEMO_LOGIN_ENABLED && (
-              /* دخول تجريبي — وضع التطوير فقط، بشكل غير بارز في الواجهة الرئيسية */
-              <div className="mt-auto flex items-center justify-center gap-3 pt-4 opacity-70">
-                <button
-                  onClick={() => void demoSignIn("shipper")}
-                  className="text-[11px] font-semibold text-muted-foreground underline underline-offset-4"
-                >
-                  دخول تجريبي · بضاعة
-                </button>
-                <span className="size-1 rounded-full bg-border" />
-                <button
-                  onClick={() => void demoSignIn("driver")}
-                  className="text-[11px] font-semibold text-muted-foreground underline underline-offset-4"
-                >
-                  دخول تجريبي · شاحنة
-                </button>
+              /* دخول تجريبي — المعاينة/التطوير فقط: بلا SMS وبلا مزود الرسائل */
+              <div className="mt-4 rounded-3xl bg-card/95 p-4 shadow-soft ring-1 ring-border backdrop-blur">
+                <p className="text-center text-xs font-bold text-muted-foreground">
+                  وضع الاختبار — دخول بلا SMS
+                </p>
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => void demoSignIn("shipper")}
+                    disabled={otpBusy}
+                    className="rounded-2xl bg-primary px-3 py-3 text-sm font-extrabold text-primary-foreground disabled:opacity-50"
+                  >
+                    دخول تجريبي (بضاعة)
+                  </button>
+                  <button
+                    onClick={() => void demoSignIn("driver")}
+                    disabled={otpBusy}
+                    className="rounded-2xl border-2 border-primary px-3 py-3 text-sm font-extrabold text-primary disabled:opacity-50"
+                  >
+                    دخول تجريبي (شاحنة)
+                  </button>
+                </div>
+                <p className="mt-2 text-center text-[11px] text-muted-foreground">
+                  ولا دخل أي رقم واستعمل الرمز {DEMO_OTP_CODE}
+                </p>
               </div>
             )}
           </div>
