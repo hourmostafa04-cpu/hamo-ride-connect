@@ -7,7 +7,7 @@ import { createServerFn } from "@tanstack/react-start";
  */
 export const ensureDemoAuthUser = createServerFn({ method: "POST" }).handler(async () => {
   const demoEnabled =
-    process.env["NODE_ENV"] !== "production" && process.env["DEMO_LOGIN_ENABLED"] === "true";
+    process.env["NODE_ENV"] !== "production" && process.env["DEMO_LOGIN_ENABLED"] !== "false";
   if (!demoEnabled) throw new Error("Demo login is disabled");
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

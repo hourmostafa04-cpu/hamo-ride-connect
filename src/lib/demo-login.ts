@@ -8,9 +8,13 @@ import type { Account, RoleId } from "@/lib/hamoula-store";
  *
  * هاد الوضع كيخص حساب واحد فقط (DEMO_PHONE). أي رقم آخر خاصو OTP حقيقي.
  */
-const FLAG = (import.meta.env["VITE_DEMO_LOGIN"] as string | undefined) ?? "false";
+const FLAG = (import.meta.env["VITE_DEMO_LOGIN"] as string | undefined) ?? "true";
 
-export const DEMO_LOGIN_ENABLED = import.meta.env.DEV && FLAG === "true";
+/** مفعّل فالمعاينة/التطوير فقط — التطبيق المنشور كيبقى دائماً بلا Demo Login. */
+export const DEMO_LOGIN_ENABLED = import.meta.env.DEV && FLAG !== "false";
+
+/** الرمز الوحيد المقبول فوضع الاختبار عوض SMS حقيقي. */
+export const DEMO_OTP_CODE = "123456";
 
 /** الرقم الوحيد المسموح ليه بتجاوز الـ SMS. */
 export const DEMO_PHONE = "0600000000";
