@@ -617,21 +617,30 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
 
 
             {DEMO_LOGIN_ENABLED && (
-              /* دخول تجريبي — وضع التطوير فقط، بشكل غير بارز في الواجهة الرئيسية */
-              <div className="mt-auto flex items-center justify-center gap-3 pt-4 opacity-70">
-                <button
-                  onClick={() => void demoSignIn("shipper")}
-                  className="text-[11px] font-semibold text-muted-foreground underline underline-offset-4"
-                >
-                  دخول تجريبي · بضاعة
-                </button>
-                <span className="size-1 rounded-full bg-border" />
-                <button
-                  onClick={() => void demoSignIn("driver")}
-                  className="text-[11px] font-semibold text-muted-foreground underline underline-offset-4"
-                >
-                  دخول تجريبي · شاحنة
-                </button>
+              /* دخول تجريبي — المعاينة/التطوير فقط: بلا SMS وبلا مزود الرسائل */
+              <div className="mt-4 rounded-3xl bg-card/95 p-4 shadow-soft ring-1 ring-border backdrop-blur">
+                <p className="text-center text-xs font-bold text-muted-foreground">
+                  وضع الاختبار — دخول بلا SMS
+                </p>
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => void demoSignIn("shipper")}
+                    disabled={otpBusy}
+                    className="rounded-2xl bg-primary px-3 py-3 text-sm font-extrabold text-primary-foreground disabled:opacity-50"
+                  >
+                    دخول تجريبي (بضاعة)
+                  </button>
+                  <button
+                    onClick={() => void demoSignIn("driver")}
+                    disabled={otpBusy}
+                    className="rounded-2xl border-2 border-primary px-3 py-3 text-sm font-extrabold text-primary disabled:opacity-50"
+                  >
+                    دخول تجريبي (شاحنة)
+                  </button>
+                </div>
+                <p className="mt-2 text-center text-[11px] text-muted-foreground">
+                  ولا دخل أي رقم واستعمل الرمز {DEMO_OTP_CODE}
+                </p>
               </div>
             )}
           </div>
