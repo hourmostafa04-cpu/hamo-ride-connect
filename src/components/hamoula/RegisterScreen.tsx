@@ -589,33 +589,6 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
               ))}
             </div>
 
-            {/* Card: اختر نوع الحساب */}
-            <div className="mt-6 rounded-3xl bg-card/95 p-4 shadow-soft ring-1 ring-border backdrop-blur">
-              <p className="text-center text-xl font-extrabold">اختر نوع الحساب</p>
-              <div className="mx-auto mt-2 h-1 w-12 rounded-full bg-primary" />
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <AccountCard
-                  icon={<Package className="size-7 text-[oklch(0.35_0.08_62)]" />}
-                  title="صاحب بضاعة"
-                  subtitle="أبحث عن شاحنة لنقل بضاعتي إلى وجهتها"
-                  onClick={() => {
-                    setRole("shipper");
-                    setStep("phone");
-                  }}
-                />
-                <AccountCard
-                  icon={<Truck className="size-7 text-[oklch(0.35_0.08_62)]" />}
-                  title="صاحب شاحنة"
-                  subtitle="أبحث عن شحنات لنقلها بشاحنتي"
-                  onClick={() => {
-                    setRole("driver");
-                    setStep("phone");
-                  }}
-                />
-              </div>
-            </div>
-
-
             {DEMO_LOGIN_ENABLED && (
               /* دخول تجريبي — المعاينة/التطوير فقط: بلا SMS وبلا مزود الرسائل */
               <div className="mt-4 rounded-3xl bg-card/95 p-4 shadow-soft ring-1 ring-border backdrop-blur">
@@ -643,6 +616,32 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
                 </p>
               </div>
             )}
+            {/* Card: اختر نوع الحساب */}
+            <div className="mt-6 rounded-3xl bg-card/95 p-4 shadow-soft ring-1 ring-border backdrop-blur">
+              <p className="text-center text-xl font-extrabold">اختر نوع الحساب</p>
+              <div className="mx-auto mt-2 h-1 w-12 rounded-full bg-primary" />
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <AccountCard
+                  icon={<Package className="size-7 text-[oklch(0.35_0.08_62)]" />}
+                  title="صاحب بضاعة"
+                  subtitle="أبحث عن شاحنة لنقل بضاعتي إلى وجهتها"
+                  onClick={() => {
+                    setRole("shipper");
+                    setStep("phone");
+                  }}
+                />
+                <AccountCard
+                  icon={<Truck className="size-7 text-[oklch(0.35_0.08_62)]" />}
+                  title="صاحب شاحنة"
+                  subtitle="أبحث عن شحنات لنقلها بشاحنتي"
+                  onClick={() => {
+                    setRole("driver");
+                    setStep("phone");
+                  }}
+                />
+              </div>
+            </div>
+
           </div>
         </div>
       </PhoneFrame>
