@@ -226,6 +226,7 @@ type Ctx = {
   }) => Bid;
   acceptBid: (bidId: string) => Promise<Bid | null>;
   declineBid: (bidId: string) => Promise<void>;
+  openTrip: (loadId: string) => void;
   /** Driver pulls back a pending bid. */
   withdrawBid: (bidId: string) => void;
   /** Driver edits the price of a pending bid (counter-offer from history). */
@@ -840,6 +841,32 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
       bids: b.bids.map((x) => (x.id === bidId ? { ...x, status: "declined" as const } : x)),
     }));
     void notifyEvent("bid-answer", { bidId });
+  }, []);
+
+  /** كيفتح رحلة معينة (من «رحلاتي» ولا «طلباتي») باش التتبع والحالة يخدمو على الطلب الصحيح. */
+  const openTrip = useCallback((loadId: string) => {
+    setBoard((b) => {
+      const l = b.loads.find((x) => x.id === loadId);
+      if (!l) return b;
+      return {
+        ...b,
+        request: {
+          ...b.request,
+          loadId: l.id,
+          pickup: l.pickup,
+          destination: l.destination,
+          cargo: l.cargo,
+          pickupPoint: l.pickupPoint,
+          destinationPoint: l.destinationPoint,
+          truck: l.truck,
+          price: l.price,
+          status: (l.tripStatus ?? "matched") as TripStatus,
+          acceptedOffer: l.acceptedOffer ?? null,
+          voiceNote: l.voiceNote,
+          updatedAt: Date.now(),
+        },
+      };
+    });
   }, []);
 
   const withdrawBid = useCallback((bidId: string) => {
