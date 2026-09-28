@@ -53,6 +53,14 @@ function TripCard({ load }: { load: Load }) {
             </Link>
             <ChatButton loadId={load.id} />
           </div>
+        ) : status === "delivered" ? (
+          <Link
+            to="/trip-details"
+            onClick={() => openTrip(load.id)}
+            className="rounded-xl bg-secondary px-3 py-2 text-sm font-extrabold text-primary"
+          >
+            تفاصيل وتقييم
+          </Link>
         ) : (
           <span />
         )}
