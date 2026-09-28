@@ -19,11 +19,14 @@ export const DEMO_OTP_CODE = "123456";
 /** الرقم الوحيد المسموح ليه بتجاوز الـ SMS. */
 export const DEMO_PHONE = "0600000000";
 
+/** رقم الحساب التجريبي ديال صاحب الشاحنة (هوية Auth مستقلة). */
+export const DEMO_DRIVER_PHONE = "0600000001";
+
 /** الحساب التجريبي بالدور المطلوب — نفس الرقم فالحالتين. */
 export function demoAccount(role: RoleId): Account {
   return {
     name: "حساب تجريبي",
-    phone: DEMO_PHONE,
+    phone: role === "driver" ? DEMO_DRIVER_PHONE : DEMO_PHONE,
     role,
     ...(role === "driver"
       ? { truckTons: "3.5", truckType: "شاحنة مغلقة", available: true }
