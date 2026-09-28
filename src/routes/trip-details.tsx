@@ -56,7 +56,9 @@ function nowTime() {
 }
 
 function TripDetailsPage() {
-  const { profile, request, activeLoad, account, bids, myLocation } = useHamoula();
+  const { profile, request, activeLoad: firstLoad, loads, account, bids, myLocation } = useHamoula();
+  // الطلب ديال هاد الرحلة بالضبط (ماشي أول طلب مفتوح).
+  const activeLoad = loads.find((l) => l.id === request.loadId) ?? firstLoad;
   const driver = request.acceptedOffer;
   // أسماء الطرفين من الطلب/العرض الحقيقي فقط — بلا بيانات تجريبية.
   const counterpartName =

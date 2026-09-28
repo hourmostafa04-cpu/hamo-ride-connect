@@ -7,6 +7,7 @@ import { ChatButton } from "@/components/hamoula/ChatButton";
 const ACTIVE: TripStatus[] = ["matched", "enroute", "loaded"];
 
 function TripCard({ load }: { load: Load }) {
+  const { openTrip } = useHamoula();
   const status = (load.tripStatus ?? "matched") as TripStatus;
   return (
     <div className="rounded-2xl border-2 border-border bg-card p-4">
@@ -45,12 +46,21 @@ function TripCard({ load }: { load: Load }) {
           <div className="flex items-center gap-2">
             <Link
               to="/tracking"
+              onClick={() => openTrip(load.id)}
               className="rounded-xl bg-primary px-3 py-2 text-sm font-extrabold text-primary-foreground"
             >
               تتبع الرحلة
             </Link>
             <ChatButton loadId={load.id} />
           </div>
+        ) : status === "delivered" ? (
+          <Link
+            to="/trip-details"
+            onClick={() => openTrip(load.id)}
+            className="rounded-xl bg-secondary px-3 py-2 text-sm font-extrabold text-primary"
+          >
+            تفاصيل وتقييم
+          </Link>
         ) : (
           <span />
         )}
