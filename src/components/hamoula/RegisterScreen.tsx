@@ -385,7 +385,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
       }
       // كنجيبو جلسة Auth ديال مستخدم الاختبار باش الكتابة فقاعدة البيانات تبقى خدامة.
       try {
-        const creds = await ensureDemoAuthUser();
+        const creds = await ensureDemoAuthUser({ data: { role: "shipper" } });
         await supabase.auth.signInWithPassword({ email: creds.email, password: creds.password });
       } catch {
         /* الجلسة التجريبية اختيارية — الواجهة كتكمل حتى بلاها */
@@ -453,7 +453,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
     setOtpBusy(true);
     try {
       // الدخول التجريبي دابا كيمر من Auth حقيقي: مستخدم Test عندو auth.uid().
-      const creds = await ensureDemoAuthUser();
+      const creds = await ensureDemoAuthUser({ data: { role: demoRole } });
       const { error } = await supabase.auth.signInWithPassword({
         email: creds.email,
         password: creds.password,
