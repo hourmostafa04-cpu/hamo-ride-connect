@@ -8,8 +8,12 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "phase1:preflight": "bash scripts/phase1_preflight.sh",
+    "phase1:apply": "bash scripts/phase1_apply.sh"
   },
   "dependencies": {
     "@block65/webcrypto-web-push": "^1.0.2",
