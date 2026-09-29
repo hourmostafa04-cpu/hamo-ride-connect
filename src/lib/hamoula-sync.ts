@@ -223,6 +223,14 @@ export async function removeBid(bidId: string) {
   await supabase.from("bids").delete().eq("id", bidId);
 }
 
+/** حذف الطلب نهائياً من صاحبه (ومعه العروض المرتبطة به) إذا احتاج ذلك. */
+export async function removeOwnLoad(loadId: string) {
+  if (!isRealLoad(loadId)) return;
+  const { error: bidsError } = await supabase.from("bids").delete().eq("load_id", loadId);
+  if (bidsError) throw new Error(bidsError.message);
+  const { error } = await supabase.from("loads").delete().eq("id", loadId);
+  if (error) throw new Error(error.message);
+}
 
 /** The unfinished request form of one phone number — survives app restarts. */
 export async function saveDraft(phone: string, data: Partial<TripRequest>) {

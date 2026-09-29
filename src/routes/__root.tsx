@@ -7,7 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -18,6 +18,7 @@ import { LastRouteTracker } from "@/components/hamoula/ResumeWhereYouLeft";
 import { attachGlobalTapSound } from "@/lib/sfx";
 import { loadPrefs } from "@/lib/notif-prefs";
 import { PushPrompt } from "@/components/hamoula/PushPrompt";
+import { applyLanguage, dirOf, readLanguage, type AppLanguage } from "@/lib/app-language";
 
 function NotFoundComponent() {
   return (
@@ -150,10 +151,26 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const [lang, setLang] = useState<AppLanguage>("ar");
 
   useEffect(() => {
     loadPrefs();
-    return attachGlobalTapSound();
+    const selected = readLanguage();
+    setLang(selected);
+    applyLanguage(selected);
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "hamoula.lang.v1") {
+        const next = readLanguage();
+        setLang(next);
+        applyLanguage(next);
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    const detachTap = attachGlobalTapSound();
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      detachTap();
+    };
   }, []);
 
   return (
@@ -165,7 +182,7 @@ function RootComponent() {
         <AuthGate>
           <Outlet />
         </AuthGate>
-        <Toaster position="top-center" dir="rtl" />
+        <Toaster position="top-center" dir={dirOf(lang)} />
       </HamoulaProvider>
     </QueryClientProvider>
   );

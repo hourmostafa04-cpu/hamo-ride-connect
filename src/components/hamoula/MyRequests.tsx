@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Boxes, Check, MapPin, Navigation, Star, Truck, X, XCircle } from "lucide-react";
+import { Boxes, Check, MapPin, Navigation, Star, Trash2, Truck, X, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { PhoneFrame, AppHeader } from "@/components/hamoula/PhoneFrame";
 import { statusLabels, useHamoula, type Bid, type Load, type TripStatus } from "@/lib/hamoula-store";
@@ -65,6 +65,7 @@ function RequestCard({
   bids,
   busy,
   onCancel,
+  onDelete,
   onAccept,
   onDecline,
 }: {
@@ -72,6 +73,7 @@ function RequestCard({
   bids: Bid[];
   busy: string | null;
   onCancel: (id: string) => void;
+  onDelete: (id: string) => void;
   onAccept: (b: Bid) => void;
   onDecline: (b: Bid) => void;
 }) {
@@ -122,6 +124,15 @@ function RequestCard({
             </button>
           </>
         )}
+        <button
+          type="button"
+          disabled={busy !== null}
+          onClick={() => onDelete(load.id)}
+          className="flex items-center gap-1 rounded-xl border-2 border-border px-3 py-2 text-sm font-bold text-muted-foreground disabled:opacity-60"
+        >
+          <Trash2 className="size-4" />
+          حذف نهائي
+        </button>
         <span className="ms-auto text-[11px] font-semibold text-muted-foreground">
           {new Date(load.createdAt).toLocaleString("ar-MA")}
         </span>
@@ -135,8 +146,17 @@ function RequestCard({
 
 
 export function MyRequests() {
-  const { myLoads, bids, cancelRequest, acceptBid, declineBid, refreshBoard, boardLoading, boardError } =
-    useHamoula();
+  const {
+    myLoads,
+    bids,
+    cancelRequest,
+    deleteRequest,
+    acceptBid,
+    declineBid,
+    refreshBoard,
+    boardLoading,
+    boardError,
+  } = useHamoula();
   const [busy, setBusy] = useState<string | null>(null);
   const active = myLoads.filter((l) => ACTIVE.includes((l.tripStatus ?? "searching") as TripStatus));
   const history = myLoads.filter((l) => !ACTIVE.includes((l.tripStatus ?? "searching") as TripStatus));
@@ -145,6 +165,19 @@ export function MyRequests() {
   const onCancel = (id: string) => {
     cancelRequest(id);
     toast.success("تلغى الطلب", { description: "بقا محفوظ فالسجل" });
+  };
+
+  const onDelete = (id: string) => {
+    if (!window.confirm("واش متأكد بغيتي تحذف هاد الطلب نهائياً؟")) return;
+    setBusy(id);
+    void deleteRequest(id)
+      .then(() => {
+        toast.success("تحذف الطلب نهائياً");
+      })
+      .catch((e) => {
+        toast.error("تعذر الحذف النهائي", { description: e instanceof Error ? e.message : "عاود المحاولة" });
+      })
+      .finally(() => setBusy(null));
   };
 
   const onAccept = (b: Bid) => {
@@ -213,6 +246,7 @@ export function MyRequests() {
                 bids={bidsFor(l.id)}
                 busy={busy}
                 onCancel={onCancel}
+                onDelete={onDelete}
                 onAccept={onAccept}
                 onDecline={onDecline}
               />
@@ -234,6 +268,7 @@ export function MyRequests() {
                 bids={bidsFor(l.id)}
                 busy={busy}
                 onCancel={onCancel}
+                onDelete={onDelete}
                 onAccept={onAccept}
                 onDecline={onDecline}
               />

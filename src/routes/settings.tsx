@@ -1,9 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { BellRing, Mic, RotateCcw, Truck, Volume2, Vibrate, PackageCheck } from "lucide-react";
+import { useEffect, useState } from "react";
+import { BellRing, Languages, Mic, RotateCcw, Truck, Volume2, Vibrate, PackageCheck } from "lucide-react";
 import { toast } from "sonner";
 import { PhoneFrame, AppHeader } from "@/components/hamoula/PhoneFrame";
 import { playSfx } from "@/lib/sfx";
 import { buzz, resetPrefs, setPref, useNotifPrefs, type NotifPrefs } from "@/lib/notif-prefs";
+import { applyLanguage, dirOf, readLanguage, writeLanguage, type AppLanguage } from "@/lib/app-language";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -89,19 +91,64 @@ function Toggle({ row, value }: { row: Row; value: boolean }) {
 
 function SettingsPage() {
   const prefs = useNotifPrefs();
+  const [lang, setLang] = useState<AppLanguage>("ar");
+
+  useEffect(() => {
+    const current = readLanguage();
+    setLang(current);
+    applyLanguage(current);
+  }, []);
+
+  const switchLang = (next: AppLanguage) => {
+    if (next === lang) return;
+    setLang(next);
+    writeLanguage(next);
+    applyLanguage(next);
+    toast.success(next === "fr" ? "Langue changée en français" : "تم تغيير اللغة للعربية");
+  };
 
   return (
     <PhoneFrame>
       <AppHeader
-        title="إعدادات الإشعارات"
-        subtitle="تحكم فالأصوات، الاهتزاز وأنواع التنبيهات"
+        title={lang === "fr" ? "Paramètres" : "إعدادات الإشعارات"}
+        subtitle={lang === "fr" ? "Notifications, sons et langue" : "تحكم فالأصوات، الاهتزاز وأنواع التنبيهات"}
         showBack
         backTo="/"
       />
       <main className="flex-1 space-y-4 px-5 py-5">
         <section className="overflow-hidden rounded-3xl border-2 border-border bg-card">
           <p className="border-b border-border px-4 py-2 text-xs font-extrabold text-muted-foreground">
-            عام
+            {lang === "fr" ? "Langue" : "اللغة"}
+          </p>
+          <div className="flex items-center gap-3 px-4 py-4">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary-soft text-primary">
+              <Languages className="size-5" />
+            </span>
+            <span className="flex-1 text-sm font-extrabold">
+              {lang === "fr" ? "Changer la langue" : "تبديل لغة الواجهة"}
+            </span>
+            <div className="flex overflow-hidden rounded-xl border-2 border-border" dir={dirOf(lang)}>
+              <button
+                type="button"
+                onClick={() => switchLang("ar")}
+                className={`px-3 py-2 text-sm font-extrabold ${lang === "ar" ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground"}`}
+              >
+                العربية
+              </button>
+              <button
+                type="button"
+                onClick={() => switchLang("fr")}
+                className={`px-3 py-2 text-sm font-extrabold ${lang === "fr" ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground"}`}
+              >
+                Français
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section className="overflow-hidden rounded-3xl border-2 border-border bg-card">
+          <p className="border-b border-border px-4 py-2 text-xs font-extrabold text-muted-foreground">
+            {lang === "fr" ? "Général" : "عام"}
           </p>
           {general.map((r, i) => (
             <div key={r.key} className={i ? "border-t border-border" : ""}>

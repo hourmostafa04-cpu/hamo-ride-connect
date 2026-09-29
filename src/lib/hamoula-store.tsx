@@ -18,6 +18,7 @@ import {
   isRealBid,
   isRealLoad,
   removeBid,
+  removeOwnLoad,
   saveBid,
   respondToBid,
   updateOwnBid,
@@ -241,6 +242,8 @@ type Ctx = {
   myBids: Bid[];
   /** Cancel a request (ملغى) — it stays in the history. */
   cancelRequest: (loadId?: string) => void;
+  /** Delete a request forever (and related offers) from the shared backend. */
+  deleteRequest: (loadId: string) => Promise<void>;
   /** Unfinished request restored from the backend, if any. */
   pendingDraft: Partial<TripRequest> | null;
   /** Keep the unfinished request (متابعة الطلب غير المكتمل). */
@@ -694,6 +697,7 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!ready || !currentLoadId || tripStatus === "draft") return;
     void saveLoadStatus(currentLoadId, { tripStatus });
+    void notifyEvent("trip-status", { loadId: currentLoadId });
     setBoard((b) => ({
       ...b,
       loads: b.loads.map((l) => (l.id === currentLoadId ? { ...l, tripStatus } : l)),
@@ -878,7 +882,10 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
   const cancelRequest = useCallback(
     (loadId?: string) => {
       const id = loadId ?? board.request.loadId ?? null;
-      if (id) void saveLoadStatus(id, { tripStatus: "cancelled" });
+      if (id) {
+        void saveLoadStatus(id, { tripStatus: "cancelled" });
+        void notifyEvent("trip-status", { loadId: id });
+      }
       setBoard((b) => ({
         ...b,
         loads: id
@@ -893,6 +900,18 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
     [board.request.loadId],
   );
 
+  const deleteRequest = useCallback(async (loadId: string) => {
+    await removeOwnLoad(loadId);
+    setBoard((b) => ({
+      ...b,
+      loads: b.loads.filter((l) => l.id !== loadId),
+      bids: b.bids.filter((x) => x.loadId !== loadId),
+      request:
+        b.request.loadId === loadId
+          ? { ...defaultRequest, updatedAt: Date.now() }
+          : b.request,
+    }));
+  }, []);
 
   const updateBidPrice = useCallback((bidId: string, price: number) => {
     void updateOwnBid(bidId, { price });
@@ -985,6 +1004,7 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
       myTrips,
       myBids,
       cancelRequest,
+      deleteRequest,
       pendingDraft,
       resumeDraft,
       discardDraft,
@@ -1024,6 +1044,7 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
       myTrips,
       myBids,
       cancelRequest,
+      deleteRequest,
       pendingDraft,
       resumeDraft,
       discardDraft,

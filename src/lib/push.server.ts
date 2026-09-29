@@ -1,6 +1,6 @@
 import { buildPushPayload } from "@block65/webcrypto-web-push";
 
-export type PushKind = "new-load" | "new-bid" | "bid-answer" | "chat";
+export type PushKind = "new-load" | "new-bid" | "bid-answer" | "chat" | "trip-status";
 
 type Sub = { id: string; endpoint: string; p256dh: string; auth: string };
 
@@ -46,6 +46,13 @@ export function buildNotification(
         body: "وصلاتك رسالة جديدة فالمحادثة",
         url: "/my-requests",
         tag: "chat",
+      };
+    case "trip-status":
+      return {
+        title: "تحديث فحالة الرحلة 🚚",
+        body: extra.status ? `الحالة دابا: ${extra.status}` : "كاين تحديث جديد فالرحلة",
+        url: "/tracking",
+        tag: "trip-status",
       };
     default:
       return null;
@@ -140,6 +147,25 @@ export async function resolveRecipients(input: {
     const row = data as { user_id: string | null; status: string } | null;
     if (!row?.user_id || row.user_id === input.senderId) return { ids: [] };
     return { ids: [row.user_id], status: row.status };
+  }
+
+  if (input.kind === "trip-status") {
+    if (!input.loadId) return { ids: [] };
+    const [{ data: load }, { data: bids }] = await Promise.all([
+      supabaseAdmin.from("loads").select("user_id, trip_status").eq("id", input.loadId).maybeSingle(),
+      supabaseAdmin
+        .from("bids")
+        .select("user_id")
+        .eq("load_id", input.loadId)
+        .eq("status", "accepted")
+        .limit(1),
+    ]);
+    const status = (load as { trip_status?: string | null } | null)?.trip_status ?? undefined;
+    const ids = [
+      (load as { user_id: string | null } | null)?.user_id ?? null,
+      ...((bids ?? []) as { user_id: string | null }[]).map((b) => b.user_id),
+    ].filter((id): id is string => !!id && id !== input.senderId);
+    return { ids, status };
   }
 
   // chat → الطرف الآخر فالمحادثة الخاصة فقط: صاحب الطلب أو السائق المقبول.

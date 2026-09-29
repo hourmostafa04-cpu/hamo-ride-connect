@@ -34,6 +34,14 @@ const EXTRA_PLACES: CityEntry[] = [
   { label: "الفقيه بن صالح", point: { lat: 32.5017, lng: -6.6889 }, aliases: ["fkih ben salah"] },
   { label: "تيزنيت", point: { lat: 29.6974, lng: -9.7316 }, aliases: ["tiznit"] },
   { label: "وادي زم", point: { lat: 32.8667, lng: -6.5667 }, aliases: ["oued zem"] },
+  { label: "المحمدية", point: { lat: 33.6861, lng: -7.3828 }, aliases: ["mohammedia"] },
+  { label: "سطات", point: { lat: 33.001, lng: -7.6164 }, aliases: ["settat"] },
+  { label: "تازة", point: { lat: 34.2149, lng: -4.01 }, aliases: ["taza"] },
+  { label: "جرسيف", point: { lat: 34.2266, lng: -3.3536 }, aliases: ["guercif"] },
+  { label: "القصر الكبير", point: { lat: 35.0047, lng: -5.9046 }, aliases: ["ksar el kebir"] },
+  { label: "شفشاون", point: { lat: 35.1714, lng: -5.2697 }, aliases: ["chefchaouen"] },
+  { label: "اليوسفية", point: { lat: 32.2463, lng: -8.5294 }, aliases: ["youssoufia"] },
+  { label: "برشيد", point: { lat: 33.2667, lng: -7.5833 }, aliases: ["berrechid"] },
 ];
 
 export const ALL_PLACES: CityEntry[] = [...MOROCCO_CITIES, ...EXTRA_PLACES].filter(
