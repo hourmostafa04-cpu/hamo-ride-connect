@@ -228,7 +228,14 @@ hourmostafa04-cpu <316719197+hourmostafa04-cpu@users.noreply.github.com>
   - `bun install` نجح
   - `bun run build` نجح
   - `bunx vitest run` نجح (17/17 tests)
-- ⏳ تطبيق Phase 1 على Supabase مازال محجوب حتى يتوفر وصول تنفيذي لقاعدة البيانات (Dashboard/DB connection) لتطبيق batches والتحقق بعد كل batch.
+- ✅ **مفاتيح VAPID (Push) تم توليدها وتخزينها بأمان** في secret store الحساب:
+  - `VAPID_PUBLIC_KEY` + `VAPID_PRIVATE_KEY` (ECDSA P-256 بصيغة web-push القياسية)
+  - `VAPID_SUBJECT` = mailto:push@hamoula.app
+  - ⚠️ خاصها تُنسخ لبيئة النشر (Lovable `.env`) عند توفر الوصول — ممنوع دخلها للـ git
+- ⏳ **Phase 1 على Supabase محجوبة**: محتاجين من المالك:
+  1. **Service Role Key** (Project Settings → API) — ضروري للتطبيق server-side
+  2. **DB Connection string** (Project Settings → Database) — لتطبيق Backup + Batch 1→4 عبر psql
+  3. **BIRD_API_KEY** + **VONAGE_API_KEY/SECRET/FROM** + **SEND_SMS_HOOK_SECRET** — لتفعيل OTP الحقيقي
 - 🚫 لن يتم عمل merge إلى `main` قبل إكمال Phase 1 + التحقق الكامل (Build + اختبارات + فحوصات التشغيل الأساسية).
 
 _آخر تحديث: 29 سبتمبر 2026 بواسطة Abacus AI Agent_
