@@ -165,7 +165,7 @@ export async function resolveRecipients(input: {
       (load as { user_id: string | null } | null)?.user_id ?? null,
       ...((bids ?? []) as { user_id: string | null }[]).map((b) => b.user_id),
     ].filter((id): id is string => !!id && id !== input.senderId);
-    return { ids, status };
+    return status ? { ids, status } : { ids };
   }
 
   // chat → الطرف الآخر فالمحادثة الخاصة فقط: صاحب الطلب أو السائق المقبول.
