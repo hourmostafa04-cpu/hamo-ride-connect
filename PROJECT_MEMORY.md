@@ -25,7 +25,7 @@
 صاحب البضاعة يرى الشاحنات، وصاحب الشاحنة يرى الطلبات. لا خلط بين الدورين في أي شاشة أو في استئناف المسار.
 
 ## 3. الوظائف الحالية
-- تسجيل/دخول بالهاتف عبر SMS/OTP (Supabase Phone Auth + Vonage).
+- تسجيل/دخول بالهاتف عبر OTP: **Bird WhatsApp كقناة أساسية** + **Vonage SMS fallback** (مع Supabase Phone Auth).
 - **وضع تجريبي:** مقفول افتراضياً وممنوع دائماً في Production. يشتغل محلياً فقط عند `VITE_DEMO_LOGIN=true` و`DEMO_LOGIN_ENABLED=true` صراحة؛ لا رقم آخر يتخطى OTP.
 - إنشاء ونشر الطلبات (`publishLoad` يحفظ في قاعدة البيانات قبل اعتبار الطلب منشوراً، ولا يبتلع الخطأ).
 - عروض (bids): تقديم، قبول، رفض، إشعار `bid-answer`.
@@ -109,7 +109,7 @@
 - نسخة احتياطية سابقة: `/mnt/documents/hamoula-backup-20260828/`.
 
 ## 10. ممنوع تغييره بدون طلب صريح
-1. منطق Auth / OTP / إعدادات Vonage وSMS.
+1. منطق Auth / OTP / إعدادات Bird (WhatsApp) وVonage (SMS fallback).
 2. قاعدة البيانات، المخطط، وسياسات RLS والصلاحيات.
 3. Google Maps / GPS / منطق التتبع.
 4. الشات والرسائل الصوتية وPush Notifications.
