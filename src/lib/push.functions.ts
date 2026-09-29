@@ -9,7 +9,7 @@ export const getVapidPublicKey = createServerFn({ method: "GET" }).handler(async
 
 export const savePushSubscription = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { endpoint: string; p256dh: string; auth: string; role: string }) => d)
+  .validator((d: { endpoint: string; p256dh: string; auth: string; role: string }) => d)
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("push_subscriptions").upsert(
       {
@@ -28,7 +28,7 @@ export const savePushSubscription = createServerFn({ method: "POST" })
 
 export const sendPushEvent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { kind: PushKind; loadId?: string; bidId?: string }) => d)
+  .validator((d: { kind: PushKind; loadId?: string; bidId?: string }) => d)
   .handler(async ({ data, context }) => {
     const { buildNotification, pushToUsers, resolveRecipients } = await import("./push.server");
     const { ids, status } = await resolveRecipients({ ...data, senderId: context.userId });

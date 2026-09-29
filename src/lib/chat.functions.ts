@@ -21,7 +21,7 @@ function phoneKey(raw: string): string {
  */
 export const sendChatMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: SendChatInput) => {
+  .validator((d: SendChatInput) => {
     if (!d?.loadId) throw new Error("loadId مطلوب");
     const body = (d.body ?? "").slice(0, 2000);
     const voice = d.voice ?? null;

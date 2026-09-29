@@ -11,7 +11,7 @@ const schema = z.object({
 
 /** Transcribe a recorded voice note (Arabic/Darija) with OpenAI gpt-4o-transcribe. */
 export const transcribeVoiceNote = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => schema.parse(data))
+  .validator((data: unknown) => schema.parse(data))
   .handler(async ({ data }) => {
     const apiKey = process.env["LOVABLE_API_KEY"];
     if (!apiKey && !process.env["OPENAI_API_KEY"]) {

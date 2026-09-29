@@ -11,7 +11,7 @@ const DEMO_USERS = {
 } as const;
 
 export const ensureDemoAuthUser = createServerFn({ method: "POST" })
-  .inputValidator((data: { role?: "shipper" | "driver" } | undefined) => ({
+  .validator((data: { role?: "shipper" | "driver" } | undefined) => ({
     role: data?.role === "driver" ? ("driver" as const) : ("shipper" as const),
   }))
   .handler(async ({ data }) => {

@@ -16,7 +16,7 @@ const SYSTEM_PROMPT = `أنت مصحح نصوص الدارجة المغربية 
 
 /** Post-process a Deepgram/Whisper Darija transcript: fix mis-heard words, keep meaning. */
 export const correctDarijaText = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => schema.parse(data))
+  .validator((data: unknown) => schema.parse(data))
   .handler(async ({ data }) => {
     const apiKey = process.env["LOVABLE_API_KEY"];
     if (!apiKey) return { text: data.text, corrected: false, error: "missing_key" as const };

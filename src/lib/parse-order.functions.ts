@@ -11,7 +11,7 @@ const schema = z.object({ text: z.string().min(2).max(2000) });
 
 /** Parse a spoken Darija order/identity sentence into structured fields with the Lovable AI gateway. */
 export const parseOrderWithAI = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => schema.parse(data))
+  .validator((data: unknown) => schema.parse(data))
   .handler(async ({ data }) => {
     const apiKey = process.env["LOVABLE_API_KEY"];
     if (!apiKey) return { result: null as AiOrderResult | null, error: "missing_key" as const };
