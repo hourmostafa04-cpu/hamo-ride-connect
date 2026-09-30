@@ -94,8 +94,11 @@
 * ✅ تم الدفع إلى GitHub عبر GitHub App token (بدون إدخال أي Secret جديد).
 
 * آخر commits مرفوعين لهاذ الإصلاحات:
+
   * `3500c41` — TripMap i18n labels
+
   * `f004a3e` — root 404/error i18n
+
   * `cf5e05b` — ratings error text
 
 * ملاحظة: هادشي كيرفع جوهر تعديلات `cb1f37f` التقنية. توحيد commit بنفس SHA الأصلي غير ممكن عبر واجهة GitHub API المباشرة.
@@ -109,15 +112,19 @@
 **التصنيف الصحيح دابا:**
 
 1. `VAPID_PRIVATE_KEY` = **ناقص فـ store الحالي** (كان فقط محلياً).
+
 2. Bird/Vonage/OpenAI/Maps/Supabase secrets = **UNVERIFIED IN LOVABLE** (ماشي `MISSING`) حتى يتفحصو من داخل Lovable Secret Manager.
 
 **تم بدون Production access:**
 
 * ✅ رفع تغييرات i18n الأساسية للفرع `features/phase1-review` على GitHub.
+
 * ✅ توليد زوج VAPID جديد ومتطابق وآمن محلياً (متحقق رياضياً) بدون إدخاله لـ Git.
 
 **مازال BLOCKED:**
 
 * إدخال زوج VAPID الجديد في secret store الآمن (يتطلب access لأداة إدارة secrets).
+
 * التحقق المباشر من Lovable Secret Manager لتأكيد شنو موجود فعلاً.
+
 * تطبيق Phase 1 على Supabase (يتطلب `DATABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` أو access token).
