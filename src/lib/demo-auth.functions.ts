@@ -40,7 +40,7 @@ export const ensureDemoAuthUser = createServerFn({ method: "POST" })
   if (!userId) throw new Error("demo auth user unavailable");
 
   // صف الحساب التجريبي ديال هاد الدور، مربوط بمستخدمو.
-  await supabaseAdmin.from("app_users").upsert(
+  const { error: appUserError } = await supabaseAdmin.from("app_users").upsert(
     {
       phone: demo.phone,
       name: "حساب تجريبي",
@@ -52,6 +52,7 @@ export const ensureDemoAuthUser = createServerFn({ method: "POST" })
     } as never,
     { onConflict: "phone" },
   );
+  if (appUserError) throw new Error(appUserError.message);
 
   return { email, password, userId };
 });

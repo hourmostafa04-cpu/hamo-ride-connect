@@ -390,10 +390,28 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
       }
       // كنجيبو جلسة Auth ديال مستخدم الاختبار باش الكتابة فقاعدة البيانات تبقى خدامة.
       try {
-        const creds = await ensureDemoAuthUser({ data: { role: "shipper" } });
-        await supabase.auth.signInWithPassword({ email: creds.email, password: creds.password });
-      } catch {
-        /* الجلسة التجريبية اختيارية — الواجهة كتكمل حتى بلاها */
+        // مهم مع RLS: خاص Session مصادق عليها بنفس الدور المختار.
+        const creds = await ensureDemoAuthUser({ data: { role } });
+        const { error: demoSignInError } = await supabase.auth.signInWithPassword({
+          email: creds.email,
+          password: creds.password,
+        });
+        if (demoSignInError) {
+          setOtpBusy(false);
+          playSfx("error");
+          setError(
+            fr
+              ? `Connexion démo impossible : ${demoSignInError.message}`
+              : `تعذر الدخول التجريبي: ${demoSignInError.message}`,
+          );
+          return;
+        }
+      } catch (e) {
+        setOtpBusy(false);
+        playSfx("error");
+        const msg = e instanceof Error ? e.message : "demo auth error";
+        setError(fr ? `Connexion démo impossible : ${msg}` : `تعذر الدخول التجريبي: ${msg}`);
+        return;
       }
     } else {
       const { error: verifyError } = await supabase.auth.verifyOtp({
