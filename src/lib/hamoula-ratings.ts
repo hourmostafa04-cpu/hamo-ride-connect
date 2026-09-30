@@ -53,7 +53,7 @@ export async function submitRating(r: NewRating): Promise<void> {
   });
   if (error) {
     if (error.code === "23505") throw new Error("قيّمتي هاد الرحلة من قبل");
-    throw new Error("ما تسناش التقييم، عاود المحاولة");
+    throw new Error("ما تسجّلش التقييم، عاود المحاولة");
   }
 }
 
