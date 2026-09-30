@@ -267,4 +267,33 @@ hourmostafa04-cpu <316719197+hourmostafa04-cpu@users.noreply.github.com>
   - `SUPABASE_SERVICE_ROLE_KEY`
   - مفاتيح OTP الحقيقية (Bird/Vonage) + webhook secret
 
+## إصلاحات مراجعة الكود الحقيقي (30 سبتمبر 2026)
+
+بناءً على مراجعة المالك للـZIP الحقيقي، تم إصلاح النقاط التالية قبل أي تطبيق لـ Phase 1:
+
+### حزمة Phase 1 (SQL + scripts)
+- ✅ **Backup تلقائي ومتحقق منه**: `phase1_apply.sh` كيدير pg_dump (schema + data) قبل أي Batch، وكيتأكد أن الملفات غير فارغة وفيها الجداول الأربعة (loads, bids, app_users, drafts) — إلا فشل، كيتوقف قبل أي SQL.
+- ✅ **Verification Gates حقيقية**: ملفات `verify_batch1.sql` → `verify_batch4.sql` جديدة كيستعملو `RAISE EXCEPTION` — أي عمود/جدول/دالة/سياسة/bucket ناقص = فشل فعلي للـpsql مع ON_ERROR_STOP.
+- ✅ **Bucket `chat-voice`**: batch4 دابا كيخلقو بأمان (`INSERT ... ON CONFLICT DO NOTHING` + `public=false`) قبل ما يطبّق policies ديالو.
+- ✅ **RPC `delete_own_load`**: حذف نهائي آمن — صاحب الطلب فقط، كيمسح العروض + رسائل الشات + الطلب نفسه (بدل DELETE مباشر اللي كان كيتصادم مع RLS).
+- ✅ **RPC `current_user_role`**: فرض الأدوار فالقاعدة — `loads_insert` كيتطلب `current_user_role()='shipper'` و`bids_insert` كيتطلب `'driver'` (ماشي غير AuthGate فـUI).
+
+### كود العميل (server-first)
+- ✅ **`saveBid`**: دابا كيتحقق من `error` ديال Supabase — إلا فشل، كيرمي خطأ وما كيتزادش العرض فالواجهة كأنو تسجل.
+- ✅ **`updateBidPrice` / `withdrawBid` / `cancelRequest` / `saveLoadStatus`**: كلهم server-first — أي خطأ كيوقف العملية وما كيتحدثش UI محلياً.
+- ✅ **`removeOwnLoad`**: كيستعمل RPC `delete_own_load` بدل DELETE المباشر.
+
+### الأمان والذاكرة
+- ✅ **`.env` خرج من git tracking** (`git rm --cached .env`) + `.gitignore` فيه `.env` و`.env.*` — ممنوع أي Secret فـGit.
+- ✅ **الذاكرة تصححات**: STT الحالي = OpenAI gpt-4o-transcribe / Lovable AI gateway (ماشي Deepgram)؛ Demo mode موثق كما هو فعلاً (DEV مفعّل افتراضياً بأي رقم + 123456، Production ممنوع دائماً).
+
+### التحقق
+- ✅ `bun run typecheck` نجح
+- ✅ `bun run test` نجح (17/17)
+- ✅ `bun run build` نجح (client + SSR + Nitro)
+
+### مازال ناقص
+- ⏳ **الفرنسية**: app-language.ts كيبدل lang وRTL/LTR، لكن باقي الشاشات ما عندهاش ترجمة فرنسية حقيقية (مهمة منفصلة).
+- ⏳ **Phase 1 apply**: محجوب حتى يتوفر DATABASE_URL + SUPABASE_SERVICE_ROLE_KEY + مفاتيح OTP.
+
 _آخر تحديث: 30 سبتمبر 2026 بواسطة Abacus AI Agent_

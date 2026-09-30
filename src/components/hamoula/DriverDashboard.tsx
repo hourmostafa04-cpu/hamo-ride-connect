@@ -373,7 +373,11 @@ export function DriverDashboard() {
             fits={fits}
             myBid={myBidFor(l.id)}
             onBid={(price, kind, voiceNote) => {
-              addBid({ loadId: l.id, price, kind, voiceNote });
+              void addBid({ loadId: l.id, price, kind, voiceNote }).catch((e) => {
+                toast.error("تعذر تسجيل العرض", {
+                  description: e instanceof Error ? e.message : "عاود المحاولة",
+                });
+              });
               updateRequest({
                 pickup: l.pickup,
                 destination: l.destination,

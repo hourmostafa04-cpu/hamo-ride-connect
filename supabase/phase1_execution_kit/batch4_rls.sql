@@ -78,7 +78,10 @@ USING (
 
 CREATE POLICY loads_insert ON public.loads
 FOR INSERT TO authenticated
-WITH CHECK (user_id = auth.uid());
+WITH CHECK (
+  user_id = auth.uid()
+  AND public.current_user_role() = 'shipper'
+);
 
 CREATE POLICY loads_delete ON public.loads
 FOR DELETE TO authenticated
@@ -101,7 +104,10 @@ USING (
 
 CREATE POLICY bids_insert ON public.bids
 FOR INSERT TO authenticated
-WITH CHECK (user_id = auth.uid());
+WITH CHECK (
+  user_id = auth.uid()
+  AND public.current_user_role() = 'driver'
+);
 
 CREATE POLICY bids_delete ON public.bids
 FOR DELETE TO authenticated
@@ -196,6 +202,15 @@ USING (
 -- -------------------------------------------------
 -- 11) سياسات Storage للصوت (chat-voice) للمشاركين فقط
 -- -------------------------------------------------
+-- إنشاء bucket chat-voice بأمان إذا لم يكن موجوداً (خاصة + غير عام)
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('chat-voice', 'chat-voice', false)
+ON CONFLICT (id) DO NOTHING;
+
+UPDATE storage.buckets
+SET public = false
+WHERE id = 'chat-voice';
+
 DROP POLICY IF EXISTS chat_voice_read ON storage.objects;
 DROP POLICY IF EXISTS chat_voice_insert ON storage.objects;
 DROP POLICY IF EXISTS chat_voice_insert_participants ON storage.objects;

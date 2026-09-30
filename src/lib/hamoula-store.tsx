@@ -224,14 +224,14 @@ type Ctx = {
     price: number;
     kind: Bid["kind"];
     voiceNote?: VoiceNote | null;
-  }) => Bid;
+  }) => Promise<Bid>;
   acceptBid: (bidId: string) => Promise<Bid | null>;
   declineBid: (bidId: string) => Promise<void>;
   openTrip: (loadId: string) => void;
   /** Driver pulls back a pending bid. */
-  withdrawBid: (bidId: string) => void;
+  withdrawBid: (bidId: string) => Promise<void>;
   /** Driver edits the price of a pending bid (counter-offer from history). */
-  updateBidPrice: (bidId: string, price: number) => void;
+  updateBidPrice: (bidId: string, price: number) => Promise<void>;
   replyToBid: (bidId: string, note: VoiceNote) => void;
   myBidFor: (loadId: string) => Bid | null;
   /** Requests published by the signed-in shipper ("طلباتي"), newest first. */
@@ -241,7 +241,7 @@ type Ctx = {
   /** Offers sent by the signed-in driver ("عروضي"). */
   myBids: Bid[];
   /** Cancel a request (ملغى) — it stays in the history. */
-  cancelRequest: (loadId?: string) => void;
+  cancelRequest: (loadId?: string) => Promise<void>;
   /** Delete a request forever (and related offers) from the shared backend. */
   deleteRequest: (loadId: string) => Promise<void>;
   /** Unfinished request restored from the backend, if any. */
@@ -696,12 +696,24 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
   // Persist every lifecycle change of the active trip.
   useEffect(() => {
     if (!ready || !currentLoadId || tripStatus === "draft") return;
-    void saveLoadStatus(currentLoadId, { tripStatus });
-    void notifyEvent("trip-status", { loadId: currentLoadId });
-    setBoard((b) => ({
-      ...b,
-      loads: b.loads.map((l) => (l.id === currentLoadId ? { ...l, tripStatus } : l)),
-    }));
+    let cancelled = false;
+    void (async () => {
+      try {
+        // السيرفر أولاً: الحالة كتتبدل فالواجهة غير بعد ما تتأكد فالقاعدة.
+        await saveLoadStatus(currentLoadId, { tripStatus });
+        if (cancelled) return;
+        void notifyEvent("trip-status", { loadId: currentLoadId });
+        setBoard((b) => ({
+          ...b,
+          loads: b.loads.map((l) => (l.id === currentLoadId ? { ...l, tripStatus } : l)),
+        }));
+      } catch (e) {
+        console.error("[hamoula] saveLoadStatus فشل — الحالة ما تبدلاتش فالقاعدة", e);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [ready, currentLoadId, tripStatus]);
 
   const publishLoad = useCallback(
@@ -765,7 +777,7 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
   );
 
   const addBid = useCallback<Ctx["addBid"]>(
-    ({ loadId, price, kind, voiceNote = null }) => {
+    async ({ loadId, price, kind, voiceNote = null }) => {
       if (sessionState !== "authenticated" || account?.role !== "driver" || !driverKey) {
         throw new Error("خاص حساب سائق مسجل باش تقدم عرض");
       }
@@ -787,11 +799,13 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
         status: "pending",
         createdAt: Date.now(),
       };
+      // السيرفر أولاً: إلا فشل الحفظ ما كيتزادش العرض فالواجهة كأنو تسجل.
+      await saveBid(bid);
       setBoard((b) => ({
         ...b,
         bids: [...b.bids.filter((x) => !(x.loadId === loadId && x.driverId === bid.driverId)), bid],
       }));
-      void saveBid(bid).then(() => notifyEvent("new-bid", { loadId }));
+      void notifyEvent("new-bid", { loadId });
       return bid;
     },
     [account, driverKey, sessionState],
@@ -873,17 +887,18 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const withdrawBid = useCallback((bidId: string) => {
-    void removeBid(bidId);
+  const withdrawBid = useCallback(async (bidId: string) => {
+    await removeBid(bidId);
     setBoard((b) => ({ ...b, bids: b.bids.filter((x) => x.id !== bidId) }));
   }, []);
 
   /** Cancel a request without deleting it — it stays visible as "ملغى". */
   const cancelRequest = useCallback(
-    (loadId?: string) => {
+    async (loadId?: string) => {
       const id = loadId ?? board.request.loadId ?? null;
       if (id) {
-        void saveLoadStatus(id, { tripStatus: "cancelled" });
+        // السيرفر أولاً: إلا فشل التغيير ما كيتعرضش الطلب كملغى فالواجهة.
+        await saveLoadStatus(id, { tripStatus: "cancelled" });
         void notifyEvent("trip-status", { loadId: id });
       }
       setBoard((b) => ({
@@ -913,8 +928,9 @@ export function HamoulaProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
-  const updateBidPrice = useCallback((bidId: string, price: number) => {
-    void updateOwnBid(bidId, { price });
+  const updateBidPrice = useCallback(async (bidId: string, price: number) => {
+    // السيرفر أولاً: إلا فشل التحديث ما كيتغيرش الثمن فالواجهة.
+    await updateOwnBid(bidId, { price });
     setBoard((b) => ({
       ...b,
       bids: b.bids.map((x) =>

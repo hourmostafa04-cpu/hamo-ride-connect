@@ -355,26 +355,84 @@ END;
 $$;
 
 -- -------------------------------------------------
--- 6) صلاحيات التنفيذ (مقيدة)
+-- 6) RPC: delete_own_load (حذف نهائي آمن)
+-- صاحب الطلب فقط: يمسح العروض + رسائل الشات + الطلب نفسه.
+-- trip_ratings كيتحذف بـ ON DELETE CASCADE من loads.
+-- -------------------------------------------------
+CREATE OR REPLACE FUNCTION public.delete_own_load(_load_id text)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  _uid uuid := auth.uid();
+BEGIN
+  IF _uid IS NULL THEN
+    RAISE EXCEPTION 'unauthorized';
+  END IF;
+
+  -- الملكية إجبارية: صاحب الطلب فقط يقدر يحذف طلبو نهائياً.
+  IF NOT EXISTS (
+    SELECT 1 FROM public.loads l
+    WHERE l.id = _load_id AND l.user_id = _uid
+  ) THEN
+    RAISE EXCEPTION 'only the load owner can delete this load';
+  END IF;
+
+  DELETE FROM public.bids WHERE load_id = _load_id;
+  DELETE FROM public.chat_messages WHERE load_id = _load_id;
+  DELETE FROM public.loads WHERE id = _load_id;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'load not found';
+  END IF;
+END;
+$$;
+
+-- -------------------------------------------------
+-- 7) RPC: current_user_role (فرض الأدوار فالقاعدة)
+-- كيرجع الدور ديال المستخدم المصادق من app_users.
+-- SECURITY DEFINER باش ما كيتعرضش لـ RLS ديال app_users.
+-- -------------------------------------------------
+CREATE OR REPLACE FUNCTION public.current_user_role()
+RETURNS text
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT role
+  FROM public.app_users
+  WHERE user_id = auth.uid()
+  LIMIT 1;
+$$;
+
+-- -------------------------------------------------
+-- 8) صلاحيات التنفيذ (مقيدة)
 -- -------------------------------------------------
 REVOKE EXECUTE ON FUNCTION public.owns_load(text) FROM PUBLIC, anon;
 REVOKE EXECUTE ON FUNCTION public.has_bid_on_load(text) FROM PUBLIC, anon;
 REVOKE EXECUTE ON FUNCTION public.is_chat_party(text) FROM PUBLIC, anon;
 REVOKE EXECUTE ON FUNCTION public.can_access_chat_load(text) FROM PUBLIC, anon;
 REVOKE EXECUTE ON FUNCTION public.current_user_phone_key() FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.current_user_role() FROM PUBLIC, anon;
 REVOKE EXECUTE ON FUNCTION public.set_trip_status(text, text) FROM PUBLIC, anon;
 REVOKE EXECUTE ON FUNCTION public.update_own_load(text, text, text, text, text, text, integer, jsonb, jsonb) FROM PUBLIC, anon;
 REVOKE EXECUTE ON FUNCTION public.update_own_bid(text, integer, integer, jsonb) FROM PUBLIC, anon;
 REVOKE EXECUTE ON FUNCTION public.respond_to_bid(text, text) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.delete_own_load(text) FROM PUBLIC, anon;
 
 GRANT EXECUTE ON FUNCTION public.owns_load(text) TO authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.has_bid_on_load(text) TO authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.is_chat_party(text) TO authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.can_access_chat_load(text) TO authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.current_user_phone_key() TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.current_user_role() TO authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.set_trip_status(text, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.update_own_load(text, text, text, text, text, text, integer, jsonb, jsonb) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.update_own_bid(text, integer, integer, jsonb) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.respond_to_bid(text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.delete_own_load(text) TO authenticated;
 
 COMMIT;

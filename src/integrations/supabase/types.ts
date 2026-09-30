@@ -340,6 +340,8 @@ export type Database = {
     Functions: {
       can_access_chat_load: { Args: { _load_id: string }; Returns: boolean }
       current_user_phone_key: { Args: never; Returns: string }
+      current_user_role: { Args: never; Returns: string }
+      delete_own_load: { Args: { _load_id: string }; Returns: undefined }
       has_bid_on_load: { Args: { _load_id: string }; Returns: boolean }
       is_chat_party: { Args: { _load_id: string }; Returns: boolean }
       owns_load: { Args: { _load_id: string }; Returns: boolean }

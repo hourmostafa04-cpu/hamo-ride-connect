@@ -262,10 +262,17 @@ function BidRow({ bid, load }: { bid: Bid; load: Load | null }) {
 
   const sendCounter = () => {
     const price = Math.max(50, Math.round(draft || 0));
-    updateBidPrice(bid.id, price);
-    setEditing(false);
-    playSfx("success");
-    toast.success("تصيفط العرض المضاد", { description: `الثمن الجديد: ${price} درهم` });
+    void updateBidPrice(bid.id, price)
+      .then(() => {
+        setEditing(false);
+        playSfx("success");
+        toast.success("تصيفط العرض المضاد", { description: `الثمن الجديد: ${price} درهم` });
+      })
+      .catch((e) => {
+        toast.error("تعذر تحديث العرض", {
+          description: e instanceof Error ? e.message : "عاود المحاولة",
+        });
+      });
   };
 
   return (
@@ -400,9 +407,16 @@ function BidRow({ bid, load }: { bid: Bid; load: Load | null }) {
             <button
               type="button"
               onClick={() => {
-                withdrawBid(bid.id);
-                playSfx("tap");
-                toast("تسحب العرض ديالك");
+                void withdrawBid(bid.id)
+                  .then(() => {
+                    playSfx("tap");
+                    toast("تسحب العرض ديالك");
+                  })
+                  .catch((e) => {
+                    toast.error("تعذر سحب العرض", {
+                      description: e instanceof Error ? e.message : "عاود المحاولة",
+                    });
+                  });
               }}
               className="min-h-12 rounded-2xl bg-destructive text-sm font-extrabold text-destructive-foreground active:scale-95"
             >

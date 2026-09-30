@@ -15,7 +15,10 @@ required=(
   "batch2_tables.sql"
   "batch3_functions.sql"
   "batch4_rls.sql"
-  "verify_after_each_batch.sql"
+  "verify_batch1.sql"
+  "verify_batch2.sql"
+  "verify_batch3.sql"
+  "verify_batch4.sql"
 )
 
 missing=0

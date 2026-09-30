@@ -163,8 +163,15 @@ export function MyRequests() {
   const bidsFor = (id: string) => bids.filter((b) => b.loadId === id).sort((a, b) => a.price - b.price);
 
   const onCancel = (id: string) => {
-    cancelRequest(id);
-    toast.success("تلغى الطلب", { description: "بقا محفوظ فالسجل" });
+    void cancelRequest(id)
+      .then(() => {
+        toast.success("تلغى الطلب", { description: "بقا محفوظ فالسجل" });
+      })
+      .catch((e) => {
+        toast.error("تعذر إلغاء الطلب", {
+          description: e instanceof Error ? e.message : "عاود المحاولة",
+        });
+      });
   };
 
   const onDelete = (id: string) => {

@@ -146,7 +146,7 @@ export async function saveLoadStatus(loadId: string, patch: { tripStatus?: TripS
     _load_id: loadId,
     _status: patch.tripStatus,
   } as never);
-  if (error) console.warn("[hamoula] set_trip_status:", error.message);
+  if (error) throw new Error(error.message);
 }
 
 /** تعديل بيانات الطلب العادية من صاحبه فقط (قبل قبول أي عرض). */
@@ -176,7 +176,7 @@ export async function saveBid(bid: Bid) {
   if (!isRealBid(bid.driverId) || !isRealLoad(bid.loadId)) return;
   const userId = await currentUserId();
   if (!userId) return;
-  await supabase.from("bids").insert({
+  const { error } = await supabase.from("bids").insert({
     id: bid.id,
     user_id: userId,
     load_id: bid.loadId,
@@ -194,6 +194,10 @@ export async function saveBid(bid: Bid) {
     shipper_reply: bid.shipperReply,
     status: bid.status,
   } as never);
+  if (error) {
+    console.error("[hamoula] saveBid failed:", error.message, bid.id);
+    throw new Error(`فشل حفظ العرض: ${error.message}`);
+  }
 }
 
 /** السائق كيعدّل عرضه هو فقط، وفقط ما دام pending — بلا أي مساس بالهوية. */
@@ -220,15 +224,15 @@ export async function respondToBid(bidId: string, decision: "accepted" | "reject
 }
 
 export async function removeBid(bidId: string) {
-  await supabase.from("bids").delete().eq("id", bidId);
+  const { error } = await supabase.from("bids").delete().eq("id", bidId);
+  if (error) throw new Error(error.message);
 }
 
 /** حذف الطلب نهائياً من صاحبه (ومعه العروض المرتبطة به) إذا احتاج ذلك. */
 export async function removeOwnLoad(loadId: string) {
   if (!isRealLoad(loadId)) return;
-  const { error: bidsError } = await supabase.from("bids").delete().eq("load_id", loadId);
-  if (bidsError) throw new Error(bidsError.message);
-  const { error } = await supabase.from("loads").delete().eq("id", loadId);
+  // حذف نهائي آمن عبر RPC: صاحب الطلب فقط، ويمسح العروض + الشات + الطلب.
+  const { error } = await supabase.rpc("delete_own_load", { _load_id: loadId } as never);
   if (error) throw new Error(error.message);
 }
 
