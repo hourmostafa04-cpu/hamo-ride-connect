@@ -4,6 +4,25 @@
 
 ---
 
+## 2026-09-30 — جولة 2: الوصول المباشر لـ Lovable + إدخال VAPID
+
+**Branch**: `features/phase1-review`
+
+### تغييرات
+- **Lovable Editor + Secret Manager access**: مؤكد (فحص مباشر من داخل Lovable).
+- **جرد الـ Secrets الفعلي**: الموجودين فـ Lovable هم `LOVABLE_API_KEY`, `DEEPGRAM_API_KEY`, `LOVABLE_CRON_SECRET` فقط. كل اللي كان `UNVERIFIED IN LOVABLE` ولّى `VERIFIED ABSENT` (Bird/Vonage/OpenAI/Maps/Supabase).
+- **زوج VAPID الجديد المتطابق**: دخل بنجاح فـ Lovable Secret Manager (`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`) — القيم ما كتباتش فالشات ولا logs.
+
+### أمان
+- زوج VAPID القديم غير متطابق (public ≠ مشتق من private) — الزوج الجديد المتطابق دخل فـ Lovable.
+- تنبيه "Critical errors" فلوحة Cloud — للفحص من المالك قبل الإطلاق.
+
+### Blockers
+- **Phase 1**: BLOCKED — لا ربط خارجي بـ Supabase production، لا `DATABASE_URL` ولا service role key ولا access token.
+- **E2E حقيقي**: BLOCKED — غياب `BIRD_API_KEY`, `VONAGE_API_KEY`, `VONAGE_API_SECRET`, `SEND_SMS_HOOK_SECRET`, `OPENAI_API_KEY` (متحقق غيابهم) + Phase 1 غير مطبق.
+
+---
+
 ## Phase 2 - ميزات إضافية (سبتمبر 2026)
 
 **Branch**: `feature/hamoula-phase2-12-progress`\
@@ -542,3 +561,29 @@ _آخر تحديث: 30 سبتمبر 2026 بواسطة Abacus AI Agent_
 - تطبيق SQL kit على قاعدة Supabase Production.
 - إدخال Secrets الإنتاج (Bird/Vonage/VAPID/OpenAI/Maps).
 - اعتماد قرار VoIP النهائي من المالك.
+
+
+---
+
+## 2026-09-30 — Audit محافظ + Push بدون Secrets جديدة
+
+### Added
+- تقرير تدقيق جديد: `docs/AUDIT_SECRETS_ACCESS.md` يوضح الفرق بين:
+  - ما هو موجود فعلياً في store الحالي
+  - وما هو **UNVERIFIED IN LOVABLE** بسبب عدم توفر وصول مباشر لـ Lovable Secret Manager
+
+### Changed
+- تصنيف secrets تم ضبطه منهجياً:
+  - `UNVERIFIED IN LOVABLE` بدل `MISSING` لكل Bird/Vonage/OpenAI/Maps/Supabase إلى حين التحقق من Lovable نفسه.
+- تحديث حالة Git:
+  - رفع إصلاحات i18n الأساسية على `features/phase1-review` عبر GitHub App token
+    - `3500c41` (TripMap labels)
+    - `f004a3e` (404/Error boundary)
+    - `cf5e05b` (ratings text)
+
+### Security
+- توليد زوج VAPID جديد ومتطابق (تم التحقق من التطابق رياضياً) مع الالتزام بعدم إدخاله في Git.
+- إبقاء إدخال VAPID في secret manager كـ BLOCKED حتى يتوفر access مناسب.
+
+### Blocked
+- Phase 1 apply على Supabase مازال محجوب لغياب production DB access (`DATABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` أو Access Token).
