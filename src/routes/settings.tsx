@@ -29,30 +29,75 @@ export const Route = createFileRoute("/settings")({
 
 type Row = {
   key: keyof NotifPrefs;
-  label: string;
-  hint: string;
+  labelAr: string;
+  labelFr: string;
+  hintAr: string;
+  hintFr: string;
   Icon: typeof BellRing;
 };
 
 const general: Row[] = [
-  { key: "sound", label: "أصوات التطبيق", hint: "نغمات التنبيه والضغط على الأزرار", Icon: Volume2 },
-  { key: "vibrate", label: "الاهتزاز", hint: "هزّة خفيفة مع كل تنبيه مهم", Icon: Vibrate },
+  {
+    key: "sound",
+    labelAr: "أصوات التطبيق",
+    labelFr: "Sons de l'application",
+    hintAr: "نغمات التنبيه والضغط على الأزرار",
+    hintFr: "Sons d'alerte et clics des boutons",
+    Icon: Volume2,
+  },
+  {
+    key: "vibrate",
+    labelAr: "الاهتزاز",
+    labelFr: "Vibration",
+    hintAr: "هزّة خفيفة مع كل تنبيه مهم",
+    hintFr: "Petite vibration pour chaque alerte importante",
+    Icon: Vibrate,
+  },
 ];
 
 const types: Row[] = [
-  { key: "tripStatus", label: "تحديثات حالة الرحلة", hint: "خرج، حمّل، فالطريق…", Icon: Truck },
-  { key: "delivered", label: "تنبيه التوصيل", hint: "حين توصل البضاعة للوجهة", Icon: PackageCheck },
-  { key: "bidAnswers", label: "ردود على العروض", hint: "قبول أو رفض العرض ديالك", Icon: BellRing },
-  { key: "voiceReplies", label: "الرسائل الصوتية", hint: "حين يصيفط ليك رد صوتي", Icon: Mic },
+  {
+    key: "tripStatus",
+    labelAr: "تحديثات حالة الرحلة",
+    labelFr: "Mises à jour du trajet",
+    hintAr: "خرج، حمّل، فالطريق…",
+    hintFr: "Départ, chargement, en route…",
+    Icon: Truck,
+  },
+  {
+    key: "delivered",
+    labelAr: "تنبيه التوصيل",
+    labelFr: "Alerte de livraison",
+    hintAr: "حين توصل البضاعة للوجهة",
+    hintFr: "Quand la marchandise arrive",
+    Icon: PackageCheck,
+  },
+  {
+    key: "bidAnswers",
+    labelAr: "ردود على العروض",
+    labelFr: "Réponses aux offres",
+    hintAr: "قبول أو رفض العرض ديالك",
+    hintFr: "Acceptation ou refus de votre offre",
+    Icon: BellRing,
+  },
+  {
+    key: "voiceReplies",
+    labelAr: "الرسائل الصوتية",
+    labelFr: "Messages vocaux",
+    hintAr: "حين يصيفط ليك رد صوتي",
+    hintFr: "Quand vous recevez une réponse vocale",
+    Icon: Mic,
+  },
 ];
 
-function Toggle({ row, value }: { row: Row; value: boolean }) {
+function Toggle({ row, value, fr }: { row: Row; value: boolean; fr: boolean }) {
   const { Icon } = row;
   return (
     <button
       type="button"
       role="switch"
       aria-checked={value}
+      aria-label={fr ? row.labelFr : row.labelAr}
       onClick={() => {
         const next = !value;
         setPref(row.key, next);
@@ -71,8 +116,8 @@ function Toggle({ row, value }: { row: Row; value: boolean }) {
         <Icon className="size-5" />
       </span>
       <span className="flex-1">
-        <span className="block text-sm font-extrabold">{row.label}</span>
-        <span className="block text-[11px] font-semibold text-muted-foreground">{row.hint}</span>
+        <span className="block text-sm font-extrabold">{fr ? row.labelFr : row.labelAr}</span>
+        <span className="block text-[11px] font-semibold text-muted-foreground">{fr ? row.hintFr : row.hintAr}</span>
       </span>
       <span
         className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
@@ -92,6 +137,7 @@ function Toggle({ row, value }: { row: Row; value: boolean }) {
 function SettingsPage() {
   const prefs = useNotifPrefs();
   const [lang, setLang] = useState<AppLanguage>("ar");
+  const fr = lang === "fr";
 
   useEffect(() => {
     const current = readLanguage();
@@ -110,22 +156,22 @@ function SettingsPage() {
   return (
     <PhoneFrame>
       <AppHeader
-        title={lang === "fr" ? "Paramètres" : "إعدادات الإشعارات"}
-        subtitle={lang === "fr" ? "Notifications, sons et langue" : "تحكم فالأصوات، الاهتزاز وأنواع التنبيهات"}
+        title={fr ? "Paramètres" : "إعدادات الإشعارات"}
+        subtitle={fr ? "Notifications, sons et langue" : "تحكم فالأصوات، الاهتزاز وأنواع التنبيهات"}
         showBack
         backTo="/"
       />
       <main className="flex-1 space-y-4 px-5 py-5">
         <section className="overflow-hidden rounded-3xl border-2 border-border bg-card">
           <p className="border-b border-border px-4 py-2 text-xs font-extrabold text-muted-foreground">
-            {lang === "fr" ? "Langue" : "اللغة"}
+            {fr ? "Langue" : "اللغة"}
           </p>
           <div className="flex items-center gap-3 px-4 py-4">
             <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary-soft text-primary">
               <Languages className="size-5" />
             </span>
             <span className="flex-1 text-sm font-extrabold">
-              {lang === "fr" ? "Changer la langue" : "تبديل لغة الواجهة"}
+              {fr ? "Changer la langue" : "تبديل لغة الواجهة"}
             </span>
             <div className="flex overflow-hidden rounded-xl border-2 border-border" dir={dirOf(lang)}>
               <button
@@ -148,22 +194,22 @@ function SettingsPage() {
 
         <section className="overflow-hidden rounded-3xl border-2 border-border bg-card">
           <p className="border-b border-border px-4 py-2 text-xs font-extrabold text-muted-foreground">
-            {lang === "fr" ? "Général" : "عام"}
+            {fr ? "Général" : "عام"}
           </p>
           {general.map((r, i) => (
             <div key={r.key} className={i ? "border-t border-border" : ""}>
-              <Toggle row={r} value={prefs[r.key]} />
+              <Toggle row={r} value={prefs[r.key]} fr={fr} />
             </div>
           ))}
         </section>
 
         <section className="overflow-hidden rounded-3xl border-2 border-border bg-card">
           <p className="border-b border-border px-4 py-2 text-xs font-extrabold text-muted-foreground">
-            أنواع التنبيهات
+            {fr ? "Types de notifications" : "أنواع التنبيهات"}
           </p>
           {types.map((r, i) => (
             <div key={r.key} className={i ? "border-t border-border" : ""}>
-              <Toggle row={r} value={prefs[r.key]} />
+              <Toggle row={r} value={prefs[r.key]} fr={fr} />
             </div>
           ))}
         </section>
@@ -174,22 +220,24 @@ function SettingsPage() {
             onClick={() => {
               if (prefs.sound) playSfx("incoming");
               buzz(80);
-              toast("هادي تجربة تنبيه 🔔", { description: "هكذا غادي توصلك التنبيهات" });
+              toast(fr ? "Test de notification 🔔" : "هادي تجربة تنبيه 🔔", {
+                description: fr ? "Voici comment vous recevrez les alertes" : "هكذا غادي توصلك التنبيهات",
+              });
             }}
             className="min-h-14 rounded-2xl bg-primary text-sm font-extrabold text-primary-foreground active:scale-95"
           >
-            جرّب التنبيه
+            {fr ? "Tester" : "جرّب التنبيه"}
           </button>
           <button
             type="button"
             onClick={() => {
               resetPrefs();
-              toast.success("رجعنا للإعدادات الأصلية");
+              toast.success(fr ? "Paramètres restaurés" : "رجعنا للإعدادات الأصلية");
             }}
             className="flex min-h-14 items-center justify-center gap-2 rounded-2xl border-2 border-border text-sm font-extrabold active:scale-95"
           >
             <RotateCcw className="size-4" />
-            استرجاع
+            {fr ? "Réinitialiser" : "استرجاع"}
           </button>
         </div>
       </main>

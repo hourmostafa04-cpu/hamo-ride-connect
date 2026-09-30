@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Boxes, Check, MapPin, Navigation, Star, Trash2, Truck, X, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { PhoneFrame, AppHeader } from "@/components/hamoula/PhoneFrame";
-import { statusLabels, useHamoula, type Bid, type Load, type TripStatus } from "@/lib/hamoula-store";
+import { useHamoula, type Bid, type Load, type TripStatus } from "@/lib/hamoula-store";
 import { ChatButton } from "@/components/hamoula/ChatButton";
 import { useAppLanguage } from "@/lib/app-language";
 
@@ -15,25 +15,65 @@ function statusTone(s: TripStatus) {
   return "bg-secondary text-foreground";
 }
 
+function statusLabel(status: TripStatus, fr: boolean) {
+  if (!fr) {
+    return (
+      {
+        draft: "مسودة",
+        searching: "قيد البحث",
+        matched: "تم المطابقة",
+        enroute: "في الطريق",
+        loaded: "تم التحميل",
+        delivered: "تم التسليم",
+        cancelled: "ملغاة",
+      } satisfies Record<TripStatus, string>
+    )[status];
+  }
+  return (
+    {
+      draft: "Brouillon",
+      searching: "Recherche en cours",
+      matched: "Attribué",
+      enroute: "En route",
+      loaded: "Chargé",
+      delivered: "Livré",
+      cancelled: "Annulé",
+    } satisfies Record<TripStatus, string>
+  )[status];
+}
+
 /** عروض أصحاب الشاحنات على هاد الطلب مع قبول/رفض. */
-function LoadOffers({ bids, busy, onAccept, onDecline }: { bids: Bid[]; busy: string | null; onAccept: (b: Bid) => void; onDecline: (b: Bid) => void }) {
+function LoadOffers({
+  bids,
+  busy,
+  onAccept,
+  onDecline,
+}: {
+  bids: Bid[];
+  busy: string | null;
+  onAccept: (b: Bid) => void;
+  onDecline: (b: Bid) => void;
+}) {
+  const fr = useAppLanguage() === "fr";
   const pending = bids.filter((b) => b.status === "pending");
   if (pending.length === 0) return null;
   return (
     <div className="mt-3 space-y-2 rounded-2xl bg-secondary/50 p-3">
-      <p className="text-xs font-extrabold">عروض أصحاب الشاحنات ({pending.length})</p>
+      <p className="text-xs font-extrabold">
+        {fr ? `Offres chauffeurs (${pending.length})` : `عروض أصحاب الشاحنات (${pending.length})`}
+      </p>
       {pending.map((b) => (
         <div key={b.id} className="rounded-xl border-2 border-border bg-card p-3">
           <div className="flex items-center justify-between gap-2">
             <p className="flex items-center gap-2 text-sm font-extrabold">
               <Truck className="size-4 text-primary" />
-              {b.driver || "صاحب الشاحنة"}
+              {b.driver || (fr ? "Chauffeur" : "صاحب الشاحنة")}
             </p>
-            <span className="text-sm font-extrabold text-primary">{b.price} درهم</span>
+            <span className="text-sm font-extrabold text-primary">{b.price} {fr ? "MAD" : "درهم"}</span>
           </div>
           <p className="mt-1 flex items-center gap-2 text-[11px] font-semibold text-muted-foreground">
             <Star className="size-3 text-primary" />
-            {b.rating} · {b.truck || "شاحنة"} · يوصل ف {b.etaMin} دقيقة
+            {b.rating} · {b.truck || (fr ? "Camion" : "شاحنة")} · {fr ? `arrive dans ${b.etaMin} min` : `يوصل ف ${b.etaMin} دقيقة`}
           </p>
           <div className="mt-2 flex gap-2">
             <button
@@ -43,7 +83,7 @@ function LoadOffers({ bids, busy, onAccept, onDecline }: { bids: Bid[]; busy: st
               className="flex h-11 flex-1 items-center justify-center gap-1 rounded-xl bg-primary text-sm font-extrabold text-primary-foreground disabled:opacity-60"
             >
               <Check className="size-4" />
-              {busy === b.id ? "كنعالجو…" : "قبول"}
+              {busy === b.id ? (fr ? "Traitement…" : "كنعالجو…") : fr ? "Accepter" : "قبول"}
             </button>
             <button
               type="button"
@@ -52,7 +92,7 @@ function LoadOffers({ bids, busy, onAccept, onDecline }: { bids: Bid[]; busy: st
               className="flex h-11 flex-1 items-center justify-center gap-1 rounded-xl border-2 border-border text-sm font-extrabold text-destructive disabled:opacity-60"
             >
               <X className="size-4" />
-              رفض
+              {fr ? "Refuser" : "رفض"}
             </button>
           </div>
         </div>
@@ -78,16 +118,16 @@ function RequestCard({
   onAccept: (b: Bid) => void;
   onDecline: (b: Bid) => void;
 }) {
-
+  const fr = useAppLanguage() === "fr";
   const status = (load.tripStatus ?? "searching") as TripStatus;
   const active = ACTIVE.includes(status);
   return (
     <div className="rounded-2xl border-2 border-border bg-card p-4">
       <div className="flex items-center justify-between gap-2">
         <span className={`rounded-full px-3 py-1 text-[11px] font-extrabold ${statusTone(status)}`}>
-          {statusLabels[status]}
+          {statusLabel(status, fr)}
         </span>
-        <span className="text-sm font-extrabold text-primary">{load.price} درهم</span>
+        <span className="text-sm font-extrabold text-primary">{load.price} {fr ? "MAD" : "درهم"}</span>
       </div>
       <div className="mt-3 space-y-1 text-sm font-bold">
         <p className="flex items-center gap-2">
@@ -112,7 +152,7 @@ function RequestCard({
               to="/tracking"
               className="flex-1 rounded-xl bg-primary px-3 py-2 text-center text-sm font-extrabold text-primary-foreground"
             >
-              تتبع الطلب
+              {fr ? "Suivre la demande" : "تتبع الطلب"}
             </Link>
             {load.status === "assigned" && <ChatButton loadId={load.id} />}
             <button
@@ -121,7 +161,7 @@ function RequestCard({
               className="flex items-center gap-1 rounded-xl border-2 border-border px-3 py-2 text-sm font-bold text-destructive"
             >
               <XCircle className="size-4" />
-              إلغاء
+              {fr ? "Annuler" : "إلغاء"}
             </button>
           </>
         )}
@@ -132,10 +172,10 @@ function RequestCard({
           className="flex items-center gap-1 rounded-xl border-2 border-border px-3 py-2 text-sm font-bold text-muted-foreground disabled:opacity-60"
         >
           <Trash2 className="size-4" />
-          حذف نهائي
+          {fr ? "Supprimer définitivement" : "حذف نهائي"}
         </button>
         <span className="ms-auto text-[11px] font-semibold text-muted-foreground">
-          {new Date(load.createdAt).toLocaleString("ar-MA")}
+          {new Date(load.createdAt).toLocaleString(fr ? "fr-MA" : "ar-MA")}
         </span>
       </div>
       {active && load.status !== "assigned" && (
@@ -144,7 +184,6 @@ function RequestCard({
     </div>
   );
 }
-
 
 export function MyRequests() {
   const lang = useAppLanguage();
@@ -168,39 +207,44 @@ export function MyRequests() {
   const onCancel = (id: string) => {
     void cancelRequest(id)
       .then(() => {
-        toast.success("تلغى الطلب", { description: "بقا محفوظ فالسجل" });
+        toast.success(fr ? "Demande annulée" : "تلغى الطلب", {
+          description: fr ? "Elle reste visible dans l'historique" : "بقا محفوظ فالسجل",
+        });
       })
       .catch((e) => {
-        toast.error("تعذر إلغاء الطلب", {
-          description: e instanceof Error ? e.message : "عاود المحاولة",
+        toast.error(fr ? "Impossible d'annuler la demande" : "تعذر إلغاء الطلب", {
+          description: e instanceof Error ? e.message : fr ? "Réessayez" : "عاود المحاولة",
         });
       });
   };
 
   const onDelete = (id: string) => {
-    if (!window.confirm("واش متأكد بغيتي تحذف هاد الطلب نهائياً؟")) return;
+    if (!window.confirm(fr ? "Voulez-vous supprimer définitivement cette demande ?" : "واش متأكد بغيتي تحذف هاد الطلب نهائياً؟")) return;
     setBusy(id);
     void deleteRequest(id)
       .then(() => {
-        toast.success("تحذف الطلب نهائياً");
+        toast.success(fr ? "Demande supprimée définitivement" : "تحذف الطلب نهائياً");
       })
       .catch((e) => {
-        toast.error("تعذر الحذف النهائي", { description: e instanceof Error ? e.message : "عاود المحاولة" });
+        toast.error(fr ? "Suppression impossible" : "تعذر الحذف النهائي", {
+          description: e instanceof Error ? e.message : fr ? "Réessayez" : "عاود المحاولة",
+        });
       })
       .finally(() => setBusy(null));
   };
 
   const onAccept = (b: Bid) => {
-    // منع الضغط المتكرر على نفس العرض.
     if (busy) return;
     setBusy(b.id);
     void acceptBid(b.id)
       .then(() => {
-        toast.success("تقبل صاحب الشاحنة ✅", { description: `${b.driver || "صاحب الشاحنة"} · ${b.price} درهم` });
+        toast.success(fr ? "Chauffeur accepté ✅" : "تقبل صاحب الشاحنة ✅", {
+          description: `${b.driver || (fr ? "Chauffeur" : "صاحب الشاحنة")} · ${b.price} ${fr ? "MAD" : "درهم"}`,
+        });
         return refreshBoard().catch(() => {});
       })
       .catch(() => {
-        toast.error("تعذر تنفيذ العملية، حاول مرة أخرى");
+        toast.error(fr ? "Opération impossible, réessayez" : "تعذر تنفيذ العملية، حاول مرة أخرى");
         void refreshBoard().catch(() => {});
       })
       .finally(() => setBusy(null));
@@ -211,11 +255,13 @@ export function MyRequests() {
     setBusy(b.id);
     void declineBid(b.id)
       .then(() => {
-        toast("تفض العرض", { description: `${b.driver || "صاحب الشاحنة"} · ${b.price} درهم` });
+        toast(fr ? "Offre refusée" : "تفض العرض", {
+          description: `${b.driver || (fr ? "Chauffeur" : "صاحب الشاحنة")} · ${b.price} ${fr ? "MAD" : "درهم"}`,
+        });
         return refreshBoard().catch(() => {});
       })
       .catch(() => {
-        toast.error("تعذر تنفيذ العملية، حاول مرة أخرى");
+        toast.error(fr ? "Opération impossible, réessayez" : "تعذر تنفيذ العملية، حاول مرة أخرى");
         void refreshBoard().catch(() => {});
       })
       .finally(() => setBusy(null));
@@ -294,4 +340,3 @@ export function MyRequests() {
     </PhoneFrame>
   );
 }
-

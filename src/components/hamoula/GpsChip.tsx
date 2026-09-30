@@ -1,26 +1,37 @@
 import { MapPin, RefreshCw, LoaderCircle } from "lucide-react";
 import { useHamoula } from "@/lib/hamoula-store";
 import { nearestCityName } from "@/lib/hamoula-location";
+import { useAppLanguage } from "@/lib/app-language";
 
 /** Live GPS status chip for the driver header. */
 export function GpsChip() {
   const { myLocation, geoStatus, requestLocation } = useHamoula();
+  const fr = useAppLanguage() === "fr";
 
   const text =
     geoStatus === "locating" && !myLocation
-      ? "كنحددو موقعك..."
+      ? fr
+        ? "Localisation en cours..."
+        : "كنحددو موقعك..."
       : geoStatus === "denied"
-        ? "الموقع مغلق — فعّلو"
+        ? fr
+          ? "Localisation désactivée"
+          : "الموقع مغلق — فعّلو"
         : geoStatus === "unsupported"
-          ? "الهاتف ما كيدعمش GPS"
+          ? fr
+            ? "GPS non pris en charge"
+            : "الهاتف ما كيدعمش GPS"
           : myLocation
-            ? `موقعك: ${nearestCityName(myLocation)}`
-            : "حدد موقعك";
+            ? `${fr ? "Votre position" : "موقعك"}: ${nearestCityName(myLocation)}`
+            : fr
+              ? "Définir ma position"
+              : "حدد موقعك";
 
   return (
     <button
       onClick={requestLocation}
       className="flex items-center gap-2 rounded-full bg-primary-foreground/15 px-3 py-1.5 text-xs font-bold text-primary-foreground"
+      aria-label={fr ? "Actualiser la position GPS" : "تحديث موقع GPS"}
     >
       {geoStatus === "locating" && !myLocation ? (
         <LoaderCircle className="size-4 animate-spin" />

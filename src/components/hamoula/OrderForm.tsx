@@ -55,6 +55,7 @@ import { smartParse } from "@/lib/smart-parse";
 import { emptyOrderForm, orderFormFromRequest, resetRequestPatch } from "@/lib/order-form-state";
 
 import CityField from "@/components/hamoula/CityField";
+import { useAppLanguage } from "@/lib/app-language";
 
 const MapPicker = lazy(() => import("@/components/hamoula/MapPicker"));
 
@@ -66,6 +67,8 @@ function MapSkeleton() {
 
 export function OrderForm({ isHome = false }: { isHome?: boolean }) {
   const navigate = useNavigate();
+  const fr = useAppLanguage() === "fr";
+  const t = (ar: string, frText: string) => (fr ? frText : ar);
   const { request, updateRequest, publishLoad, pendingDraft, resumeDraft, discardDraft, ready } =
     useHamoula();
 
@@ -188,7 +191,7 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
 
 
   const suggested = truck ? findTruck(truck) : null;
-  const suggestedLabel = suggested ? `${suggested.label} (${suggested.hint})` : "اختر نوع الشاحنة";
+  const suggestedLabel = suggested ? `${suggested.label} (${suggested.hint})` : t("اختر نوع الشاحنة", "Choisissez le type de camion");
 
   /**
    * Merge a spoken transcript into the form: only the fields mentioned in this
@@ -197,7 +200,7 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
    */
   const applyParsed = async (text: string) => {
     if (!text.trim()) {
-      toast.info("ما فهمناش الكلام", { description: "عاود سجل بصوت واضح" });
+      toast.info(t("ما فهمناش الكلام", "Texte non compris"), { description: t("عاود سجل بصوت واضح", "Réenregistrez avec une voix claire") });
       return;
     }
     // AI parser first (Darija spoken numbers/cities), local regex as fallback.
@@ -229,29 +232,29 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
     if (pk && pkPoint) {
       setPickup(pk);
       setPickupPoint(pkPoint);
-      filled.push("نقطة التحميل");
+      filled.push(t("نقطة التحميل", "Point de chargement"));
     } else if (pickup && negated.includes(pickup)) {
       setPickup("");
-      cleared.push("نقطة التحميل");
+      cleared.push(t("نقطة التحميل", "Point de chargement"));
     }
 
     if (ds && dsPoint) {
       setDestination(ds);
       setDestinationPoint(dsPoint);
-      filled.push("الوجهة");
+      filled.push(t("الوجهة", "Destination"));
     } else if (destination && negated.includes(destination)) {
       setDestination("");
-      cleared.push("الوجهة");
+      cleared.push(t("الوجهة", "Destination"));
     }
 
     if (parsed.cargo) {
       setCargo(parsed.cargo);
-      filled.push("نوع السلعة");
+      filled.push(t("نوع السلعة", "Type de marchandise"));
     }
     if (parsed.price) {
       setPrice(String(parsed.price));
       setPriceLocked(true);
-      filled.push("الثمن");
+      filled.push(t("الثمن", "Prix"));
     }
     if (parsed.truck) {
       const t = findTruck(parsed.truck);
@@ -271,15 +274,15 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
     );
 
     if (filled.length || cleared.length) {
-      const parts = [...filled, ...cleared.map((f) => `${f} (تمسحات)`)];
-      toast.success(correcting ? "بدلنا ليك اللي غلطتي فيه" : "عمرنا ليك المعلومات", {
+      const parts = [...filled, ...cleared.map((f) => `${f} (${t("تمسحات", "effacé")})`)];
+      toast.success(correcting ? t("بدلنا ليك اللي غلطتي فيه", "Correction appliquée") : t("عمرنا ليك المعلومات", "Informations remplies"), {
         description: parts.join("، "),
       });
     } else if (missing.length) {
-      toast.info("ما سمعناش القيمة الجديدة", { description: "عاود قول القيمة الصحيحة" });
+      toast.info(t("ما سمعناش القيمة الجديدة", "Nouvelle valeur non entendue"), { description: t("عاود قول القيمة الصحيحة", "Redites la bonne valeur") });
     } else {
-      toast.info("سمعناك ولكن ما لقيناش المعلومات", {
-        description: "قول مثلا: من كازا لمراكش، خضرة، بألف درهم",
+      toast.info(t("سمعناك ولكن ما لقيناش المعلومات", "Nous vous avons entendu mais aucune information utile n'a été trouvée"), {
+        description: t("قول مثلا: من كازا لمراكش، خضرة، بألف درهم", "Exemple: de Casablanca à Marrakech, légumes, pour 1000 MAD"),
       });
     }
   };
@@ -288,8 +291,8 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
     <PhoneFrame>
       <div className="mol-brand flex min-h-screen flex-1 flex-col bg-background">
       <AppHeader
-        title="طلب نقل بضاعة"
-        subtitle="عمّر المعلومات وسير للعروض"
+        title={t("طلب نقل بضاعة", "Demande de transport")}
+        subtitle={t("عمّر المعلومات وسير للعروض", "Remplissez les infos puis consultez les offres")}
         showBack
         backTo="/"
       >
@@ -300,7 +303,7 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
         {pendingDraft && (
           <div className="mb-4 rounded-2xl border-2 border-primary bg-primary-soft p-4">
             <p className="text-sm font-extrabold text-accent-foreground">
-              عندك طلب غير مكتمل محفوظ
+              {t("عندك طلب غير مكتمل محفوظ", "Vous avez une demande incomplète sauvegardée")}
             </p>
             <p className="mt-1 text-xs font-semibold text-accent-foreground/80">
               {[pendingDraft.pickup, pendingDraft.destination].filter(Boolean).join(" ← ") ||
@@ -324,18 +327,18 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
                   }
                   if (d.pickupPoint) setPickupPoint(d.pickupPoint);
                   if (d.destinationPoint) setDestinationPoint(d.destinationPoint);
-                  toast.success("رجعنا ليك الطلب غير المكتمل");
+                  toast.success(t("رجعنا ليك الطلب غير المكتمل", "Demande incomplète restaurée"));
                 }}
                 className="flex-1 rounded-xl bg-primary px-3 py-2 text-sm font-extrabold text-primary-foreground"
               >
-                متابعة الطلب غير المكتمل
+                {t("متابعة الطلب غير المكتمل", "Reprendre la demande incomplète")}
               </button>
               <button
                 type="button"
                 onClick={discardDraft}
                 className="rounded-xl border-2 border-border bg-card px-3 py-2 text-sm font-bold"
               >
-                مسح
+                {t("مسح", "Supprimer")}
               </button>
             </div>
           </div>
@@ -347,25 +350,27 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
             data-testid="new-request"
             onClick={() => {
               resetForm();
-              toast.success("طلب جديد", { description: "الخانات ولات خاوية" });
+              toast.success(t("طلب جديد", "Nouvelle demande"), {
+                description: t("الخانات ولات خاوية", "Les champs ont été vidés"),
+              });
             }}
             className="flex min-h-12 items-center justify-center gap-2 rounded-2xl border-2 border-border bg-card px-4 py-3 text-sm font-extrabold text-foreground active:scale-[0.98]"
           >
             <Boxes className="size-5 text-primary" />
-            طلب جديد
+            {t("طلب جديد", "Nouvelle demande")}
           </button>
           <Link
             to="/my-requests"
             className="flex min-h-12 items-center justify-center gap-2 rounded-2xl border-2 border-border bg-card px-4 py-3 text-sm font-extrabold text-foreground active:scale-[0.98]"
           >
             <ClipboardList className="size-5 text-primary" />
-            طلباتي
+            {t("طلباتي", "Mes demandes")}
           </Link>
         </div>
         {draft?.voiceNote && (
           <div className="mt-4">
             <VoiceNotePlayer
-              title="التسجيل المرفق بالطلب"
+              title={t("التسجيل المرفق بالطلب", "Enregistrement vocal joint à la demande")}
               duration={draft.voiceNote.duration}
               transcript={draft.voiceNote.transcript}
               audioUrl={draft.voiceNote.audioUrl}
@@ -384,20 +389,20 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
           // تحقق قبل الإرسال: ما كنسجلوش طلب ناقص ولا بثمن 0.
           const finalPrice = Number(price) || 0;
           const missing: string[] = [];
-          if (!pickup.trim()) missing.push("نقطة الانطلاق");
-          if (!destination.trim()) missing.push("الوجهة");
-          if (!cargo.trim()) missing.push("نوع السلعة");
-          if (!truck) missing.push("نوع الشاحنة");
-          if (!hasRoute) missing.push("نقطتين مختلفتين على الخريطة");
+          if (!pickup.trim()) missing.push(t("نقطة الانطلاق", "Point de départ"));
+          if (!destination.trim()) missing.push(t("الوجهة", "Destination"));
+          if (!cargo.trim()) missing.push(t("نوع السلعة", "Type de marchandise"));
+          if (!truck) missing.push(t("نوع الشاحنة", "Type de camion"));
+          if (!hasRoute) missing.push(t("نقطتين مختلفتين على الخريطة", "Deux points différents sur la carte"));
           if (missing.length) {
-            toast.error("معلومات ناقصة", {
-              description: `كمّل: ${missing.join("، ")}`,
+            toast.error(t("معلومات ناقصة", "Informations manquantes"), {
+              description: `${t("كمّل", "Complétez")}: ${missing.join("، ")}`,
             });
             return;
           }
           if (finalPrice <= 0) {
-            toast.error("الثمن غير صالح", {
-              description: "اختر نوع الشاحنة والنقط باش يتحسب الثمن، ولا كتبو بيدك.",
+            toast.error(t("الثمن غير صالح", "Prix invalide"), {
+              description: t("اختر نوع الشاحنة والنقط باش يتحسب الثمن، ولا كتبو بيدك.", "Choisissez le camion et les points pour calculer le prix, ou saisissez-le manuellement."),
             });
             return;
           }
@@ -421,8 +426,8 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
             resettingFormRef.current = false;
             setSubmitting(false);
             console.error("[hamoula] إرسال الطلب فشل", err);
-            toast.error("ما تسجلش الطلب", {
-              description: "وقع مشكل فالحفظ. عاود المحاولة من فضلك.",
+            toast.error(t("ما تسجلش الطلب", "La demande n'a pas été enregistrée"), {
+              description: t("وقع مشكل فالحفظ. عاود المحاولة من فضلك.", "Un problème est survenu lors de l'enregistrement. Réessayez."),
             });
             return;
           }
@@ -431,12 +436,12 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
           // Clear the on-screen draft AND the stored one so the next request starts empty.
           resetForm();
 
-          toast.success("تم إرسال الطلب", { description: "كنقلبو على شاحنات قريبة منك" });
+          toast.success(t("تم إرسال الطلب", "Demande envoyée"), { description: t("كنقلبو على شاحنات قريبة منك", "Nous cherchons des camions proches de vous") });
           navigate({ to: "/offers" });
         }}
       >
         <CityField
-          label="نقطة الانطلاق"
+          label={t("نقطة الانطلاق", "Point de départ")}
           icon={<MapPin className="size-5 text-primary" />}
           value={pickup}
           showGps
@@ -445,11 +450,11 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
             setPickup(label);
             setPickupPoint(point);
           }}
-          placeholder="كتب المدينة: الدار البيضاء / Casablanca"
+          placeholder={t("كتب المدينة: الدار البيضاء / Casablanca", "Écrivez la ville : Casablanca")}
         />
 
         <CityField
-          label="الوجهة"
+          label={t("الوجهة", "Destination")}
           icon={<Navigation className="size-5 text-primary" />}
           value={destination}
           onChange={setDestination}
@@ -457,11 +462,11 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
             setDestination(label);
             setDestinationPoint(point);
           }}
-          placeholder="كتب المدينة: مراكش / Marrakech"
+          placeholder={t("كتب المدينة: مراكش / Marrakech", "Écrivez la ville : Marrakech")}
         />
 
         <div>
-          <label className="mb-2 block text-sm font-bold">GPS والخريطة</label>
+          <label className="mb-2 block text-sm font-bold">{t("GPS والخريطة", "GPS et carte")}</label>
           <ClientOnly fallback={<MapSkeleton />}>
             <Suspense fallback={<MapSkeleton />}>
               <MapPicker
@@ -475,13 +480,13 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
           </ClientOnly>
           {hasRoute && (
             <div className="mt-2 flex items-center justify-between rounded-2xl border-2 border-border bg-secondary px-3 py-2 text-xs font-bold">
-              <span className="text-primary">المسافة التقريبية: {roadKm} كلم</span>
-              <span className="text-foreground">مدة الطريق: {travelTimeLabel(roadKm)}</span>
+              <span className="text-primary">{t("المسافة التقريبية", "Distance approximative")}: {roadKm} {fr ? "km" : "كلم"}</span>
+              <span className="text-foreground">{t("مدة الطريق", "Durée du trajet")}: {travelTimeLabel(roadKm)}</span>
             </div>
           )}
 
           <p className="mt-1 text-xs text-muted-foreground">
-            ضغط على الخريطة باش تبدل النقطة، ولا حرك العلامة بيدك.
+            {t("ضغط على الخريطة باش تبدل النقطة، ولا حرك العلامة بيدك.", "Appuyez sur la carte pour changer un point, ou déplacez le marqueur.")}
           </p>
         </div>
 
@@ -494,9 +499,9 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
 
 
         <div className="rounded-3xl border-2 border-primary/25 bg-card p-4 shadow-soft">
-          <p className="text-center text-lg font-extrabold">نوع الشاحنة</p>
+          <p className="text-center text-lg font-extrabold">{t("نوع الشاحنة", "Type de camion")}</p>
           <p className="mt-1 text-center text-xs font-semibold text-muted-foreground">
-            اختر نوع الشاحنة المناسبة لبضاعتك
+            {t("اختر نوع الشاحنة المناسبة لبضاعتك", "Choisissez le type de camion adapté à votre marchandise")}
           </p>
 
           <div className="mt-4 grid grid-cols-4 gap-2">
@@ -543,7 +548,7 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
 
         <div>
           <label className="mb-2 block text-sm font-bold">
-            {priceLocked ? "الثمن المقترح" : "الثمن التقديري (قابل للتفاوض)"}
+            {priceLocked ? t("الثمن المقترح", "Prix proposé") : t("الثمن التقديري (قابل للتفاوض)", "Prix estimé (négociable)")}
           </label>
           <div className="flex items-center gap-3 rounded-2xl border-2 border-border bg-card px-4 py-3 focus-within:border-primary">
             <Banknote className="size-5 text-primary" />
@@ -556,17 +561,17 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
               }}
               className="w-full bg-transparent text-2xl font-extrabold outline-none"
             />
-            <span className="text-sm font-bold text-muted-foreground">درهم</span>
+            <span className="text-sm font-bold text-muted-foreground">{fr ? "MAD" : "درهم"}</span>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
             {priceLocked
-              ? "هادا هو الثمن ديالك — ما غنبدلوهش."
+              ? t("هادا هو الثمن ديالك — ما غنبدلوهش.", "C'est votre prix — il ne sera pas modifié.")
               : suggested
-                ? `ثمن تقديري فقط وقابل للتفاوض — محسوب حسب المسافة (${roadKm} كلم) والشاحنة (${suggested.label} — ${suggested.hint}).`
-                : "ثمن تقديري فقط وقابل للتفاوض — اختر نوع الشاحنة باش يبان الثمن."}
+                ? `${t("ثمن تقديري فقط وقابل للتفاوض", "Prix estimé et négociable")} — ${t("محسوب حسب المسافة", "calculé selon la distance")} (${roadKm} ${fr ? "km" : "كلم"}) ${t("والشاحنة", "et le camion")} (${suggested.label} — ${suggested.hint}).`
+                : t("ثمن تقديري فقط وقابل للتفاوض — اختر نوع الشاحنة باش يبان الثمن.", "Prix estimé et négociable — choisissez le camion pour afficher le prix.")}
           </p>
           <p className="mt-1 text-[11px] font-bold text-primary">
-            ⚠️ الثمن تقديري فقط وقابل للتفاوض مع صاحب الشاحنة.
+            ⚠️ {t("الثمن تقديري فقط وقابل للتفاوض مع صاحب الشاحنة.", "Le prix est estimatif et négociable avec le chauffeur.")}
           </p>
         </div>
 
@@ -575,9 +580,9 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
             <ShieldCheck className="size-6 text-primary" />
           </span>
           <span className="block">
-            <span className="block text-sm font-extrabold text-foreground">شحن آمن ومضمون</span>
+            <span className="block text-sm font-extrabold text-foreground">{t("شحن آمن ومضمون", "Transport sûr et garanti")}</span>
             <span className="block text-xs font-semibold text-muted-foreground">
-              كنحرصو على سلامة بضاعتك من الانطلاق حتى التسليم
+              {t("كنحرصو على سلامة بضاعتك من الانطلاق حتى التسليم", "Nous veillons à la sécurité de votre marchandise du départ à la livraison")}
             </span>
           </span>
         </div>
@@ -591,7 +596,7 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
             aria-busy={submitting}
             className="gradient-primary min-h-14 w-full rounded-2xl py-4 text-lg font-extrabold text-primary-foreground shadow-soft active:opacity-90 disabled:opacity-60"
           >
-            {submitting ? "كنسيفطو الطلب…" : "إرسال الطلب"}
+            {submitting ? t("كنسيفطو الطلب…", "Envoi en cours…") : t("إرسال الطلب", "Envoyer la demande")}
           </button>
 
           {!isHome && (
@@ -600,7 +605,7 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
               className="flex min-h-11 items-center justify-center gap-2 py-1 text-sm font-semibold text-muted-foreground"
             >
               <ArrowRight className="size-4" />
-              رجوع
+              {t("رجوع", "Retour")}
             </Link>
           )}
         </StickyActions>
@@ -613,17 +618,19 @@ export function OrderForm({ isHome = false }: { isHome?: boolean }) {
 
 /** Goods-type field with its own mic: fills ONLY نوع السلعة, still editable by hand. */
 function CargoField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const fr = useAppLanguage() === "fr";
+  const t = (ar: string, frText: string) => (fr ? frText : ar);
   const dictation = useAiDictation({
     mode: "cargo",
     silenceMs: 2000,
     onText: (text) => {
       const spoken = text.replace(/[.،,!؟?]/g, " ").replace(/\s+/g, " ").trim();
       if (!spoken) {
-        toast.info("ما سمعناش السلعة — عاود سجل");
+        toast.info(t("ما سمعناش السلعة — عاود سجل", "Marchandise non entendue — réenregistrez"));
         return;
       }
       onChange(spoken);
-      toast.success("نوع السلعة", { description: spoken });
+      toast.success(t("نوع السلعة", "Type de marchandise"), { description: spoken });
     },
     onError: (m) => toast.error(m),
   });
@@ -632,18 +639,18 @@ function CargoField({ value, onChange }: { value: string; onChange: (v: string) 
 
   return (
     <div data-testid="cargo-field">
-      <label className="mb-2 block text-sm font-bold">نوع السلعة</label>
+      <label className="mb-2 block text-sm font-bold">{t("نوع السلعة", "Type de marchandise")}</label>
       <div className="flex items-center gap-3 rounded-2xl border-2 border-border bg-card px-4 py-3 focus-within:border-primary">
         <Boxes className="size-5 text-primary" />
         <input
           value={value}
-          placeholder="مثال: رملة، خضرة، أجهزة..."
+          placeholder={t("مثال: رملة، خضرة، أجهزة...", "Exemple : sable, légumes, appareils...")}
           onChange={(e) => onChange(e.target.value)}
           className="w-full bg-transparent text-base font-semibold outline-none placeholder:font-normal placeholder:text-muted-foreground"
         />
         <button
           type="button"
-          aria-label="تسجيل صوتي لنوع السلعة"
+          aria-label={t("تسجيل صوتي لنوع السلعة", "Saisie vocale du type de marchandise")}
           onClick={() => (dictation.state === "listening" ? dictation.stop() : dictation.start())}
           className={`grid size-10 shrink-0 place-items-center rounded-xl border-2 transition ${
             dictation.state === "listening"
@@ -660,7 +667,7 @@ function CargoField({ value, onChange }: { value: string; onChange: (v: string) 
       </div>
       {busy && (
         <p className="mt-1 text-xs font-bold text-primary">
-          {dictation.state === "listening" ? "كنسمعك... قول نوع السلعة" : "كنعالجو..."}
+          {dictation.state === "listening" ? t("كنسمعك... قول نوع السلعة", "Je vous écoute... dites le type de marchandise") : t("كنعالجو...", "Traitement en cours...")}
         </p>
       )}
     </div>
@@ -669,17 +676,19 @@ function CargoField({ value, onChange }: { value: string; onChange: (v: string) 
 
 /** Optional notes field with its own mic; it stays outside the saved order payload. */
 function NotesField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const fr = useAppLanguage() === "fr";
+  const t = (ar: string, frText: string) => (fr ? frText : ar);
   const dictation = useAiDictation({
     mode: "general",
     silenceMs: 2000,
     onText: (text) => {
       const spoken = text.replace(/[.،,!؟?]/g, " ").replace(/\s+/g, " ").trim();
       if (!spoken) {
-        toast.info("ما سمعناش الملاحظة — عاود سجل");
+        toast.info(t("ما سمعناش الملاحظة — عاود سجل", "Note non entendue — réenregistrez"));
         return;
       }
       onChange(spoken);
-      toast.success("تسجلت الملاحظة", { description: spoken });
+      toast.success(t("تسجلت الملاحظة", "Note enregistrée"), { description: spoken });
     },
     onError: (m) => toast.error(m),
   });
@@ -688,19 +697,19 @@ function NotesField({ value, onChange }: { value: string; onChange: (v: string) 
 
   return (
     <div data-testid="notes-field">
-      <label className="mb-2 block text-sm font-bold">ملاحظات اختيارية</label>
+      <label className="mb-2 block text-sm font-bold">{t("ملاحظات اختيارية", "Notes facultatives")}</label>
       <div className="flex items-start gap-3 rounded-2xl border-2 border-border bg-card px-4 py-3 focus-within:border-primary">
         <NotebookPen className="mt-1 size-5 shrink-0 text-primary" />
         <textarea
           value={value}
           rows={3}
-          placeholder="مثال: التحميل سهل، التسليم قبل الخمسة..."
+          placeholder={t("مثال: التحميل سهل، التسليم قبل الخمسة...", "Exemple : chargement facile, livraison avant 17h...")}
           onChange={(e) => onChange(e.target.value)}
           className="min-h-20 w-full resize-none bg-transparent text-base font-semibold outline-none placeholder:font-normal placeholder:text-muted-foreground"
         />
         <button
           type="button"
-          aria-label="تسجيل صوتي للملاحظات"
+          aria-label={t("تسجيل صوتي للملاحظات", "Saisie vocale des notes")}
           onClick={() => (dictation.state === "listening" ? dictation.stop() : dictation.start())}
           className={`grid size-10 shrink-0 place-items-center rounded-xl border-2 transition ${
             dictation.state === "listening"
@@ -717,7 +726,7 @@ function NotesField({ value, onChange }: { value: string; onChange: (v: string) 
       </div>
       {busy && (
         <p className="mt-1 text-xs font-bold text-primary">
-          {dictation.state === "listening" ? "كنسمعك... قول الملاحظة" : "كنعالجو..."}
+          {dictation.state === "listening" ? t("كنسمعك... قول الملاحظة", "Je vous écoute... dites la note") : t("كنعالجو...", "Traitement en cours...")}
         </p>
       )}
     </div>

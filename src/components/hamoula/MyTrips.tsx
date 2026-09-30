@@ -1,13 +1,42 @@
 import { Link } from "@tanstack/react-router";
 import { Boxes, MapPin, Navigation } from "lucide-react";
 import { PhoneFrame, AppHeader } from "@/components/hamoula/PhoneFrame";
-import { statusLabels, useHamoula, type Load, type TripStatus } from "@/lib/hamoula-store";
+import { useHamoula, type Load, type TripStatus } from "@/lib/hamoula-store";
 import { ChatButton } from "@/components/hamoula/ChatButton";
+import { useAppLanguage } from "@/lib/app-language";
 
 const ACTIVE: TripStatus[] = ["matched", "enroute", "loaded"];
 
+function statusLabel(status: TripStatus, fr: boolean) {
+  if (!fr) {
+    return (
+      {
+        draft: "مسودة",
+        searching: "قيد البحث",
+        matched: "تم المطابقة",
+        enroute: "في الطريق",
+        loaded: "تم التحميل",
+        delivered: "تم التسليم",
+        cancelled: "ملغاة",
+      } satisfies Record<TripStatus, string>
+    )[status];
+  }
+  return (
+    {
+      draft: "Brouillon",
+      searching: "Recherche en cours",
+      matched: "Attribué",
+      enroute: "En route",
+      loaded: "Chargé",
+      delivered: "Livré",
+      cancelled: "Annulé",
+    } satisfies Record<TripStatus, string>
+  )[status];
+}
+
 function TripCard({ load }: { load: Load }) {
   const { openTrip } = useHamoula();
+  const fr = useAppLanguage() === "fr";
   const status = (load.tripStatus ?? "matched") as TripStatus;
   return (
     <div className="rounded-2xl border-2 border-border bg-card p-4">
@@ -21,9 +50,9 @@ function TripCard({ load }: { load: Load }) {
                 : "bg-secondary text-foreground"
           }`}
         >
-          {statusLabels[status]}
+          {statusLabel(status, fr)}
         </span>
-        <span className="text-sm font-extrabold text-primary">{load.price} درهم</span>
+        <span className="text-sm font-extrabold text-primary">{load.price} {fr ? "MAD" : "درهم"}</span>
       </div>
       <div className="mt-3 space-y-1 text-sm font-bold">
         <p className="flex items-center gap-2">
@@ -49,7 +78,7 @@ function TripCard({ load }: { load: Load }) {
               onClick={() => openTrip(load.id)}
               className="rounded-xl bg-primary px-3 py-2 text-sm font-extrabold text-primary-foreground"
             >
-              تتبع الرحلة
+              {fr ? "Suivre le trajet" : "تتبع الرحلة"}
             </Link>
             <ChatButton loadId={load.id} />
           </div>
@@ -59,13 +88,13 @@ function TripCard({ load }: { load: Load }) {
             onClick={() => openTrip(load.id)}
             className="rounded-xl bg-secondary px-3 py-2 text-sm font-extrabold text-primary"
           >
-            تفاصيل وتقييم
+            {fr ? "Détails et évaluation" : "تفاصيل وتقييم"}
           </Link>
         ) : (
           <span />
         )}
         <span className="text-[11px] font-semibold text-muted-foreground">
-          {new Date(load.createdAt).toLocaleString("ar-MA")}
+          {new Date(load.createdAt).toLocaleString(fr ? "fr-MA" : "ar-MA")}
         </span>
       </div>
     </div>
@@ -74,18 +103,24 @@ function TripCard({ load }: { load: Load }) {
 
 export function MyTrips() {
   const { myTrips } = useHamoula();
+  const fr = useAppLanguage() === "fr";
   const active = myTrips.filter((l) => ACTIVE.includes((l.tripStatus ?? "matched") as TripStatus));
   const history = myTrips.filter((l) => !ACTIVE.includes((l.tripStatus ?? "matched") as TripStatus));
 
   return (
     <PhoneFrame>
-      <AppHeader title="رحلاتي" subtitle="الرحلات اللي ربحتي محفوظة هنا" showBack backTo="/driver" />
+      <AppHeader
+        title={fr ? "Mes trajets" : "رحلاتي"}
+        subtitle={fr ? "Tous vos trajets gagnés sont sauvegardés ici" : "الرحلات اللي ربحتي محفوظة هنا"}
+        showBack
+        backTo="/driver"
+      />
       <div className="flex-1 space-y-6 px-5 py-6">
         <section className="space-y-3">
-          <h2 className="text-sm font-extrabold">رحلة نشيطة</h2>
+          <h2 className="text-sm font-extrabold">{fr ? "Trajet en cours" : "رحلة نشيطة"}</h2>
           {active.length === 0 ? (
             <p className="rounded-2xl border-2 border-dashed border-border p-4 text-sm text-muted-foreground">
-              ما عندك حتى رحلة نشيطة دابا.
+              {fr ? "Aucun trajet actif actuellement." : "ما عندك حتى رحلة نشيطة دابا."}
             </p>
           ) : (
             active.map((l) => <TripCard key={l.id} load={l} />)
@@ -93,10 +128,10 @@ export function MyTrips() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-sm font-extrabold">سجل الرحلات</h2>
+          <h2 className="text-sm font-extrabold">{fr ? "Historique des trajets" : "سجل الرحلات"}</h2>
           {history.length === 0 ? (
             <p className="rounded-2xl border-2 border-dashed border-border p-4 text-sm text-muted-foreground">
-              السجل خاوي.
+              {fr ? "Historique vide." : "السجل خاوي."}
             </p>
           ) : (
             history.map((l) => <TripCard key={l.id} load={l} />)

@@ -3,6 +3,7 @@ import { Mic, Play, Pause, Trash2, Volume2, Square, Check, X } from "lucide-reac
 import { playSfx } from "@/lib/sfx";
 import { startRecording, micErrorMessage, type RecorderHandle } from "@/lib/audio-recorder";
 import { transcribeBlob } from "@/hooks/use-ai-dictation";
+import { useAppLanguage } from "@/lib/app-language";
 
 let arabicVoice: SpeechSynthesisVoice | null = null;
 
@@ -113,7 +114,10 @@ export const WELCOME_MESSAGE =
   "مرحبا بك في تطبيق حمولة، حدد مكان التحميل والوجهة أو سجل طلبك بالصوت";
 
 /** Voice banner with a big speaker icon and a play button for audio guidance. */
-export function VoiceBanner({ message = WELCOME_MESSAGE }: { message?: string }) {
+export function VoiceBanner({ message }: { message?: string }) {
+  const fr = useAppLanguage() === "fr";
+  const t = (ar: string, frText: string) => (fr ? frText : ar);
+  const resolvedMessage = message ?? t(WELCOME_MESSAGE, "Bienvenue sur Hamoula, définissez le point de chargement et la destination, ou enregistrez votre demande par la voix");
   const [playing, setPlaying] = useState(false);
 
   useEffect(() => () => stopSpeaking(), []);
@@ -125,7 +129,7 @@ export function VoiceBanner({ message = WELCOME_MESSAGE }: { message?: string })
       return;
     }
     setPlaying(true);
-    const ok = speak(message, () => setPlaying(false));
+    const ok = speak(resolvedMessage, () => setPlaying(false));
     if (!ok) setPlaying(false);
   };
 
@@ -136,17 +140,17 @@ export function VoiceBanner({ message = WELCOME_MESSAGE }: { message?: string })
           <Volume2 className="size-7" />
         </span>
         <p className="flex-1 text-base font-extrabold leading-snug text-accent-foreground">
-          {message}
+          {resolvedMessage}
         </p>
       </div>
       <div className="mt-3 flex items-center gap-3">
         <button
           onClick={toggle}
-          aria-label={playing ? "إيقاف الإرشاد الصوتي" : "تشغيل الإرشاد الصوتي"}
+          aria-label={playing ? t("إيقاف الإرشاد الصوتي", "Arrêter le guide vocal") : t("تشغيل الإرشاد الصوتي", "Lancer le guide vocal")}
           className="flex min-h-12 items-center gap-2 rounded-2xl bg-primary px-5 text-base font-extrabold text-primary-foreground active:opacity-90"
         >
           {playing ? <Pause className="size-6" /> : <Play className="size-6" />}
-          {playing ? "توقيف" : "سمع الشرح"}
+          {playing ? t("توقيف", "Arrêter") : t("سمع الشرح", "Écouter l'explication")}
         </button>
         <Waveform active={playing} progress={playing ? 1 : 0} />
       </div>
@@ -168,6 +172,8 @@ export function VoiceNotePlayer({
   title?: string;
   tone?: "light" | "primary";
 }) {
+  const fr = useAppLanguage() === "fr";
+  const t = (ar: string, frText: string) => (fr ? frText : ar);
   const [playing, setPlaying] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -241,7 +247,7 @@ export function VoiceNotePlayer({
       <div className="flex items-center gap-3">
         <button
           onClick={toggle}
-          aria-label={playing ? "إيقاف التسجيل الصوتي" : "تشغيل التسجيل الصوتي"}
+          aria-label={playing ? t("إيقاف التسجيل الصوتي", "Arrêter l'audio") : t("تشغيل التسجيل الصوتي", "Lire l'audio")}
           className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground active:opacity-90"
         >
           {playing ? <Pause className="size-6" /> : <Play className="size-6" />}
@@ -298,6 +304,8 @@ export function VoiceRecorderSheet({
   hint: string;
   transcript: string;
 }) {
+  const fr = useAppLanguage() === "fr";
+  const t = (ar: string, frText: string) => (fr ? frText : ar);
   const [recording, setRecording] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [levels, setLevels] = useState<number[]>(() => Array(BAR_COUNT).fill(14));
@@ -336,7 +344,7 @@ export function VoiceRecorderSheet({
     const blob = await handle.stop();
     if (!blob) {
       finishingRef.current = false;
-      setError("ما سمعنا والو — عاود سجل قريب من الميكرو");
+      setError(t("ما سمعنا والو — عاود سجل قريب من الميكرو", "Aucun son capté — rapprochez-vous du micro et réessayez"));
       return;
     }
     const url = URL.createObjectURL(blob);
@@ -435,7 +443,7 @@ export function VoiceRecorderSheet({
     if (text) onTranscript?.(text);
     onSend({
       duration: Math.max(seconds, 1),
-      transcript: text || (audioUrl ? "رسالة صوتية مسجلة" : transcript),
+      transcript: text || (audioUrl ? t("رسالة صوتية مسجلة", "Message vocal enregistré") : transcript),
       ...(audioUrl ? { audioUrl } : {}),
     });
     urlRef.current = null;
@@ -456,15 +464,15 @@ export function VoiceRecorderSheet({
         <div className="flex items-start gap-2">
           <div className="flex-1">
             <h2 className="text-center text-xl font-extrabold">
-              {recording ? title : "مراجعة التسجيل"}
+              {recording ? title : t("مراجعة التسجيل", "Vérifier l'enregistrement")}
             </h2>
             <p className="mt-1 text-center text-sm font-semibold text-muted-foreground">
-              {recording ? hint : "سمع التسجيل وتأكد من الكلام قبل ما تبعث"}
+              {recording ? hint : t("سمع التسجيل وتأكد من الكلام قبل ما تبعث", "Écoutez l'enregistrement et vérifiez le texte avant l'envoi")}
             </p>
           </div>
           <button
             onClick={requestClose}
-            aria-label="إغلاق"
+            aria-label={t("إغلاق", "Fermer")}
             className="flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-border text-muted-foreground"
           >
             <X className="size-5" />
@@ -478,9 +486,9 @@ export function VoiceRecorderSheet({
 
         {confirmClose ? (
           <div className="mt-6 flex flex-col items-center gap-4">
-            <p className="text-center text-lg font-extrabold">هل تريد إلغاء التسجيل؟</p>
+            <p className="text-center text-lg font-extrabold">{t("هل تريد إلغاء التسجيل؟", "Voulez-vous annuler l'enregistrement ?")}</p>
             <p className="text-center text-sm font-semibold text-muted-foreground">
-              غادي يتمسح التسجيل والكلام اللي سجلتي
+              {t("غادي يتمسح التسجيل والكلام اللي سجلتي", "L'enregistrement et le texte seront supprimés")}
             </p>
             <div className="mt-2 flex w-full gap-3">
               <button
@@ -488,13 +496,13 @@ export function VoiceRecorderSheet({
                 className="flex min-h-14 flex-1 items-center justify-center gap-2 rounded-2xl bg-destructive text-lg font-extrabold text-destructive-foreground"
               >
                 <Trash2 className="size-6" />
-                نعم، ألغِ
+                {t("نعم، ألغِ", "Oui, annuler")}
               </button>
               <button
                 onClick={() => setConfirmClose(false)}
                 className="flex min-h-14 flex-1 items-center justify-center rounded-2xl border-2 border-primary text-lg font-extrabold text-primary"
               >
-                رجوع
+                {t("رجوع", "Retour")}
               </button>
             </div>
           </div>
@@ -511,7 +519,7 @@ export function VoiceRecorderSheet({
                 <span
                   className={`size-3 animate-pulse rounded-full ${silenceSoon ? "bg-primary" : "bg-destructive"}`}
                 />
-                {silenceSoon ? "سالينا؟ غانحبسو التسجيل…" : "كنسجل دابا"}
+                {silenceSoon ? t("سالينا؟ غانحبسو التسجيل…", "Terminé ? Arrêt imminent de l'enregistrement…") : t("كنسجل دابا", "Enregistrement en cours") }
               </span>
               <span
                 className={`relative flex size-24 items-center justify-center rounded-full transition-all duration-300 ${
@@ -537,7 +545,7 @@ export function VoiceRecorderSheet({
                 className={`w-full transition-opacity duration-300 ${silenceSoon ? "opacity-40" : ""}`}
               />
               <p className="w-full rounded-2xl bg-secondary p-3 text-center text-sm font-bold leading-relaxed">
-                {heard || "تكلم دابا… غانكتبو كلامك ونوريوهلك قبل الإرسال"}
+                {heard || t("تكلم دابا… غانكتبو كلامك ونوريوهلك قبل الإرسال", "Parlez maintenant… votre texte sera transcrit avant l'envoi")}
               </p>
             </div>
             <div className="mt-6 flex gap-3">
@@ -546,12 +554,12 @@ export function VoiceRecorderSheet({
                 className="flex min-h-16 flex-1 items-center justify-center gap-2 rounded-2xl bg-destructive text-xl font-extrabold text-destructive-foreground"
               >
                 <Square className="size-7" />
-                حبس التسجيل
+                {t("حبس التسجيل", "Arrêter l'enregistrement")}
               </button>
 
               <button
                 onClick={requestClose}
-                aria-label="إلغاء"
+                aria-label={t("إلغاء", "Annuler")}
                 className="flex min-h-14 min-w-14 items-center justify-center rounded-2xl border-2 border-border text-muted-foreground"
               >
                 <Trash2 className="size-6" />
@@ -571,7 +579,7 @@ export function VoiceRecorderSheet({
             {processing && (
               <p className="mt-3 flex items-center justify-center gap-2 rounded-2xl bg-primary-soft p-3 text-center text-sm font-extrabold text-primary">
                 <span className="size-3 animate-ping rounded-full bg-primary" />
-                كنحللو التسجيل بالذكاء الاصطناعي…
+                {t("كنحللو التسجيل بالذكاء الاصطناعي…", "Analyse de l'enregistrement par IA…")}
               </p>
             )}
             {!processing && (
@@ -580,15 +588,15 @@ export function VoiceRecorderSheet({
                   htmlFor="voice-transcript"
                   className="mb-1 block text-sm font-extrabold text-muted-foreground"
                 >
-                  الكلام اللي فهمنا — تقدر تصححو قبل الإرسال
+                  {t("الكلام اللي فهمنا — تقدر تصححو قبل الإرسال", "Texte reconnu — vous pouvez le corriger avant l'envoi")}
                 </label>
                 <textarea
                   id="voice-transcript"
-                  dir="rtl"
+                  dir={fr ? "ltr" : "rtl"}
                   rows={3}
                   value={heard}
                   onChange={(e) => setHeard(e.target.value)}
-                  placeholder="عاود كتب الكلام هنا إلى بغيتي تصححو…"
+                  placeholder={t("عاود كتب الكلام هنا إلى بغيتي تصححو…", "Réécrivez le texte ici si vous souhaitez le corriger…")}
                   className="w-full rounded-2xl border-2 border-border bg-secondary p-3 text-base font-bold leading-relaxed text-foreground outline-none focus:border-primary"
                 />
               </div>
@@ -600,14 +608,14 @@ export function VoiceRecorderSheet({
                 className="flex min-h-16 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-lg font-extrabold text-primary-foreground disabled:opacity-60"
               >
                 <Check className="size-6" />
-                إرسال وتأكيد الطلب
+                {t("إرسال وتأكيد الطلب", "Envoyer et confirmer la demande")}
               </button>
               <button
                 onClick={retry}
                 className="flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl border-2 border-destructive text-lg font-extrabold text-destructive"
               >
                 <Trash2 className="size-6" />
-                مسح وإعادة التسجيل
+                {t("مسح وإعادة التسجيل", "Supprimer et réenregistrer")}
               </button>
             </div>
           </>

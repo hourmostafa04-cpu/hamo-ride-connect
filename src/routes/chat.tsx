@@ -151,11 +151,11 @@ function ChatPage() {
 
   return (
     <PhoneFrame>
-      <AppHeader title={`محادثة · ${counterpart}`} subtitle={`${load?.pickup} ← ${load?.destination}`} showBack />
+      <AppHeader title={`${fr ? "Chat" : "محادثة"} · ${counterpart}`} subtitle={`${load?.pickup} ← ${load?.destination}`} showBack />
       <main className="flex-1 space-y-3 p-5">
         {messages.length === 0 && (
           <p className="rounded-2xl border-2 border-border bg-card p-4 text-center text-sm font-bold text-muted-foreground">
-            ما كاين حتى رسالة — بدا المحادثة دابا.
+            {fr ? "Aucun message — démarrez la conversation maintenant." : "ما كاين حتى رسالة — بدا المحادثة دابا."}
           </p>
         )}
         {messages.map((m) => {

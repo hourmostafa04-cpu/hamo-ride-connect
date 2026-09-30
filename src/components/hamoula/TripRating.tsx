@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Star } from "lucide-react";
 import { toast } from "sonner";
 import { hasRatedTrip, submitRating } from "@/lib/hamoula-ratings";
+import { useAppLanguage } from "@/lib/app-language";
 
 type Props = {
   loadId: string;
@@ -21,6 +22,7 @@ export function TripRating({
   rateeRole,
   counterpartName,
 }: Props) {
+  const fr = useAppLanguage() === "fr";
   const [stars, setStars] = useState(0);
   const [comment, setComment] = useState("");
   const [busy, setBusy] = useState(false);
@@ -58,9 +60,9 @@ export function TripRating({
         comment,
       });
       setDone(true);
-      toast.success("شكراً، تسجل التقييم ديالك");
+      toast.success(fr ? "Merci, votre évaluation a été enregistrée" : "شكراً، تسجل التقييم ديالك");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "ما تسناش التقييم");
+      toast.error(e instanceof Error ? e.message : fr ? "Échec de l'envoi de l'évaluation" : "ما تسجّلش التقييم");
     } finally {
       setBusy(false);
     }
@@ -69,13 +71,19 @@ export function TripRating({
   return (
     <section className="rounded-3xl border-2 border-primary/30 bg-primary-soft/40 p-4">
       <h2 className="font-extrabold">
-        {rateeRole === "driver" ? "قيّم صاحب الشاحنة" : "قيّم صاحب البضاعة"}
+        {rateeRole === "driver"
+          ? fr
+            ? "Évaluer le chauffeur"
+            : "قيّم صاحب الشاحنة"
+          : fr
+            ? "Évaluer l'expéditeur"
+            : "قيّم صاحب البضاعة"}
       </h2>
       <p className="mt-1 text-xs text-muted-foreground">{counterpartName}</p>
 
       {done ? (
         <p className="mt-3 rounded-2xl bg-card px-3 py-3 text-sm font-bold text-primary">
-          قيّمتي هاد الرحلة من قبل — شكراً ليك
+          {fr ? "Vous avez déjà évalué ce trajet — merci" : "قيّمتي هاد الرحلة من قبل — شكراً ليك"}
         </p>
       ) : (
         <>
@@ -84,7 +92,7 @@ export function TripRating({
               <button
                 key={n}
                 type="button"
-                aria-label={`${n} نجوم`}
+                aria-label={fr ? `${n} étoiles` : `${n} نجوم`}
                 onClick={() => setStars(n)}
                 className="rounded-full p-1"
               >
@@ -99,7 +107,7 @@ export function TripRating({
             onChange={(e) => setComment(e.target.value)}
             maxLength={300}
             rows={2}
-            placeholder="تعليق قصير (اختياري)"
+            placeholder={fr ? "Commentaire court (optionnel)" : "تعليق قصير (اختياري)"}
             className="mt-3 w-full rounded-2xl border-2 border-border bg-card p-3 text-sm outline-none focus:border-primary"
           />
           <button
@@ -108,7 +116,7 @@ export function TripRating({
             onClick={save}
             className="mt-3 w-full rounded-2xl bg-primary px-4 py-3 font-extrabold text-primary-foreground disabled:opacity-50"
           >
-            {busy ? "كنسجلو التقييم…" : "أرسل التقييم"}
+            {busy ? (fr ? "Enregistrement…" : "كنسجلو التقييم…") : fr ? "Envoyer l'évaluation" : "أرسل التقييم"}
           </button>
         </>
       )}

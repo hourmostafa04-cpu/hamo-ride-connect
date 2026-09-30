@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { BellRing, X } from "lucide-react";
 import { toast } from "sonner";
 import { useHamoula } from "@/lib/hamoula-store";
+import { useAppLanguage } from "@/lib/app-language";
 import {
   enablePush,
   markPushAsked,
@@ -20,12 +21,12 @@ export function PushPrompt() {
   const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
   const role = (account?.role ?? profile.role) === "driver" ? "driver" : "shipper";
+  const fr = useAppLanguage() === "fr";
 
   useEffect(() => {
     if (!ready || !account) return;
     if (!pushSupported()) return;
     void registerPushWorker().then(() => {
-      // مسجل من قبل؟ نجدّدو الاشتراك بصمت.
       if (pushGranted()) void enablePush(role).catch(() => undefined);
       else if (!pushAsked() && Notification.permission === "default") setShow(true);
     });
@@ -40,9 +41,11 @@ export function PushPrompt() {
           <BellRing className="size-5" />
         </span>
         <div className="flex-1 text-right">
-          <p className="text-sm font-extrabold">فعّل التنبيهات</p>
+          <p className="text-sm font-extrabold">{fr ? "Activer les notifications" : "فعّل التنبيهات"}</p>
           <p className="text-[11px] font-semibold text-muted-foreground">
-            باش يوصلك الطلب أو العرض الجديد حتى إذا التطبيق مسدود
+            {fr
+              ? "Recevez les nouvelles demandes/offres même si l'app est fermée"
+              : "باش يوصلك الطلب أو العرض الجديد حتى إذا التطبيق مسدود"}
           </p>
         </div>
         <button
@@ -53,16 +56,21 @@ export function PushPrompt() {
             const ok = await enablePush(role).catch(() => false);
             setBusy(false);
             setShow(false);
-            if (ok) toast.success("تفعّلات التنبيهات ✅");
-            else toast("ما تفعلاتش التنبيهات — تقدر تفعلها من إعدادات المتصفح");
+            if (ok) toast.success(fr ? "Notifications activées ✅" : "تفعّلات التنبيهات ✅");
+            else
+              toast(
+                fr
+                  ? "Notifications non activées — vous pouvez les activer depuis le navigateur"
+                  : "ما تفعلاتش التنبيهات — تقدر تفعلها من إعدادات المتصفح",
+              );
           }}
           className="min-h-11 rounded-2xl bg-primary px-4 text-xs font-extrabold text-primary-foreground active:scale-95"
         >
-          تفعيل
+          {fr ? "Activer" : "تفعيل"}
         </button>
         <button
           type="button"
-          aria-label="إغلاق"
+          aria-label={fr ? "Fermer" : "إغلاق"}
           onClick={() => {
             markPushAsked();
             setShow(false);

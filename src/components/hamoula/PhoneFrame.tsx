@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { ArrowRight, Home } from "lucide-react";
 import { useHamoula } from "@/lib/hamoula-store";
+import { useAppLanguage } from "@/lib/app-language";
 
 import { ProfileSwitcher } from "./ProfileSwitcher";
 import { ScrollFab } from "./ScrollFab";
@@ -41,6 +42,7 @@ export function StickyActions({ children }: { children: ReactNode }) {
 
 export function BackButton({ fallback = "/" }: { fallback?: string }) {
   const router = useRouter();
+  const fr = useAppLanguage() === "fr";
   const goBack = () => {
     if (typeof window !== "undefined" && window.history.length > 1) {
       router.history.back();
@@ -52,11 +54,11 @@ export function BackButton({ fallback = "/" }: { fallback?: string }) {
     <button
       type="button"
       onClick={goBack}
-      aria-label="رجوع"
+      aria-label={fr ? "Retour" : "رجوع"}
       className="flex min-h-12 shrink-0 items-center gap-2 rounded-2xl bg-primary-foreground/20 px-4 py-3 text-base font-extrabold text-primary-foreground shadow-soft ring-1 ring-primary-foreground/30 transition-colors hover:bg-primary-foreground/30 active:scale-95 active:bg-primary-foreground/35"
     >
       <ArrowRight className="size-6" />
-      رجوع
+      {fr ? "Retour" : "رجوع"}
     </button>
   );
 
@@ -73,15 +75,16 @@ export function useHomePath(): "/driver" | "/" {
 export function HomeButton() {
   const router = useRouter();
   const to = useHomePath();
+  const fr = useAppLanguage() === "fr";
   return (
     <button
       type="button"
       onClick={() => router.navigate({ to })}
-      aria-label="الرئيسية"
+      aria-label={fr ? "Accueil" : "الرئيسية"}
       className="flex min-h-11 shrink-0 items-center gap-2 rounded-full bg-primary-foreground/15 px-3.5 py-2 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary-foreground/25 active:scale-95"
     >
       <Home className="size-5" />
-      الرئيسية
+      {fr ? "Accueil" : "الرئيسية"}
     </button>
   );
 }

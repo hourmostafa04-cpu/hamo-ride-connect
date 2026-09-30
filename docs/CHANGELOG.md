@@ -482,3 +482,37 @@ _آخر تحديث: 30 سبتمبر 2026 بواسطة Abacus AI Agent_
 2. منح/تأكيد صلاحية تنفيذ migration على قاعدة Supabase المستهدفة.
 
 3. اعتماد خيار VoIP النهائي (Daily/Agora/Twilio/WebRTC) قبل أي ربط إنتاجي.
+
+
+---
+
+## 2026-09-30 — استكمال ترجمة فرنسية ومراجعات جودة بدون Secrets
+
+### تغييرات منجزة
+- `src/components/hamoula/RegisterScreen.tsx`
+  - إكمال ترجمة النصوص المتبقية الحرجة للفرنسية (labels/errors/OTP/status/aria) مع fallback عربي.
+  - معالجة رسائل الأخطاء الديناميكية (`sendError`, `verifyError`, demo OTP) بصيغة ثنائية اللغة.
+  - تحسين نصوص حالات الصوت/GPS داخل نفس الشاشة.
+- `src/components/hamoula/TripRating.tsx`
+  - تصحيح عبارة الخطأ العربية إلى: **"ما تسجّلش التقييم"**.
+- `src/components/hamoula/DriverDashboard.tsx`
+  - استكمال/توسيع ترجمة واجهة السائق (فلاتر، حالات loading/error، toasts، أزرار العروض، واجهة counter-offer، نصوص التواصل، نصوص voice actions).
+- `src/components/hamoula/Voice.tsx`
+  - تعريب/فرنسة عناصر Voice UI بشكل كامل تقريباً:
+    - `VoiceBanner` (رسائل/أزرار/aria)
+    - `VoiceNotePlayer` (aria)
+    - `VoiceRecorderSheet` (حالات التسجيل/التأكيد/الإلغاء/التحليل/الإرسال/placeholders)
+  - ضبط `textarea dir` ليكون `ltr` عند الفرنسية و`rtl` عند العربية.
+
+### تحقق إضافي
+- تم التأكد من عدم وجود duplicate فعلي لملف `ContactActions` داخل `src/components/hamoula` وأن النسخة المستعملة هي:
+  - `src/components/hamoula/ContactActions.tsx`
+- تم فحص `TODO|FIXME` في `src/` والنتيجة: لا توجد عناصر متبقية.
+
+### اختبارات
+- `bun run typecheck` ✅
+- `bun run test` ✅ (17/17)
+- `bun run build` ✅
+
+### ملاحظات/قيود
+- الأعمال التي تتطلب Production access أو Secrets بقيت خارج التنفيذ المباشر بهذه الجولة (SQL apply / runtime secrets / VoIP decision) وتم توثيقها كـ BLOCKED.

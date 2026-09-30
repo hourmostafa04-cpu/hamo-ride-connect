@@ -10,6 +10,7 @@ import {
   reverseGeocodePoint,
 } from "@/lib/places.functions";
 import type { LatLng } from "@/lib/hamoula-geo";
+import { useAppLanguage } from "@/lib/app-language";
 
 type Suggestion = { key: string; main: string; secondary: string; placeId?: string; point?: LatLng };
 
@@ -31,6 +32,7 @@ export default function CityField({
   onPick: (label: string, point: LatLng) => void;
   showGps?: boolean;
 }) {
+  const fr = useAppLanguage() === "fr";
   const [open, setOpen] = useState(false);
   const [locating, setLocating] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -49,7 +51,7 @@ export default function CityField({
     const local: Suggestion[] = searchPlaces(q, 5).map((c) => ({
       key: `local:${c.label}`,
       main: c.label,
-      secondary: "المغرب",
+      secondary: fr ? "Maroc" : "المغرب",
       point: c.point,
     }));
     setResults(local);
@@ -73,7 +75,7 @@ export default function CityField({
       }
     }, 300);
     return () => clearTimeout(t);
-  }, [value, open]);
+  }, [value, open, fr]);
 
   const choose = async (s: Suggestion) => {
     if (s.point) {
@@ -88,7 +90,7 @@ export default function CityField({
       onPick(place.label || s.main, place.point);
       setOpen(false);
     } catch {
-      toast.error("ما قدرناش نجيبو هاد المكان — عاود جرب");
+      toast.error(fr ? "Impossible de récupérer ce lieu — réessayez" : "ما قدرناش نجيبو هاد المكان — عاود جرب");
     } finally {
       setResolving(false);
     }
@@ -96,7 +98,7 @@ export default function CityField({
 
   const useMyLocation = () => {
     if (typeof navigator === "undefined" || !navigator.geolocation) {
-      toast.error("هاد الهاتف ما كيدعمش تحديد الموقع");
+      toast.error(fr ? "Cet appareil ne prend pas en charge la géolocalisation" : "هاد الهاتف ما كيدعمش تحديد الموقع");
       return;
     }
     setLocating(true);
@@ -111,21 +113,27 @@ export default function CityField({
       setLocating(false);
       const finalName = name || nearestCityName(point);
       onPick(finalName, point);
-      toast.success(`موقعك الحالي: ${finalName}`);
+      toast.success(fr ? `Votre position: ${finalName}` : `موقعك الحالي: ${finalName}`);
     };
     const onErr = (err: GeolocationPositionError) => {
       setLocating(false);
       if (err.code === err.PERMISSION_DENIED) {
-        toast.error("الإذن ديال الموقع مرفوض", {
-          description: "فعّل الموقع/Localisation لهاد الموقع من إعدادات الهاتف ثم عاود جرب.",
+        toast.error(fr ? "Autorisation de localisation refusée" : "الإذن ديال الموقع مرفوض", {
+          description: fr
+            ? "Activez la localisation pour ce site depuis les paramètres puis réessayez."
+            : "فعّل الموقع/Localisation لهاد الموقع من إعدادات الهاتف ثم عاود جرب.",
         });
         return;
       }
       if (err.code === err.TIMEOUT) {
-        toast.error("ما وصلناش للموقع فالوقت", { description: "خرج لبرا شوية ولا عاود جرب." });
+        toast.error(fr ? "Délai dépassé pour obtenir la position" : "ما وصلناش للموقع فالوقت", {
+          description: fr ? "Déplacez-vous vers une zone ouverte puis réessayez." : "خرج لبرا شوية ولا عاود جرب.",
+        });
         return;
       }
-      toast.error("ما قدرناش نجيبو موقعك دابا", { description: "تأكد أن GPS مفعّل وعاود جرب." });
+      toast.error(fr ? "Impossible d'obtenir votre position maintenant" : "ما قدرناش نجيبو موقعك دابا", {
+        description: fr ? "Vérifiez que le GPS est activé puis réessayez." : "تأكد أن GPS مفعّل وعاود جرب.",
+      });
     };
     // نطلبو موقع دقيق أولاً، وإلا كنعاودو بدقة عادية (بلا أي موقع تجريبي).
     navigator.geolocation.getCurrentPosition(
@@ -145,7 +153,6 @@ export default function CityField({
     );
   };
 
-
   // Place-name mic: the spoken text feeds the same autocomplete — no auto-guessing.
   const dictation = useAiDictation({
     mode: "city",
@@ -155,7 +162,7 @@ export default function CityField({
       if (!spoken) return;
       onChange(spoken);
       setOpen(true);
-      toast.info("ختار المكان من اللائحة", { description: spoken });
+      toast.info(fr ? "Choisissez le lieu dans la liste" : "ختار المكان من اللائحة", { description: spoken });
     },
     onError: (m) => toast.error(m),
   });
@@ -184,7 +191,7 @@ export default function CityField({
           )}
           <button
             type="button"
-            aria-label={`تسجيل صوتي لـ ${label}`}
+            aria-label={fr ? `Saisie vocale pour ${label}` : `تسجيل صوتي لـ ${label}`}
             onClick={() => (dictation.state === "listening" ? dictation.stop() : dictation.start())}
             className={`grid size-10 shrink-0 place-items-center rounded-xl border-2 transition ${
               dictation.state === "listening"
@@ -201,7 +208,13 @@ export default function CityField({
         </div>
         {busy && (
           <p className="mt-1 text-xs font-bold text-primary">
-            {dictation.state === "listening" ? "كنسمعك... قول سمية المكان" : "كنعالجو..."}
+            {dictation.state === "listening"
+              ? fr
+                ? "Je vous écoute... dites le nom du lieu"
+                : "كنسمعك... قول سمية المكان"
+              : fr
+                ? "Traitement en cours..."
+                : "كنعالجو..."}
           </p>
         )}
 
@@ -217,7 +230,13 @@ export default function CityField({
             ) : (
               <Crosshair className="size-5" />
             )}
-            {locating ? "كنحددو موقعك..." : "استخدم موقعي الحالي"}
+            {locating
+              ? fr
+                ? "Localisation en cours..."
+                : "كنحددو موقعك..."
+              : fr
+                ? "Utiliser ma position actuelle"
+                : "استخدم موقعي الحالي"}
           </button>
         )}
 

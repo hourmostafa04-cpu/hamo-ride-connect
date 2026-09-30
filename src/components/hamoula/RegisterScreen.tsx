@@ -29,6 +29,7 @@ import { extractTonnage, extractTruckKind, tonChipFor } from "@/lib/voice-order"
 import { smartParse } from "@/lib/smart-parse";
 import { DEMO_LOGIN_ENABLED, DEMO_OTP_CODE, DEMO_PHONE, demoAccount } from "@/lib/demo-login";
 import { ensureDemoAuthUser } from "@/lib/demo-auth.functions";
+import { useAppLanguage } from "@/lib/app-language";
 
 import triporteurImg from "@/assets/trucks/triporteur.png";
 import hondaImg from "@/assets/trucks/honda.png";
@@ -93,6 +94,8 @@ const truckKinds = driverTruckKinds;
 
 export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
   const { account, signIn, findAccount, myLocation, geoStatus, requestLocation } = useHamoula();
+  const fr = useAppLanguage() === "fr";
+  const t = (ar: string, frText: string) => (fr ? frText : ar);
   /** Role choice first, then phone (verified by SMS), then the account is restored or created. */
   const [step, setStep] = useState<"role" | "phone" | "otp" | "register">(
     account ? "phone" : "role",
@@ -141,7 +144,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
       setRole("driver");
     }
     if (spokenKind || chip)
-      toast.success("حددنا الشاحنة", {
+      toast.success(t("حددنا الشاحنة", "Camion sélectionné"), {
         description: [spokenKind, chip].filter(Boolean).join(" · "),
       });
   };
@@ -155,17 +158,17 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
         setPhoneTouched(true);
         setError(null);
         playSfx("success");
-        toast.success("عمرنا رقم التيليفون", { description: formatMoroccanPhone(strict.phone) });
+        toast.success(t("عمرنا رقم التيليفون", "Numéro rempli"), { description: formatMoroccanPhone(strict.phone) });
         return;
       }
       if (strict.digits) {
         setPhone(strict.digits);
         setPhoneTouched(true);
-        toast.warning("الرقم ما كملش", { description: "خاص 10 أرقام كيبداو ب 06 / 07" });
+        toast.warning(t("الرقم ما كملش", "Numéro incomplet"), { description: t("خاص 10 أرقام كيبداو ب 06 / 07", "10 chiffres requis commençant par 06/07") });
         return;
       }
       playSfx("error");
-      toast.error("ما فهمناش الرقم", { description: "عاود قول النمرة رقم برقم" });
+      toast.error(t("ما فهمناش الرقم", "Numéro non compris"), { description: t("عاود قول النمرة رقم برقم", "Redites le numéro chiffre par chiffre") });
       return;
     }
 
@@ -189,11 +192,11 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
     if (spokenName) {
       setName(spokenName);
       playSfx("success");
-      toast.success("عمرنا السمية", { description: spokenName });
+      toast.success(t("عمرنا السمية", "Nom rempli"), { description: spokenName });
       return;
     }
     playSfx("error");
-    toast.error("ما فهمناش السمية", { description: "عاود قول السمية ديالك بشوية" });
+    toast.error(t("ما فهمناش السمية", "Nom non compris"), { description: t("عاود قول السمية ديالك بشوية", "Répétez votre nom lentement") });
   };
 
   // AI dictation: we record real audio and let the Darija-aware model transcribe it.
@@ -227,7 +230,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
         if (digits) speak(digits.split("").join(" ، "));
         else {
           playSfx("error");
-          toast.error("ما فهمناش الرقم", { description: "عاود قول النمرة رقم برقم" });
+          toast.error(t("ما فهمناش الرقم", "Numéro non compris"), { description: t("عاود قول النمرة رقم برقم", "Redites le numéro chiffre par chiffre") });
         }
         return;
       }
@@ -262,21 +265,21 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
         setPhoneTouched(true);
         setError(null);
         playSfx("success");
-        toast.success("عمرنا رقم التيليفون", { description: formatMoroccanPhone(digits) });
+        toast.success(t("عمرنا رقم التيليفون", "Numéro rempli"), { description: formatMoroccanPhone(digits) });
         setApplying(false);
         setPending(null);
         return;
       }
       setApplying(false);
       playSfx("error");
-      toast.error("الرقم ماشي صحيح", { description: "خاص 10 أرقام كيبداو ب 06 ولا 07" });
+      toast.error(t("الرقم ماشي صحيح", "Numéro invalide"), { description: t("خاص 10 أرقام كيبداو ب 06 ولا 07", "10 chiffres requis commençant par 06 ou 07") });
       return;
     }
     if (pending.field === "firstName" || pending.field === "lastName") {
       if (pending.field === "firstName") setFirstName(pending.text);
       if (pending.field === "lastName") setLastName(pending.text);
       playSfx("success");
-      toast.success(pending.field === "firstName" ? "عمرنا الاسم" : "عمرنا النسب", {
+      toast.success(pending.field === "firstName" ? t("عمرنا الاسم", "Prénom rempli") : t("عمرنا النسب", "Nom de famille rempli"), {
         description: pending.text,
       });
       setApplying(false);
@@ -320,10 +323,12 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
     !phoneTouched || phoneValid
       ? null
       : phoneDigits.length === 0
-        ? "دخل رقم الهاتف"
+        ? t("دخل رقم الهاتف", "Saisissez le numéro de téléphone")
         : !/^0[5-7]/.test(phoneDigits)
-          ? "الرقم خاصو يبدا بـ 06 ولا 07 ولا 05"
-          : `باقي ${10 - phoneDigits.length} رقم — خاص 10 أرقام بصيغة 06XX XX XX XX`;
+          ? t("الرقم خاصو يبدا بـ 06 ولا 07 ولا 05", "Le numéro doit commencer par 06, 07 ou 05")
+          : fr
+            ? `Il reste ${10 - phoneDigits.length} chiffres — format requis: 06XX XX XX XX`
+            : `باقي ${10 - phoneDigits.length} رقم — خاص 10 أرقام بصيغة 06XX XX XX XX`;
 
   /** Moroccan local 0XXXXXXXXX -> E.164 +212XXXXXXXXX (what the SMS provider needs). */
   const toE164 = (local: string) => `+212${local.slice(1)}`;
@@ -333,7 +338,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
     const normalized = normalizePhone(phone);
     // الدخول/التسجيل موحد: غير الرقم هو المطلوب هنا — باقي المعلومات غير للحسابات الجديدة.
     if (!normalized) {
-      setError("رقم الهاتف ماشي صحيح — مثال: 0661 22 44 88 ولا 212661224488+");
+      setError(t("رقم الهاتف ماشي صحيح — مثال: 0661 22 44 88 ولا 212661224488+", "Numéro invalide — ex: 0661 22 44 88 ou +212661224488"));
       return;
     }
     setError(null);
@@ -345,7 +350,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
       setResendIn(0);
       setStep("otp");
       playSfx("success");
-      toast.success("وضع الاختبار", { description: `دخل الرمز ${DEMO_OTP_CODE} بلا SMS` });
+      toast.success(t("وضع الاختبار", "Mode test"), { description: fr ? `Saisissez le code ${DEMO_OTP_CODE} sans SMS` : `دخل الرمز ${DEMO_OTP_CODE} بلا SMS` });
       return;
     }
     setOtpBusy(true);
@@ -353,7 +358,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
     setOtpBusy(false);
     if (sendError) {
       playSfx("error");
-      setError(`خطأ فإرسال الرمز: ${sendError.message}`);
+      setError(fr ? `Erreur d'envoi du code : ${sendError.message}` : `خطأ فإرسال الرمز: ${sendError.message}`);
       return;
     }
     setOtpSentTo(e164);
@@ -361,7 +366,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
     setResendIn(60);
     setStep("otp");
     playSfx("success");
-    toast.success("تصيفط ليك رمز التحقق بال SMS", { description: formatPhone(normalized) });
+    toast.success(t("تصيفط ليك رمز التحقق بال SMS", "Code SMS envoyé"), { description: formatPhone(normalized) });
   };
 
   /** Step 2: verify the code, then restore the account or open registration. */
@@ -370,7 +375,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
     const normalized = normalizePhone(phone);
     if (!normalized) return;
     if (code.length !== 6) {
-      setError("دخل الرمز كامل — 6 أرقام");
+      setError(t("دخل الرمز كامل — 6 أرقام", "Saisissez le code complet — 6 chiffres"));
       return;
     }
     setError(null);
@@ -380,7 +385,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
       if (code !== DEMO_OTP_CODE) {
         setOtpBusy(false);
         playSfx("error");
-        setError(`فوضع الاختبار الرمز هو ${DEMO_OTP_CODE}`);
+        setError(fr ? `En mode test, le code est ${DEMO_OTP_CODE}` : `فوضع الاختبار الرمز هو ${DEMO_OTP_CODE}`);
         return;
       }
       // كنجيبو جلسة Auth ديال مستخدم الاختبار باش الكتابة فقاعدة البيانات تبقى خدامة.
@@ -399,7 +404,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
       if (verifyError) {
         setOtpBusy(false);
         playSfx("error");
-        setError(`الرمز ماشي صحيح: ${verifyError.message}`);
+        setError(fr ? `Code invalide : ${verifyError.message}` : `الرمز ماشي صحيح: ${verifyError.message}`);
         return;
       }
     }
@@ -409,8 +414,8 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
     if (existing) {
       signIn(existing);
       playSfx("success");
-      toast.success(`مرحبا بيك من جديد ${existing.name}`, {
-        description: existing.role === "driver" ? "صاحب شاحنة" : "صاحب بضاعة",
+      toast.success(fr ? `Bon retour ${existing.name}` : `مرحبا بيك من جديد ${existing.name}`, {
+        description: existing.role === "driver" ? t("صاحب شاحنة", "Chauffeur") : t("صاحب بضاعة", "Expéditeur"),
       });
       onDone(existing.role);
       return;
@@ -419,12 +424,12 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
     if (role === "shipper" && name.trim()) {
       signIn({ name: name.trim(), phone: formatPhone(normalized), role: "shipper" });
       playSfx("success");
-      toast.success("تأكد الرقم ديالك", { description: "كمل طلب نقل البضاعة" });
+      toast.success(t("تأكد الرقم ديالك", "Numéro confirmé"), { description: t("كمل طلب نقل البضاعة", "Complétez votre demande de transport") });
       onDone("shipper");
       return;
     }
     setStep("register");
-    toast("حساب جديد", { description: "كمل التسجيل مرة وحدة وصافي" });
+    toast(t("حساب جديد", "Nouveau compte"), { description: t("كمل التسجيل مرة وحدة وصافي", "Complétez l'inscription une seule fois") });
   };
 
   const resendCode = async () => {
@@ -459,11 +464,11 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
         password: creds.password,
       });
       if (error) {
-        setError("تعذر الدخول التجريبي — عاود المحاولة");
+        setError(t("تعذر الدخول التجريبي — عاود المحاولة", "Connexion démo impossible — réessayez"));
         return;
       }
     } catch {
-      setError("تعذر الدخول التجريبي — عاود المحاولة");
+      setError(t("تعذر الدخول التجريبي — عاود المحاولة", "Connexion démo impossible — réessayez"));
       return;
     } finally {
       setOtpBusy(false);
@@ -471,8 +476,8 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
     const acc = demoAccount(demoRole);
     signIn(acc);
     playSfx("success");
-    toast.success("دخلتي بالحساب التجريبي", {
-      description: demoRole === "driver" ? "صاحب شاحنة" : "صاحب بضاعة",
+    toast.success(t("دخلتي بالحساب التجريبي", "Connecté en compte démo"), {
+      description: demoRole === "driver" ? t("صاحب شاحنة", "Chauffeur") : t("صاحب بضاعة", "Expéditeur"),
     });
     onDone(demoRole);
   };
@@ -481,15 +486,15 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
 
     const normalized = normalizePhone(phone);
     if (!name.trim()) {
-      setError("كتب الاسم والنسب ديالك");
+      setError(t("كتب الاسم والنسب ديالك", "Saisissez votre nom complet"));
       return;
     }
     if (role === "driver" && !plate.trim()) {
-      setError("كتب رقم لوحة الشاحنة");
+      setError(t("كتب رقم لوحة الشاحنة", "Saisissez la plaque du camion"));
       return;
     }
     if (!normalized) {
-      setError("رقم الهاتف ماشي صحيح — مثال: 0661 22 44 88 ولا 212661224488+");
+      setError(t("رقم الهاتف ماشي صحيح — مثال: 0661 22 44 88 ولا 212661224488+", "Numéro invalide — ex: 0661 22 44 88 ou +212661224488"));
       return;
     }
     setError(null);
@@ -501,7 +506,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
         ? { truckTons: tons, truckType: kind, truckPlate: plate.trim(), available }
         : {}),
     });
-    toast.success("مرحبا بيك فمول طرانسبور", { description: formatPhone(normalized) });
+    toast.success(t("مرحبا بيك فمول طرانسبور", "Bienvenue dans Mol Transport"), { description: formatPhone(normalized) });
     onDone(role);
   };
 
@@ -550,11 +555,11 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
                     if (!window.closed) window.location.replace("about:blank");
                   }, 300);
                 }}
-                aria-label="إغلاق التطبيق"
+                aria-label={t("إغلاق التطبيق", "Fermer l'application")}
                 className="flex min-h-8 shrink-0 items-center gap-1 rounded-full bg-card/80 px-2.5 py-1 text-[10px] font-bold text-muted-foreground ring-1 ring-border transition-colors hover:bg-card active:scale-95"
               >
                 <X className="size-3.5" />
-                إغلاق التطبيق
+                {t("إغلاق التطبيق", "Fermer")}
               </button>
             </div>
 
@@ -565,7 +570,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
                 مول <span className="text-primary">ترانسبور</span>
               </h1>
               <p className="mt-1 text-sm font-bold text-muted-foreground">
-                نقل البضائع بسهولة وأمان
+                {t("نقل البضائع بسهولة وأمان", "Transport de marchandises simple et sûr")}
               </p>
             </div>
 
@@ -593,7 +598,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
               /* دخول تجريبي — المعاينة/التطوير فقط: بلا SMS وبلا مزود الرسائل */
               <div className="mt-4 rounded-3xl bg-card/95 p-4 shadow-soft ring-1 ring-border backdrop-blur">
                 <p className="text-center text-xs font-bold text-muted-foreground">
-                  وضع الاختبار — دخول بلا SMS
+                  {t("وضع الاختبار — دخول بلا SMS", "Mode test — connexion sans SMS")}
                 </p>
                 <div className="mt-3 grid grid-cols-2 gap-3">
                   <button
@@ -601,30 +606,31 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
                     disabled={otpBusy}
                     className="rounded-2xl bg-primary px-3 py-3 text-sm font-extrabold text-primary-foreground disabled:opacity-50"
                   >
-                    دخول تجريبي (بضاعة)
+                    {t("دخول تجريبي (بضاعة)", "Démo expéditeur")}
                   </button>
                   <button
                     onClick={() => void demoSignIn("driver")}
                     disabled={otpBusy}
                     className="rounded-2xl border-2 border-primary px-3 py-3 text-sm font-extrabold text-primary disabled:opacity-50"
                   >
-                    دخول تجريبي (شاحنة)
+                    {t("دخول تجريبي (شاحنة)", "Démo chauffeur")}
                   </button>
                 </div>
                 <p className="mt-2 text-center text-[11px] text-muted-foreground">
-                  ولا دخل أي رقم واستعمل الرمز {DEMO_OTP_CODE}
+                  {fr ? `Ou saisissez n'importe quel numéro puis utilisez le code ${DEMO_OTP_CODE}` : `ولا دخل أي رقم واستعمل الرمز ${DEMO_OTP_CODE}`}
                 </p>
               </div>
             )}
             {/* Card: اختر نوع الحساب */}
             <div className="mt-6 rounded-3xl bg-card/95 p-4 shadow-soft ring-1 ring-border backdrop-blur">
-              <p className="text-center text-xl font-extrabold">اختر نوع الحساب</p>
+              <p className="text-center text-xl font-extrabold">{t("اختر نوع الحساب", "Choisissez le type de compte")}</p>
               <div className="mx-auto mt-2 h-1 w-12 rounded-full bg-primary" />
               <div className="mt-4 grid grid-cols-2 gap-3">
                 <AccountCard
                   icon={<Package className="size-7 text-[oklch(0.35_0.08_62)]" />}
-                  title="صاحب بضاعة"
-                  subtitle="أبحث عن شاحنة لنقل بضاعتي إلى وجهتها"
+                  title={t("صاحب بضاعة", "Expéditeur")}
+                  subtitle={t("أبحث عن شاحنة لنقل بضاعتي إلى وجهتها", "Je cherche un camion pour transporter ma marchandise")}
+                  cta={t("دخول", "Entrer")}
                   onClick={() => {
                     setRole("shipper");
                     setStep("phone");
@@ -632,8 +638,9 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
                 />
                 <AccountCard
                   icon={<Truck className="size-7 text-[oklch(0.35_0.08_62)]" />}
-                  title="صاحب شاحنة"
-                  subtitle="أبحث عن شحنات لنقلها بشاحنتي"
+                  title={t("صاحب شاحنة", "Chauffeur")}
+                  subtitle={t("أبحث عن شحنات لنقلها بشاحنتي", "Je cherche des chargements pour mon camion")}
+                  cta={t("دخول", "Entrer")}
                   onClick={() => {
                     setRole("driver");
                     setStep("phone");
@@ -656,19 +663,22 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
         <p className="text-[11px] font-extrabold tracking-[0.35em]">MOL TRANSPORT</p>
         <h1 className="mt-3 text-3xl font-extrabold tracking-tight">
           {step === "otp"
-            ? "كود التأكيد"
+            ? t("كود التأكيد", "Code de confirmation")
             : step === "phone"
-              ? "دخول / تسجيل"
+              ? t("دخول / تسجيل", "Connexion / Inscription")
               : role === "driver"
-                ? "تسجيل صاحب الشاحنة"
-                : "تسجيل صاحب البضاعة"}
+                ? t("تسجيل صاحب الشاحنة", "Inscription chauffeur")
+                : t("تسجيل صاحب البضاعة", "Inscription expéditeur")}
         </h1>
         <p className="mt-2 max-w-xs text-sm leading-relaxed opacity-90">
           {step === "otp"
-            ? "دخل الكود اللي وصلك ف SMS."
+            ? t("دخل الكود اللي وصلك ف SMS.", "Saisissez le code reçu par SMS.")
             : step === "phone"
-              ? "دخل رقم الهاتف ديالك — إلا عندك حساب غتدخل نيشان، وإلا ما عندكش غتكمل التسجيل من هنا."
-              : "كتب المعلومات ديالك وضغط تأكيد."}
+              ? t(
+                  "دخل رقم الهاتف ديالك — إلا عندك حساب غتدخل نيشان، وإلا ما عندكش غتكمل التسجيل من هنا.",
+                  "Entrez votre numéro de téléphone : compte existant = connexion directe, sinon vous complétez l'inscription ici.",
+                )
+              : t("كتب المعلومات ديالك وضغط تأكيد.", "Renseignez vos informations puis confirmez.")}
         </p>
       </div>
 
@@ -677,7 +687,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
         {step === "register" && (
           <div className="mb-4 flex items-center justify-between rounded-2xl border-2 border-primary/30 bg-primary-soft px-4 py-3">
             <span className="flex items-center gap-2 text-sm font-bold text-primary">
-              <ShieldCheck className="size-5" /> الرقم تأكد بال SMS
+              <ShieldCheck className="size-5" /> {t("الرقم تأكد بال SMS", "Numéro confirmé par SMS")}
             </span>
             <span dir="ltr" className="text-base font-extrabold">
               {formatPhone(normalizePhone(phone) ?? phone)}
@@ -686,7 +696,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
         )}
         {step === "register" && (
         <>
-        <label className="block text-sm font-bold">الاسم والنسب</label>
+        <label className="block text-sm font-bold">{t("الاسم والنسب", "Nom complet")}</label>
         <div
           className={`mt-2 flex items-center gap-3 rounded-2xl border-2 bg-card px-4 py-3 ${
             listening === "name" ? "border-primary" : "border-border"
@@ -697,7 +707,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
             value={name}
             onChange={(e) => setName(e.target.value)}
             maxLength={60}
-            placeholder="مثال: سعيد المرابط"
+            placeholder={t("مثال: سعيد المرابط", "Exemple : Saïd El Mourabit")}
             className="w-full bg-transparent text-base font-bold outline-none placeholder:font-normal placeholder:text-muted-foreground"
           />
           <FieldMic
@@ -705,7 +715,8 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
             busy={listening === "name" && processing}
             settling={listening === "name" && silenceSoon}
             onClick={() => (listening === "name" ? stopVoice() : startVoice("name"))}
-            label="قول السمية ديالك"
+            label={t("قول السمية ديالك", "Dites votre nom")}
+            stopLabel={t("توقيف التسجيل", "Arrêter l'enregistrement")}
           />
         </div>
         {listening === "name" && (
@@ -715,9 +726,9 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
             <Waveform active />
             <span className="text-xs font-bold text-primary">
               {processing
-                ? "كنحللو الصوت بالذكاء الاصطناعي…"
+                ? t("كنحللو الصوت بالذكاء الاصطناعي…", "Analyse audio par IA…")
                 : silenceSoon
-                  ? "سالينا؟ غانعمروها…"
+                  ? t("سالينا؟ غانعمروها…", "Terminé ? On va la remplir…")
                   : FIELD_PROMPT.name}
             </span>
           </div>
@@ -732,7 +743,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
         <>
         {/* دخول/تسجيل موحد: رقم الهاتف فقط — إلا كان الحساب موجود كيدخل نيشان،
             وإلا ما كانش كيكمل التسجيل من نفس المسار بعد تأكيد الكود. */}
-        <label className="block text-sm font-bold">رقم الهاتف المغربي</label>
+        <label className="block text-sm font-bold">{t("رقم الهاتف المغربي", "Numéro de téléphone marocain")}</label>
 
         <div
           className={`mt-2 flex items-center gap-3 rounded-2xl border-2 bg-card px-4 py-3 ${
@@ -744,7 +755,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
             dir="ltr"
             inputMode="tel"
             autoComplete="tel"
-            aria-label="رقم الهاتف"
+            aria-label={t("رقم الهاتف", "Numéro de téléphone")}
             value={phone}
             onChange={(e) => {
               setPhone(e.target.value);
@@ -759,7 +770,8 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
             busy={listening === "phone" && processing}
             settling={listening === "phone" && silenceSoon}
             onClick={() => (listening === "phone" ? stopVoice() : startVoice("phone"))}
-            label="قول رقم التيليفون"
+            label={t("قول رقم التيليفون", "Dites le numéro de téléphone")}
+            stopLabel={t("توقيف التسجيل", "Arrêter l'enregistrement")}
           />
         </div>
         {phoneIssue && <p className="mt-1 text-xs font-bold text-destructive">{phoneIssue}</p>}
@@ -770,9 +782,9 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
             <Waveform active />
             <span className="text-xs font-bold text-primary">
               {processing
-                ? "كنحللو الصوت بالذكاء الاصطناعي…"
+                ? t("كنحللو الصوت بالذكاء الاصطناعي…", "Analyse audio par IA…")
                 : silenceSoon
-                  ? "سالينا؟ غانعمروها…"
+                  ? t("سالينا؟ غانعمروها…", "Terminé ? On va la remplir…")
                   : FIELD_PROMPT.phone}
             </span>
           </div>
@@ -793,15 +805,15 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
           <div className="mt-5 rounded-2xl border-2 border-primary/40 bg-primary-soft p-4">
             <p className="text-xs font-bold text-primary">
               {pending.field === "phone"
-                ? "عاود سمع الرقم رقم برقم — واش صحيح؟"
-                : "صححنا الدارجة — واش هادشي هو اللي قلتي؟"}
+                ? t("عاود سمع الرقم رقم برقم — واش صحيح؟", "Écoutez à nouveau chiffre par chiffre — c'est correct ?")
+                : t("صححنا الدارجة — واش هادشي هو اللي قلتي؟", "Texte corrigé — est-ce bien ce que vous avez dit ?")} 
             </p>
             {pending.field === "phone" ? (
               <>
                 <div
                   dir="ltr"
                   className="mt-2 flex flex-wrap justify-center gap-1.5"
-                  aria-label="الأرقام اللي فهمنا"
+                  aria-label={t("الأرقام اللي فهمنا", "Chiffres reconnus")}
                 >
                   {(sanitizePhoneInput(pending.text) || "—").split("").map((d, i) => (
                     <span
@@ -815,7 +827,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
                 <input
                   dir="ltr"
                   inputMode="tel"
-                  aria-label="الرقم اللي فهمنا"
+                  aria-label={t("الرقم اللي فهمنا", "Numéro reconnu")}
                   value={pending.text}
                   onChange={(e) =>
                     setPending({ field: pending.field, text: sanitizePhoneInput(e.target.value) })
@@ -838,7 +850,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
               <textarea
                 dir="rtl"
                 rows={2}
-                aria-label="الكلام اللي فهمنا"
+                aria-label={t("الكلام اللي فهمنا", "Texte reconnu")}
                 value={pending.text}
                 onChange={(e) => setPending({ field: pending.field, text: e.target.value })}
                 className="mt-2 w-full rounded-2xl border-2 border-border bg-card p-3 text-base font-extrabold leading-relaxed outline-none focus:border-primary"
@@ -860,7 +872,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
                 ) : (
                   <Check className="size-5" />
                 )}
-                تأكيد وعمّر
+                {t("تأكيد وعمّر", "Confirmer et remplir")}
               </button>
               <button
                 onClick={() => {
@@ -871,7 +883,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
                 className="flex items-center justify-center gap-2 rounded-2xl border-2 border-border bg-card py-3 text-base font-bold"
               >
                 <Mic className="size-5" />
-                عاود التسجيل
+                {t("عاود التسجيل", "Réenregistrer")}
               </button>
             </div>
           </div>
@@ -881,7 +893,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
           <div className="rounded-2xl border-2 border-primary/40 bg-primary-soft p-4">
             <p className="flex items-center gap-2 text-sm font-bold text-primary">
               <ShieldCheck className="size-5" />
-              تصيفط رمز التحقق بال SMS لـ{" "}
+              {t("تصيفط رمز التحقق بال SMS لـ", "Code de vérification SMS envoyé à")}{" "}
               <span dir="ltr" className="font-extrabold">{otpSentTo}</span>
             </p>
             <input
@@ -890,7 +902,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
               autoComplete="one-time-code"
               maxLength={6}
               autoFocus
-              aria-label="رمز التحقق"
+              aria-label={t("رمز التحقق", "Code de vérification")}
               placeholder="••••••"
               value={otp}
               onChange={(e) => {
@@ -906,33 +918,33 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
               disabled={resendIn > 0 || otpBusy}
               className="mt-3 w-full text-center text-xs font-bold text-primary disabled:text-muted-foreground"
             >
-              {resendIn > 0 ? `عاود الإرسال من بعد ${resendIn} ثانية` : "ما وصلنيش الرمز — عاود صيفطو"}
+              {resendIn > 0 ? (fr ? `Renvoyer dans ${resendIn} sec` : `عاود الإرسال من بعد ${resendIn} ثانية`) : t("ما وصلنيش الرمز — عاود صيفطو", "Je n'ai pas reçu le code — renvoyer")}
             </button>
           </div>
         )}
 
         {step === "register" && (
         <>
-        <p className="mt-6 text-sm font-bold">شكون نتا؟</p>
+        <p className="mt-6 text-sm font-bold">{t("شكون نتا؟", "Qui êtes-vous ?")}</p>
         <div className="mt-3 grid grid-cols-2 gap-3">
           <RoleTile
             active={role === "shipper"}
             onClick={() => setRole("shipper")}
             icon={<Package className="size-8" />}
-            label="صاحب بضاعة"
+            label={t("صاحب بضاعة", "Expéditeur")}
           />
           <RoleTile
             active={role === "driver"}
             onClick={() => setRole("driver")}
             icon={<Truck className="size-8" />}
-            label="صاحب شاحنة"
+            label={t("صاحب شاحنة", "Chauffeur")}
           />
         </div>
 
         {role === "driver" && (
           <div className="mt-6 space-y-5 rounded-2xl border-2 border-primary/30 bg-primary-soft/50 p-4">
             <div>
-              <p className="text-sm font-bold">نوع الشاحنة</p>
+              <p className="text-sm font-bold">{t("نوع الشاحنة", "Type de camion")}</p>
               <div className="mt-3 grid grid-cols-4 gap-2">
                 {truckTypes.map((t) => {
                   const active = kind === t.label;
@@ -975,11 +987,11 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
             </div>
             {!plate.trim() && (
               <div>
-                <p className="text-sm font-bold">رقم لوحة الشاحنة</p>
+                <p className="text-sm font-bold">{t("رقم لوحة الشاحنة", "Numéro d'immatriculation")}</p>
                 <input
                   value={plate}
                   onChange={(e) => setPlate(e.target.value)}
-                  placeholder="مثال: 12345 - أ - 20"
+                  placeholder={t("مثال: 12345 - أ - 20", "Exemple : 12345 - A - 20")}
                   className="mt-3 w-full rounded-2xl border-2 border-border bg-card px-4 py-3 text-base font-bold outline-none focus:border-primary"
                 />
               </div>
@@ -987,28 +999,30 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
             {/* الحمولة القصوى كتجي مباشرة من نوع الشاحنة المختار (بلا أزرار طوناج). */}
 
             <div>
-              <p className="text-sm font-bold">الموقع ديالك دابا (GPS)</p>
+              <p className="text-sm font-bold">{t("الموقع ديالك دابا (GPS)", "Votre position actuelle (GPS)")}</p>
               <button
                 onClick={requestLocation}
                 className="mt-3 flex w-full items-center justify-between rounded-2xl border-2 border-border bg-card px-4 py-3 text-base font-bold"
               >
                 <span>
                   {geoStatus === "granted" && myLocation
-                    ? `تسجل الموقع ${myLocation.lat.toFixed(3)} , ${myLocation.lng.toFixed(3)}`
+                    ? (fr
+                        ? `Position enregistrée ${myLocation.lat.toFixed(3)} , ${myLocation.lng.toFixed(3)}`
+                        : `تسجل الموقع ${myLocation.lat.toFixed(3)} , ${myLocation.lng.toFixed(3)}`)
                     : geoStatus === "denied"
-                      ? "ما سمحتيش بالموقع — عاود المحاولة"
+                      ? t("ما سمحتيش بالموقع — عاود المحاولة", "Autorisation refusée — réessayez")
                       : geoStatus === "locating"
-                        ? "كنقلبو على الموقع…"
-                        : "فعّل الموقع الحالي"}
+                        ? t("كنقلبو على الموقع…", "Recherche de votre position…")
+                        : t("فعّل الموقع الحالي", "Activer la position actuelle")}
                 </span>
                 {geoStatus === "granted" && <Check className="size-5 text-primary" />}
               </button>
             </div>
             <div>
-              <p className="text-sm font-bold">واش نتا متوفر دابا؟</p>
+              <p className="text-sm font-bold">{t("واش نتا متوفر دابا؟", "Êtes-vous disponible maintenant ?")}</p>
               <div className="mt-3 grid grid-cols-2 gap-3">
-                <Chip active={available} onClick={() => setAvailable(true)} label="متوفر" />
-                <Chip active={!available} onClick={() => setAvailable(false)} label="غير متوفر" />
+                <Chip active={available} onClick={() => setAvailable(true)} label={t("متوفر", "Disponible")} />
+                <Chip active={!available} onClick={() => setAvailable(false)} label={t("غير متوفر", "Indisponible")} />
               </div>
             </div>
           </div>
@@ -1036,16 +1050,16 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
                 className="flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl bg-primary py-5 text-lg font-extrabold text-primary-foreground shadow-soft transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {otpBusy ? <Loader2 className="size-6 animate-spin" /> : <LogIn className="size-6" />}
-                تأكيد
+                {t("تأكيد", "Confirmer")}
               </button>
               <p className="text-center text-sm font-bold text-accent-foreground">
-                غادي توصلك رسالة SMS فيها كود التأكيد
+                {t("غادي توصلك رسالة SMS فيها كود التأكيد", "Vous allez recevoir un SMS avec le code de confirmation")}
               </p>
               <button
                 onClick={() => setStep("role")}
                 className="min-h-12 w-full rounded-2xl border-2 border-border bg-card py-3 text-base font-bold"
               >
-                رجوع
+                {t("رجوع", "Retour")}
               </button>
             </>
           )}
@@ -1059,13 +1073,13 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
                 className="flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl bg-primary py-5 text-lg font-extrabold text-primary-foreground shadow-soft transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {otpBusy ? <Loader2 className="size-6 animate-spin" /> : <Check className="size-6" />}
-                تأكيد الرمز
+                {t("تأكيد الرمز", "Confirmer le code")}
               </button>
               <button
                 onClick={changeNumber}
                 className="min-h-12 w-full rounded-2xl border-2 border-border bg-card py-3 text-base font-bold"
               >
-                بدل رقم الهاتف
+                {t("بدل رقم الهاتف", "Changer le numéro")}
               </button>
             </>
           )}
@@ -1077,23 +1091,23 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
                 className="flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl bg-primary py-5 text-lg font-extrabold text-primary-foreground shadow-soft transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Check className="size-6" />
-                إنشاء الحساب
+                {t("إنشاء الحساب", "Créer le compte")}
               </button>
               <button
                 onClick={changeNumber}
                 className="min-h-12 w-full rounded-2xl border-2 border-border bg-card py-3 text-base font-bold"
               >
-                بدل رقم الهاتف
+                {t("بدل رقم الهاتف", "Changer le numéro")}
               </button>
             </>
           )}
 
           <p className="text-center text-xs text-muted-foreground">
             {step === "phone"
-              ? "غتوصل برمز د 6 أرقام بال SMS باش نأكدو الرقم ديالك."
+              ? t("غتوصل برمز د 6 أرقام بال SMS باش نأكدو الرقم ديالك.", "Vous recevrez un code SMS à 6 chiffres pour confirmer votre numéro.")
               : step === "otp"
-                ? "كتب الرمز اللي وصلك بال SMS — كيتأكد بوحدو ملي تكمل 6 أرقام."
-                : "الرقم تأكد بال SMS — باقي غير المعلومات ديالك."}
+                ? t("كتب الرمز اللي وصلك بال SMS — كيتأكد بوحدو ملي تكمل 6 أرقام.", "Saisissez le code reçu par SMS — validation automatique à 6 chiffres.")
+                : t("الرقم تأكد بال SMS — باقي غير المعلومات ديالك.", "Numéro confirmé par SMS — il reste vos informations.")}
           </p>
         </StickyActions>
 
@@ -1149,6 +1163,7 @@ function FieldMic({
   busy = false,
   onClick,
   label,
+  stopLabel,
 }: {
   active: boolean;
   /** Silence detected — showing the calm pulse right before the value is filled. */
@@ -1157,12 +1172,13 @@ function FieldMic({
   busy?: boolean;
   onClick: () => void;
   label: string;
+  stopLabel: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      aria-label={active ? "توقيف التسجيل" : label}
+      aria-label={active ? stopLabel : label}
       className={`relative flex size-10 shrink-0 items-center justify-center rounded-full transition-colors ${
         active
           ? settling
@@ -1194,12 +1210,14 @@ function AccountCard({
   icon,
   title,
   subtitle,
+  cta,
   highlight = false,
   onClick,
 }: {
   icon: React.ReactNode;
   title: string;
   subtitle: string;
+  cta: string;
   highlight?: boolean;
   onClick: () => void;
 }) {
@@ -1221,7 +1239,7 @@ function AccountCard({
         onClick={onClick}
         className="mt-auto min-h-10 w-full rounded-xl bg-primary py-2 text-base font-extrabold text-primary-foreground shadow-soft active:scale-95"
       >
-        دخول
+        {cta}
       </button>
     </div>
   );

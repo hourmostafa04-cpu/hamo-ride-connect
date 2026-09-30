@@ -27,31 +27,31 @@ type TabId = "all" | "pending" | "accepted" | "declined";
 
 type SortId = "newest" | "oldest" | "price-high" | "price-low";
 
-const sortOptions: Array<{ id: SortId; label: string }> = [
-  { id: "newest", label: "الأحدث أولاً" },
-  { id: "oldest", label: "الأقدم أولاً" },
-  { id: "price-high", label: "الثمن الأعلى" },
-  { id: "price-low", label: "الثمن الأرخص" },
+const sortOptions = (fr: boolean): Array<{ id: SortId; label: string }> => [
+  { id: "newest", label: fr ? "Plus récentes" : "الأحدث أولاً" },
+  { id: "oldest", label: fr ? "Plus anciennes" : "الأقدم أولاً" },
+  { id: "price-high", label: fr ? "Prix décroissant" : "الثمن الأعلى" },
+  { id: "price-low", label: fr ? "Prix croissant" : "الثمن الأرخص" },
 ];
 
-const tabs: Array<{ id: TabId; label: string }> = [
-  { id: "all", label: "الكل" },
-  { id: "pending", label: "قيد المراجعة" },
-  { id: "accepted", label: "مقبولة" },
-  { id: "declined", label: "مرفوضة" },
+const tabs = (fr: boolean): Array<{ id: TabId; label: string }> => [
+  { id: "all", label: fr ? "Tout" : "الكل" },
+  { id: "pending", label: fr ? "En attente" : "قيد المراجعة" },
+  { id: "accepted", label: fr ? "Acceptées" : "مقبولة" },
+  { id: "declined", label: fr ? "Refusées" : "مرفوضة" },
 ];
 
-const statusMeta: Record<Bid["status"], { label: string; className: string }> = {
+const statusMeta = (fr: boolean): Record<Bid["status"], { label: string; className: string }> => ({
   pending: {
-    label: "قيد المراجعة",
+    label: fr ? "En attente" : "قيد المراجعة",
     className: "bg-accent text-accent-foreground",
   },
-  accepted: { label: "مقبول", className: "bg-primary text-primary-foreground" },
-  declined: { label: "مرفوض", className: "bg-destructive text-destructive-foreground" },
-};
+  accepted: { label: fr ? "Acceptée" : "مقبول", className: "bg-primary text-primary-foreground" },
+  declined: { label: fr ? "Refusée" : "مرفوض", className: "bg-destructive text-destructive-foreground" },
+});
 
-function formatDate(ts: number) {
-  return new Intl.DateTimeFormat("ar-MA", {
+function formatDate(ts: number, fr: boolean) {
+  return new Intl.DateTimeFormat(fr ? "fr-MA" : "ar-MA", {
     day: "2-digit",
     month: "2-digit",
     hour: "2-digit",
@@ -115,7 +115,7 @@ export function MyBids() {
         </div>
 
         <div className="scroll-row -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-          {tabs.map((t) => (
+          {tabs(fr).map((t) => (
             <button
               key={t.id}
               type="button"
@@ -142,7 +142,7 @@ export function MyBids() {
             onClick={() => {
               downloadCsv(buildRows(visible, loads));
               playSfx("success");
-              toast.success("تنزّل الملف CSV");
+              toast.success(fr ? "Fichier CSV téléchargé" : "تنزّل الملف CSV");
             }}
             className="flex min-h-12 items-center justify-center gap-2 rounded-2xl border-2 border-border bg-card text-sm font-extrabold disabled:opacity-50"
           >
@@ -155,7 +155,7 @@ export function MyBids() {
             onClick={() => {
               const ok = printPdf(buildRows(visible, loads), profile.name);
               playSfx("tap");
-              if (!ok) toast.error("خاصك تسمح للنافذة تتفتح باش تسجل PDF");
+              if (!ok) toast.error(fr ? "Autorisez l'ouverture de fenêtre pour enregistrer le PDF" : "خاصك تسمح للنافذة تتفتح باش تسجل PDF");
             }}
             className="flex min-h-12 items-center justify-center gap-2 rounded-2xl border-2 border-primary bg-primary-soft text-sm font-extrabold text-accent-foreground disabled:opacity-50"
           >
@@ -169,13 +169,13 @@ export function MyBids() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="قلب بالحمولة، نقطة التحميل ولا الوجهة…"
+            placeholder={fr ? "Rechercher par marchandise, départ ou destination…" : "قلب بالحمولة، نقطة التحميل ولا الوجهة…"}
             className="min-h-12 w-full rounded-2xl border-2 border-border bg-card px-12 py-3 text-sm font-bold outline-none focus:border-primary"
           />
           {query && (
             <button
               type="button"
-              aria-label="مسح البحث"
+              aria-label={fr ? "Effacer la recherche" : "مسح البحث"}
               onClick={() => setQuery("")}
               className="absolute top-1/2 left-3 -translate-y-1/2 rounded-full bg-secondary p-1.5 text-muted-foreground"
             >
@@ -185,7 +185,7 @@ export function MyBids() {
         </div>
 
         <div className="scroll-row -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-          {sortOptions.map((s) => (
+          {sortOptions(fr).map((s) => (
             <button
               key={s.id}
               type="button"
@@ -210,20 +210,24 @@ export function MyBids() {
             <Banknote className="mx-auto size-10 text-muted-foreground" />
             <p className="mt-3 text-sm font-bold text-muted-foreground">
               {q
-                ? "ما لقينا حتى عرض بهاد الكلمة. جرب كلمة أخرى."
-                : "ما عندك حتى عرض فهاد الخانة. سير للطلبات القريبة وبعت عرض ديالك."}
+                ? fr
+                  ? "Aucune offre trouvée avec ce mot-clé."
+                  : "ما لقينا حتى عرض بهاد الكلمة. جرب كلمة أخرى."
+                : fr
+                  ? "Aucune offre dans cette section. Allez aux demandes proches et envoyez votre offre."
+                  : "ما عندك حتى عرض فهاد الخانة. سير للطلبات القريبة وبعت عرض ديالك."}
             </p>
             <Link
               to="/driver"
               className="mt-5 flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-base font-bold text-primary-foreground active:scale-95"
             >
               <ArrowRight className="size-5" />
-              الطلبات القريبة
+              {fr ? "Demandes proches" : "الطلبات القريبة"}
             </Link>
           </div>
         ) : (
           visible.map((b) => (
-            <BidRow key={b.id} bid={b} load={loads.find((l) => l.id === b.loadId) ?? null} />
+            <BidRow key={b.id} bid={b} load={loads.find((l) => l.id === b.loadId) ?? null} fr={fr} />
           ))
         )}
       </div>
@@ -254,12 +258,12 @@ function Stat({
   );
 }
 
-function BidRow({ bid, load }: { bid: Bid; load: Load | null }) {
+function BidRow({ bid, load, fr }: { bid: Bid; load: Load | null; fr: boolean }) {
   const { withdrawBid, updateBidPrice } = useHamoula();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(bid.price);
   const [confirmWithdraw, setConfirmWithdraw] = useState(false);
-  const meta = statusMeta[bid.status];
+  const meta = statusMeta(fr)[bid.status];
   const Icon =
     bid.status === "accepted" ? CheckCircle2 : bid.status === "declined" ? XCircle : Clock;
 
@@ -269,11 +273,13 @@ function BidRow({ bid, load }: { bid: Bid; load: Load | null }) {
       .then(() => {
         setEditing(false);
         playSfx("success");
-        toast.success("تصيفط العرض المضاد", { description: `الثمن الجديد: ${price} درهم` });
+        toast.success(fr ? "Contre-offre envoyée" : "تصيفط العرض المضاد", {
+          description: fr ? `Nouveau prix: ${price} MAD` : `الثمن الجديد: ${price} درهم`,
+        });
       })
       .catch((e) => {
-        toast.error("تعذر تحديث العرض", {
-          description: e instanceof Error ? e.message : "عاود المحاولة",
+        toast.error(fr ? "Impossible de mettre à jour l'offre" : "تعذر تحديث العرض", {
+          description: e instanceof Error ? e.message : fr ? "Réessayez" : "عاود المحاولة",
         });
       });
   };
@@ -282,8 +288,8 @@ function BidRow({ bid, load }: { bid: Bid; load: Load | null }) {
     <article className="space-y-3 rounded-3xl border-2 border-border bg-card p-4 shadow-soft">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-base font-extrabold">{load?.shipper ?? "طلب نقل"}</h3>
-          <p className="text-xs font-semibold text-muted-foreground">{formatDate(bid.createdAt)}</p>
+          <h3 className="text-base font-extrabold">{load?.shipper ?? (fr ? "Demande de transport" : "طلب نقل")}</h3>
+          <p className="text-xs font-semibold text-muted-foreground">{formatDate(bid.createdAt, fr)}</p>
         </div>
         <span
           className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-extrabold ${meta.className}`}
@@ -296,23 +302,29 @@ function BidRow({ bid, load }: { bid: Bid; load: Load | null }) {
       {load && (
         <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-secondary px-4 py-3 text-sm font-extrabold">
           <MapPin className="size-4 text-primary" />
-          <span>{load.pickup || "نقطة التحميل"}</span>
+          <span>{load.pickup || (fr ? "Point de chargement" : "نقطة التحميل")}</span>
           <span className="text-primary">➔</span>
           <Navigation className="size-4 text-primary" />
-          <span>{load.destination || "الوجهة"}</span>
+          <span>{load.destination || (fr ? "Destination" : "الوجهة")}</span>
         </div>
       )}
 
       <div className="flex items-end justify-between">
         <span className="text-xs font-bold text-muted-foreground">
-          {bid.kind === "accepted-price" ? "قبلتي الثمن المقترح" : "عرض ثمن مضاد"}
+          {bid.kind === "accepted-price"
+            ? fr
+              ? "Vous avez accepté le prix proposé"
+              : "قبلتي الثمن المقترح"
+            : fr
+              ? "Contre-offre"
+              : "عرض ثمن مضاد"}
         </span>
-        <span className="text-2xl font-extrabold text-primary">{bid.price} درهم</span>
+        <span className="text-2xl font-extrabold text-primary">{bid.price} {fr ? "MAD" : "درهم"}</span>
       </div>
 
       {bid.voiceNote && (
         <VoiceNotePlayer
-          title="الرسالة الصوتية ديالك"
+          title={fr ? "Votre message vocal" : "الرسالة الصوتية ديالك"}
           duration={bid.voiceNote.duration}
           transcript={bid.voiceNote.transcript}
           {...(bid.voiceNote.audioUrl ? { audioUrl: bid.voiceNote.audioUrl } : {})}
@@ -321,7 +333,7 @@ function BidRow({ bid, load }: { bid: Bid; load: Load | null }) {
 
       {bid.shipperReply && (
         <VoiceNotePlayer
-          title="رد مول السلعة"
+          title={fr ? "Réponse de l'expéditeur" : "رد مول السلعة"}
           duration={bid.shipperReply.duration}
           transcript={bid.shipperReply.transcript}
           {...(bid.shipperReply.audioUrl ? { audioUrl: bid.shipperReply.audioUrl } : {})}
@@ -341,7 +353,7 @@ function BidRow({ bid, load }: { bid: Bid; load: Load | null }) {
             className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-primary text-sm font-extrabold text-primary-foreground active:scale-95"
           >
             <Pencil className="size-4" />
-            عرض مضاد
+            {fr ? "Contre-offre" : "عرض مضاد"}
           </button>
           <button
             type="button"
@@ -352,7 +364,7 @@ function BidRow({ bid, load }: { bid: Bid; load: Load | null }) {
             className="flex min-h-12 items-center justify-center gap-2 rounded-2xl border-2 border-destructive text-sm font-extrabold text-destructive active:scale-95"
           >
             <Trash2 className="size-4" />
-            تراجع عن العرض
+            {fr ? "Retirer l'offre" : "تراجع عن العرض"}
           </button>
         </div>
       )}
@@ -367,7 +379,7 @@ function BidRow({ bid, load }: { bid: Bid; load: Load | null }) {
               onChange={(e) => setDraft(Number(e.target.value))}
               className="min-h-12 w-full rounded-xl border-2 border-border bg-card px-4 text-lg font-extrabold outline-none focus:border-primary"
             />
-            <span className="text-sm font-extrabold text-muted-foreground">درهم</span>
+            <span className="text-sm font-extrabold text-muted-foreground">{fr ? "MAD" : "درهم"}</span>
           </div>
           <div className="flex gap-2">
             {[100, 200, 500].map((step) => (
@@ -390,14 +402,14 @@ function BidRow({ bid, load }: { bid: Bid; load: Load | null }) {
               onClick={sendCounter}
               className="min-h-12 rounded-2xl bg-primary text-sm font-extrabold text-primary-foreground active:scale-95"
             >
-              صيفط العرض
+              {fr ? "Envoyer l'offre" : "صيفط العرض"}
             </button>
             <button
               type="button"
               onClick={() => setEditing(false)}
               className="min-h-12 rounded-2xl border-2 border-border bg-card text-sm font-extrabold text-muted-foreground"
             >
-              إلغاء
+              {fr ? "Annuler" : "إلغاء"}
             </button>
           </div>
         </div>
@@ -405,7 +417,7 @@ function BidRow({ bid, load }: { bid: Bid; load: Load | null }) {
 
       {bid.status === "pending" && confirmWithdraw && (
         <div className="space-y-3 rounded-2xl border-2 border-destructive/40 bg-secondary p-3">
-          <p className="text-sm font-extrabold">واش بغيتي تسحب هاد العرض؟</p>
+          <p className="text-sm font-extrabold">{fr ? "Voulez-vous retirer cette offre ?" : "واش بغيتي تسحب هاد العرض؟"}</p>
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
@@ -413,24 +425,24 @@ function BidRow({ bid, load }: { bid: Bid; load: Load | null }) {
                 void withdrawBid(bid.id)
                   .then(() => {
                     playSfx("tap");
-                    toast("تسحب العرض ديالك");
+                    toast(fr ? "Offre retirée" : "تسحب العرض ديالك");
                   })
                   .catch((e) => {
-                    toast.error("تعذر سحب العرض", {
-                      description: e instanceof Error ? e.message : "عاود المحاولة",
+                    toast.error(fr ? "Impossible de retirer l'offre" : "تعذر سحب العرض", {
+                      description: e instanceof Error ? e.message : fr ? "Réessayez" : "عاود المحاولة",
                     });
                   });
               }}
               className="min-h-12 rounded-2xl bg-destructive text-sm font-extrabold text-destructive-foreground active:scale-95"
             >
-              إيه، سحبو
+              {fr ? "Oui, retirer" : "إيه، سحبو"}
             </button>
             <button
               type="button"
               onClick={() => setConfirmWithdraw(false)}
               className="min-h-12 rounded-2xl border-2 border-border bg-card text-sm font-extrabold text-muted-foreground"
             >
-              لا
+              {fr ? "Non" : "لا"}
             </button>
           </div>
         </div>
@@ -441,7 +453,7 @@ function BidRow({ bid, load }: { bid: Bid; load: Load | null }) {
           to="/tracking"
           className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-primary text-base font-extrabold text-primary-foreground active:scale-95"
         >
-          تتبع الرحلة
+          {fr ? "Suivre le trajet" : "تتبع الرحلة"}
         </Link>
       )}
     </article>

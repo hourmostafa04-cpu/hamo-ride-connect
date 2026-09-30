@@ -32,14 +32,20 @@ const CITY_KEY = "hamoula-driver-city";
 
 type TruckSize = "small" | "medium" | "large";
 
-const truckSizeChips: Array<{ id: TruckSize | "all"; label: string }> = [
-  { id: "all", label: "كل الشاحنات" },
-  { id: "small", label: "صغيرة (1-2 طن)" },
-  { id: "medium", label: "متوسطة (3-7 طن)" },
-  { id: "large", label: "كبيرة (+8 طن)" },
+const truckSizeChips: Array<{ id: TruckSize | "all"; ar: string; fr: string }> = [
+  { id: "all", ar: "كل الشاحنات", fr: "Tous les camions" },
+  { id: "small", ar: "صغيرة (1-2 طن)", fr: "Petits (1-2 t)" },
+  { id: "medium", ar: "متوسطة (3-7 طن)", fr: "Moyens (3-7 t)" },
+  { id: "large", ar: "كبيرة (+8 طن)", fr: "Grands (+8 t)" },
 ];
 
-const cargoChips = ["أثاث", "مواد بناء", "خضر", "قطع غيار", "بضاعة"];
+const cargoChips: Array<{ ar: string; fr: string }> = [
+  { ar: "أثاث", fr: "Meubles" },
+  { ar: "مواد بناء", fr: "Matériaux" },
+  { ar: "خضر", fr: "Légumes" },
+  { ar: "قطع غيار", fr: "Pièces détachées" },
+  { ar: "بضاعة", fr: "Marchandise" },
+];
 
 /** Maps any stored truck id (small/medium/large/heavy/semi-…) to a size bucket. */
 function truckSize(id: string): TruckSize {
@@ -51,6 +57,7 @@ function truckSize(id: string): TruckSize {
 export function DriverDashboard() {
   const lang = useAppLanguage();
   const fr = lang === "fr";
+  const t = (ar: string, frText: string) => (fr ? frText : ar);
   const {
     loads,
     myBids,
@@ -151,7 +158,7 @@ export function DriverDashboard() {
               localStorage.setItem(AVAIL_KEY, next ? "1" : "0");
               updateAccount({ available: next });
               playSfx("tap");
-              toast(next ? "راك متاح للعمل 🟢" : "راك غير متاح 🔴");
+              toast(next ? t("راك متاح للعمل 🟢", "Vous êtes disponible 🟢") : t("راك غير متاح 🔴", "Vous êtes indisponible 🔴"));
             }}
             className={`flex w-full items-center justify-between rounded-2xl border-2 px-4 py-3 text-base font-extrabold ${
               available
@@ -159,7 +166,7 @@ export function DriverDashboard() {
                 : "border-border bg-secondary text-muted-foreground"
             }`}
           >
-            <span>{available ? "متاح للعمل 🟢" : "غير متاح 🔴"}</span>
+            <span>{available ? t("متاح للعمل 🟢", "Disponible 🟢") : t("غير متاح 🔴", "Indisponible 🔴")}</span>
             <span
               className={`flex h-7 w-12 items-center rounded-full p-1 transition-colors ${
                 available ? "justify-end bg-primary" : "justify-start bg-muted-foreground/40"
@@ -170,10 +177,10 @@ export function DriverDashboard() {
           </button>
 
           <div>
-            <div className="mb-2 text-sm font-bold">المدينة ديالك دابا</div>
+            <div className="mb-2 text-sm font-bold">{t("المدينة ديالك دابا", "Votre ville actuelle")}</div>
             <div className="scroll-row -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
               <CityChip
-                label="موقعي (GPS)"
+                label={t("موقعي (GPS)", "Ma position (GPS)")}
                 active={city === ""}
                 onClick={() => {
                   setCity("");
@@ -195,19 +202,28 @@ export function DriverDashboard() {
           </div>
         </section>
 
-        <VoiceBanner message="سمع الطلب الصوتي، وجاوب بضغطة وحدة: قبول الثمن ولا عرض مضاد" />
+        <VoiceBanner
+          message={t(
+            "سمع الطلب الصوتي، وجاوب بضغطة وحدة: قبول الثمن ولا عرض مضاد",
+            "Écoutez la demande vocale et répondez en un clic : accepter le prix ou proposer une contre-offre",
+          )}
+        />
 
         <div className="flex items-center justify-between rounded-2xl bg-primary-soft px-4 py-3">
           <span className="text-sm font-bold text-accent-foreground">
-            {boardLoading ? "كنجيبو الطلبات…" : `${visible.length} طلب قريب منك`}
+            {boardLoading
+              ? t("كنجيبو الطلبات…", "Chargement des demandes…")
+              : fr
+                ? `${visible.length} demande(s) proche(s)`
+                : `${visible.length} طلب قريب منك`}
           </span>
-          <LiveBadge label="مباشر" />
+          <LiveBadge label={t("مباشر", "En direct")} />
         </div>
 
         {boardLoading && (
           <div className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border px-4 py-3 text-sm font-bold text-muted-foreground">
             <RefreshCw className="size-4 animate-spin" />
-            كنحدثو لائحة الطلبات…
+            {t("كنحدثو لائحة الطلبات…", "Mise à jour de la liste des demandes…")}
           </div>
         )}
 
@@ -219,20 +235,22 @@ export function DriverDashboard() {
               onClick={() => void refreshBoard().catch(() => {})}
               className="min-h-10 w-full rounded-xl border-2 border-destructive px-4 text-sm font-extrabold"
             >
-              عاود المحاولة
+              {t("عاود المحاولة", "Réessayer")}
             </button>
           </div>
         )}
 
         {incompleteCount > 0 && (
           <div className="rounded-2xl border-2 border-dashed border-border px-4 py-3 text-center text-xs font-bold text-muted-foreground">
-            {incompleteCount} طلب فيه بيانات ناقصة (بلا مدن ولا بثمن 0) — مخبّي حتى يتصحح
+            {fr
+              ? `${incompleteCount} demande(s) avec données incomplètes (ville manquante ou prix à 0) — masquée(s) jusqu'à correction`
+              : `${incompleteCount} طلب فيه بيانات ناقصة (بلا مدن ولا بثمن 0) — مخبّي حتى يتصحح`}
           </div>
         )}
 
         {!available && (
           <div className="rounded-2xl border-2 border-dashed border-border px-4 py-3 text-center text-xs font-bold text-muted-foreground">
-            راك غير متاح — الطلبات كتبان ولكن ما غاديش توصلك إشعارات جديدة
+            {t("راك غير متاح — الطلبات كتبان ولكن ما غاديش توصلك إشعارات جديدة", "Vous êtes indisponible — les demandes restent visibles mais vous ne recevrez pas de nouvelles notifications")}
           </div>
         )}
 
@@ -268,7 +286,7 @@ export function DriverDashboard() {
                   : "border-border bg-card text-muted-foreground"
               }`}
             >
-              {t.label}
+              {fr ? t.fr : t.ar}
             </button>
           ))}
         </div>
@@ -279,31 +297,35 @@ export function DriverDashboard() {
             <input
               value={cargoQuery}
               onChange={(e) => setCargoQuery(e.target.value)}
-              placeholder="نوع الحمولة (أثاث، مواد بناء…)"
+              placeholder={t("نوع الحمولة (أثاث، مواد بناء…)", "Type de cargaison (meubles, matériaux…)")}
               className="w-full bg-transparent text-base font-bold outline-none placeholder:font-semibold placeholder:text-muted-foreground"
             />
             {cargoQuery && (
-              <button type="button" onClick={() => setCargoQuery("")} aria-label="مسح البحث">
+              <button type="button" onClick={() => setCargoQuery("")} aria-label={t("مسح البحث", "Effacer la recherche")}>
                 <X className="size-5 text-muted-foreground" />
               </button>
             )}
           </div>
           <div className="scroll-row -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-            {cargoChips.map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => setCargoQuery(cargoQuery === c ? "" : c)}
-                aria-pressed={cargoQuery === c}
-                className={`shrink-0 rounded-full border-2 px-4 py-1.5 text-xs font-bold ${
-                  cargoQuery === c
-                    ? "border-primary bg-primary-soft text-accent-foreground"
-                    : "border-border bg-card text-muted-foreground"
-                }`}
-              >
-                {c}
-              </button>
-            ))}
+            {cargoChips.map((c) => {
+              const label = fr ? c.fr : c.ar;
+              const active = cargoQuery === label;
+              return (
+                <button
+                  key={c.ar}
+                  type="button"
+                  onClick={() => setCargoQuery(active ? "" : label)}
+                  aria-pressed={active}
+                  className={`shrink-0 rounded-full border-2 px-4 py-1.5 text-xs font-bold ${
+                    active
+                      ? "border-primary bg-primary-soft text-accent-foreground"
+                      : "border-border bg-card text-muted-foreground"
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -311,7 +333,7 @@ export function DriverDashboard() {
           to="/my-bids"
           className="flex min-h-12 items-center justify-between rounded-2xl border-2 border-primary bg-primary-soft px-4 text-base font-extrabold text-accent-foreground active:scale-95"
         >
-          <span>سجل العروض ديالي</span>
+          <span>{t("سجل العروض ديالي", "Historique de mes offres")}</span>
           <span className="rounded-full bg-primary px-3 py-1 text-sm text-primary-foreground">
             {myOpenBids}
           </span>
@@ -321,8 +343,8 @@ export function DriverDashboard() {
           to="/my-trips"
           className="flex min-h-12 items-center justify-between rounded-2xl border-2 border-border bg-card px-4 text-base font-extrabold text-foreground active:scale-95"
         >
-          <span>رحلاتي</span>
-          <span className="text-sm font-bold text-primary">شوف السجل</span>
+          <span>{t("رحلاتي", "Mes trajets")}</span>
+          <span className="text-sm font-bold text-primary">{t("شوف السجل", "Voir l'historique")}</span>
         </Link>
 
 
@@ -330,8 +352,8 @@ export function DriverDashboard() {
         {!base && (
           <div className="rounded-2xl border-2 border-dashed border-border px-4 py-3 text-center text-xs font-bold text-muted-foreground">
             {geoStatus === "denied"
-              ? "الموقع مغلق — فعّل GPS ولا اختار المدينة ديالك باش نحسبو المسافة"
-              : "كنحددو موقعك باش نرتبو الطلبات من الأقرب ليك"}
+              ? t("الموقع مغلق — فعّل GPS ولا اختار المدينة ديالك باش نحسبو المسافة", "Position désactivée — activez le GPS ou choisissez votre ville pour calculer la distance")
+              : t("كنحددو موقعك باش نرتبو الطلبات من الأقرب ليك", "Nous localisons votre position pour trier les demandes par proximité")}
           </div>
         )}
 
@@ -339,7 +361,7 @@ export function DriverDashboard() {
           <div className="rounded-2xl border-2 border-dashed border-border p-8 text-center">
             <Package className="mx-auto size-10 text-muted-foreground" />
             <p className="mt-3 text-sm font-bold text-muted-foreground">
-              لا توجد طلبات حالياً. حيد للحساب ديال مول السلعة وسير طلب باش تشوف كيفاش كيوصل.
+              {t("لا توجد طلبات حالياً. حيد للحساب ديال مول السلعة وسير طلب باش تشوف كيفاش كيوصل.", "Aucune demande pour le moment. Passez au compte expéditeur et créez une demande pour voir le flux complet.")}
             </p>
             <div className="mt-5 flex flex-col gap-3">
               <button
@@ -350,10 +372,10 @@ export function DriverDashboard() {
                   playSfx("tap");
                   try {
                     await refreshBoard();
-                    toast("تحديث الطلبات", { description: "تم تحديث قائمة الطلبات" });
+                    toast(t("تحديث الطلبات", "Mise à jour des demandes"), { description: t("تم تحديث قائمة الطلبات", "La liste des demandes a été mise à jour") });
                   } catch (e) {
-                    toast.error("ما قدرناش نحدثو الطلبات", {
-                      description: e instanceof Error ? e.message : "شوف الاتصال بالإنترنت",
+                    toast.error(t("ما قدرناش نحدثو الطلبات", "Impossible de mettre à jour les demandes"), {
+                      description: e instanceof Error ? e.message : t("شوف الاتصال بالإنترنت", "Vérifiez votre connexion Internet"),
                     });
                   } finally {
                     setRefreshing(false);
@@ -362,7 +384,7 @@ export function DriverDashboard() {
                 className="flex min-h-11 items-center justify-center gap-2 rounded-xl border-2 border-border bg-card px-5 py-3 text-base font-bold text-foreground transition-colors hover:bg-secondary active:scale-95 disabled:opacity-60"
               >
                 <RefreshCw className={`size-5 ${refreshing ? "animate-spin" : ""}`} />
-                تحديث الطلبات
+                {t("تحديث الطلبات", "Mettre à jour les demandes")}
               </button>
             </div>
           </div>
@@ -377,8 +399,8 @@ export function DriverDashboard() {
             myBid={myBidFor(l.id)}
             onBid={(price, kind, voiceNote) => {
               void addBid({ loadId: l.id, price, kind, voiceNote }).catch((e) => {
-                toast.error("تعذر تسجيل العرض", {
-                  description: e instanceof Error ? e.message : "عاود المحاولة",
+                toast.error(t("تعذر تسجيل العرض", "Impossible d'enregistrer l'offre"), {
+                  description: e instanceof Error ? e.message : t("عاود المحاولة", "Réessayez"),
                 });
               });
               updateRequest({
@@ -441,6 +463,8 @@ function LoadCard({
   ) => void;
 }) {
   const navigate = useNavigate();
+  const fr = useAppLanguage() === "fr";
+  const t = (ar: string, frText: string) => (fr ? frText : ar);
   const [counter, setCounter] = useState(String(load.price + 100));
   const [sheet, setSheet] = useState(false);
   const [recording, setRecording] = useState(false);
@@ -459,7 +483,7 @@ function LoadCard({
         </div>
         <div className="text-left">
           <div className="text-2xl font-extrabold text-primary">{load.price}</div>
-          <div className="text-[11px] font-bold text-muted-foreground">درهم مقترح</div>
+          <div className="text-[11px] font-bold text-muted-foreground">{t("درهم مقترح", "MAD proposé")}</div>
         </div>
       </div>
 
@@ -472,17 +496,17 @@ function LoadCard({
         )}
         <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-xs font-extrabold text-muted-foreground">
           <RouteIcon className="size-3.5" />
-          مسافة الرحلة {kmText(tripKm)} كم
+          {fr ? `Distance du trajet ${kmText(tripKm)} km` : `مسافة الرحلة ${kmText(tripKm)} كم`}
         </span>
       </div>
 
       <div className="rounded-2xl bg-secondary px-4 py-3">
         <div className="flex items-center gap-2 text-sm font-extrabold">
           <MapPin className="size-4 text-primary" />
-          <span>{load.pickup || "نقطة التحميل"}</span>
+          <span>{load.pickup || t("نقطة التحميل", "Point de chargement")}</span>
           <span className="text-primary">➔</span>
           <Navigation className="size-4 text-primary" />
-          <span>{load.destination || "الوجهة"}</span>
+          <span>{load.destination || t("الوجهة", "Destination")}</span>
         </div>
         <div className="mt-2 flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
           <Weight className="size-3.5" />
@@ -494,7 +518,7 @@ function LoadCard({
 
       {load.voiceNote && (
         <VoiceNotePlayer
-          title="الطلب الصوتي ديال مول السلعة"
+          title={t("الطلب الصوتي ديال مول السلعة", "Demande vocale de l'expéditeur")}
           duration={load.voiceNote.duration}
           transcript={load.voiceNote.transcript}
           audioUrl={load.voiceNote.audioUrl}
@@ -505,19 +529,23 @@ function LoadCard({
       <ContactActions
         seed={load.id}
         {...(load.shipperPhone ? { phone: load.shipperPhone } : {})}
-        name={`تواصل مع ${load.shipper}`}
+        name={fr ? `Contacter ${load.shipper}` : `تواصل مع ${load.shipper}`}
         compact
       />
 
       {!fits && (
         <div className="rounded-2xl border-2 border-destructive bg-destructive/10 px-4 py-3 text-sm font-extrabold text-destructive">
-          غير مناسب للحمولة — وزن البضاعة {load.capacity} أكبر من حمولة الشاحنة ديالك
+          {fr
+            ? `Incompatible avec la charge — le poids ${load.capacity} dépasse la capacité de votre camion`
+            : `غير مناسب للحمولة — وزن البضاعة ${load.capacity} أكبر من حمولة الشاحنة ديالك`}
         </div>
       )}
 
       {!fits ? null : myBid ? (
         <div className="rounded-2xl bg-primary-soft px-4 py-3 text-sm font-bold text-accent-foreground">
-          تبعت العرض ديالك: {myBid.price} درهم · كنتسناو جواب مول السلعة
+          {fr
+            ? `Votre offre a été envoyée : ${myBid.price} MAD · en attente de la réponse de l'expéditeur`
+            : `تبعت العرض ديالك: ${myBid.price} درهم · كنتسناو جواب مول السلعة`}
         </div>
       ) : (
         <>
@@ -529,15 +557,21 @@ function LoadCard({
               setSending(true);
               onBid(load.price, "accepted-price", null);
               playSfx("success");
-              toast.success("قبلتي الثمن المقترح", {
-                description: `${load.price} درهم · كنوجهوك لشاشة تتبع الرحلة`,
+              toast.success(t("قبلتي الثمن المقترح", "Prix proposé accepté"), {
+                description: fr
+                  ? `${load.price} MAD · redirection vers l'écran de suivi`
+                  : `${load.price} درهم · كنوجهوك لشاشة تتبع الرحلة`,
               });
               setTimeout(() => navigate({ to: "/tracking" }), 700);
             }}
             className="flex w-full items-center justify-center gap-3 rounded-2xl bg-primary py-4 text-lg font-extrabold text-primary-foreground active:opacity-90 disabled:opacity-60"
           >
             <Check className="size-7" />
-            {sending ? "كنسيفطو العرض…" : `قبول بالسعر المقترح ${load.price} درهم`}
+            {sending
+              ? t("كنسيفطو العرض…", "Envoi de l'offre…")
+              : fr
+                ? `Accepter le prix proposé ${load.price} MAD`
+                : `قبول بالسعر المقترح ${load.price} درهم`}
           </button>
 
           <button
@@ -548,7 +582,7 @@ function LoadCard({
             className="flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-primary py-4 text-lg font-extrabold text-primary"
           >
             <Banknote className="size-6" />
-            تقديم عرض ثمن مضاد
+            {t("تقديم عرض ثمن مضاد", "Proposer une contre-offre")}
           </button>
 
           <button
@@ -556,18 +590,18 @@ function LoadCard({
             className="flex w-full items-center justify-center gap-3 rounded-2xl bg-accent py-4 text-lg font-extrabold text-accent-foreground active:opacity-90"
           >
             <Mic className="size-7" />
-            جاوب برسالة صوتية
+            {t("جاوب برسالة صوتية", "Répondre par message vocal")}
           </button>
 
           {sheet && (
             <div className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/40 p-0">
               <div className="w-full max-w-[430px] space-y-4 rounded-t-3xl bg-card p-5">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-lg font-extrabold">عرض ثمن مضاد</h4>
+                  <h4 className="text-lg font-extrabold">{t("عرض ثمن مضاد", "Contre-offre de prix")}</h4>
                   <button
                     onClick={() => setSheet(false)}
                     className="rounded-full border-2 border-border p-2"
-                    aria-label="إغلاق"
+                    aria-label={t("إغلاق", "Fermer")}
                   >
                     <X className="size-4" />
                   </button>
@@ -582,7 +616,7 @@ function LoadCard({
                     onChange={(e) => setCounter(e.target.value.replace(/\D/g, ""))}
                     className="w-full bg-transparent text-3xl font-extrabold outline-none"
                   />
-                  <span className="text-sm font-bold text-muted-foreground">درهم</span>
+                  <span className="text-sm font-bold text-muted-foreground">{fr ? "MAD" : "درهم"}</span>
                 </div>
 
                 <div className="grid grid-cols-3 gap-3">
@@ -594,7 +628,7 @@ function LoadCard({
                       }
                       className="min-h-14 rounded-2xl border-2 border-primary bg-primary-soft text-lg font-extrabold text-accent-foreground"
                     >
-                      +{step} درهم
+                      {fr ? `+${step} MAD` : `+${step} درهم`}
                     </button>
                   ))}
                 </div>
@@ -609,11 +643,11 @@ function LoadCard({
                     onBid(price, "counter", null);
                     setSheet(false);
                     playSfx("send");
-                    toast.success("تبعت العرض المضاد", { description: `${price} درهم` });
+                    toast.success(t("تبعت العرض المضاد", "Contre-offre envoyée"), { description: fr ? `${price} MAD` : `${price} درهم` });
                   }}
                   className="w-full rounded-2xl bg-primary py-4 text-lg font-extrabold text-primary-foreground disabled:opacity-60"
                 >
-                  {sending ? "كنسيفطو…" : "بعت العرض المضاد"}
+                  {sending ? t("كنسيفطو…", "Envoi…") : t("بعت العرض المضاد", "Envoyer la contre-offre")}
                 </button>
               </div>
             </div>
@@ -622,15 +656,15 @@ function LoadCard({
           <VoiceRecorderSheet
             open={recording}
             onClose={() => setRecording(false)}
-            title="رسالة صوتية لمول السلعة"
-            hint="قول الثمن ديالك ووقت الوصول"
+            title={t("رسالة صوتية لمول السلعة", "Message vocal à l'expéditeur")}
+            hint={t("قول الثمن ديالك ووقت الوصول", "Indiquez votre prix et votre heure d'arrivée")}
             transcript={driverVoiceReplies[1]!}
             onSend={(note) => {
               if (sending) return;
               setSending(true);
               setRecording(false);
               onBid(Number(counter) || load.price, "counter", note);
-              toast.success("تبعتات الرسالة الصوتية مع العرض");
+              toast.success(t("تبعتات الرسالة الصوتية مع العرض", "Message vocal envoyé avec l'offre"));
             }}
           />
         </>

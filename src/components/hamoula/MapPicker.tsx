@@ -3,6 +3,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Crosshair, MapPin, Navigation } from "lucide-react";
 import { formatCoords, distanceKm, type LatLng } from "@/lib/hamoula-geo";
+import { useAppLanguage } from "@/lib/app-language";
 
 function pinIcon(color: string, label: string) {
   return L.divIcon({
@@ -27,6 +28,7 @@ export default function MapPicker({
   destination: LatLng;
   onChange: (mode: Mode, point: LatLng) => void;
 }) {
+  const fr = useAppLanguage() === "fr";
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
   const pickupMarker = useRef<L.Marker | null>(null);
@@ -48,7 +50,7 @@ export default function MapPicker({
     L.control.zoom({ position: "topleft" }).addTo(m);
 
     pickupMarker.current = L.marker([pickup.lat, pickup.lng], {
-      icon: pinIcon("#f97316", "التحميل"),
+      icon: pinIcon("#f97316", fr ? "Chargement" : "التحميل"),
       draggable: true,
     })
       .addTo(m)
@@ -58,7 +60,7 @@ export default function MapPicker({
       });
 
     destMarker.current = L.marker([destination.lat, destination.lng], {
-      icon: pinIcon("#0f172a", "الوجهة"),
+      icon: pinIcon("#0f172a", fr ? "Destination" : "الوجهة"),
       draggable: true,
     })
       .addTo(m)
@@ -89,7 +91,7 @@ export default function MapPicker({
       map.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fr]);
 
   useEffect(() => {
     pickupMarker.current?.setLatLng([pickup.lat, pickup.lng]);
@@ -135,7 +137,7 @@ export default function MapPicker({
           }`}
         >
           <MapPin className="size-4" />
-          حدد التحميل
+          {fr ? "Point de départ" : "حدد التحميل"}
         </button>
         <button
           type="button"
@@ -147,12 +149,12 @@ export default function MapPicker({
           }`}
         >
           <Navigation className="size-4" />
-          حدد الوجهة
+          {fr ? "Point d'arrivée" : "حدد الوجهة"}
         </button>
         <button
           type="button"
           onClick={locate}
-          aria-label="موقعي الحالي"
+          aria-label={fr ? "Ma position actuelle" : "موقعي الحالي"}
           className="flex size-10 items-center justify-center rounded-xl border-2 border-primary text-primary"
         >
           <Crosshair className="size-5" />
@@ -160,9 +162,9 @@ export default function MapPicker({
       </div>
       <div ref={el} dir="ltr" className="h-56 w-full" />
       <div className="flex items-center justify-between px-3 py-2 text-[11px] font-semibold text-muted-foreground">
-        <span>التحميل: {formatCoords(pickup)}</span>
-        <span>{distanceKm(pickup, destination).toFixed(0)} كلم</span>
-        <span>الوجهة: {formatCoords(destination)}</span>
+        <span>{fr ? "Départ" : "التحميل"}: {formatCoords(pickup)}</span>
+        <span>{distanceKm(pickup, destination).toFixed(0)} {fr ? "km" : "كلم"}</span>
+        <span>{fr ? "Arrivée" : "الوجهة"}: {formatCoords(destination)}</span>
       </div>
     </div>
   );

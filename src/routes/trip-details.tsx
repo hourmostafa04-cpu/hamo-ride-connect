@@ -21,6 +21,7 @@ import { playSfx } from "@/lib/sfx";
 
 import { tripRefLabel } from "@/lib/trip-ref";
 import { TripRating } from "@/components/hamoula/TripRating";
+import { useAppLanguage } from "@/lib/app-language";
 
 const TripMap = lazy(() => import("@/components/hamoula/TripMap"));
 
@@ -55,22 +56,34 @@ function nowTime() {
   return new Date().toLocaleTimeString("fr-MA", { hour: "2-digit", minute: "2-digit" });
 }
 
+function stepLabel(step: string, fr: boolean) {
+  if (!fr) return step;
+  const map: Record<string, string> = {
+    "تم القبول": "Accepté",
+    "السائق فالطريق": "Chauffeur en route",
+    "تم التحميل": "Chargement effectué",
+    "تم التسليم": "Livré",
+  };
+  return map[step] ?? step;
+}
+
 function TripDetailsPage() {
+  const fr = useAppLanguage() === "fr";
   const { profile, request, activeLoad: firstLoad, loads, account, bids, myLocation } = useHamoula();
   // الطلب ديال هاد الرحلة بالضبط (ماشي أول طلب مفتوح).
   const activeLoad = loads.find((l) => l.id === request.loadId) ?? firstLoad;
   const driver = request.acceptedOffer;
-  // أسماء الطرفين من الطلب/العرض الحقيقي فقط — بلا بيانات تجريبية.
   const counterpartName =
     profile.role === "driver"
-      ? activeLoad?.shipper?.trim() || "صاحب البضاعة"
-      : driver?.driver?.trim() || "صاحب الشاحنة";
+      ? activeLoad?.shipper?.trim() || (fr ? "Expéditeur" : "صاحب البضاعة")
+      : driver?.driver?.trim() || (fr ? "Chauffeur" : "صاحب الشاحنة");
   const counterpartSub =
     profile.role === "driver"
-      ? "صاحب البضاعة"
-      : [driver?.truck, driver?.plate].filter(Boolean).join(" · ") || "شاحنة";
+      ? fr
+        ? "Expéditeur"
+        : "صاحب البضاعة"
+      : [driver?.truck, driver?.plate].filter(Boolean).join(" · ") || (fr ? "Camion" : "شاحنة");
 
-  // Status comes from persisted participant actions; this screen never advances it.
   const step = Math.max(0, statusByStep.indexOf(request.status));
   const [events, setEvents] = useState<Event[]>([
     { id: 1, label: tripSteps[0]!, time: nowTime() },
@@ -86,7 +99,6 @@ function TripDetailsPage() {
   }, [step]);
 
   const driverPoint = account?.role === "driver" ? myLocation : null;
-  // التقييم المتبادل: الرحلة الحقيقية + رقم الطرف الآخر الحقيقي (بلا بيانات تجريبية).
   const ratingLoadId = request.loadId ?? activeLoad?.id ?? "";
   const acceptedBid = bids.find((b) => b.id === driver?.id);
   const rateePhone =
@@ -99,19 +111,19 @@ function TripDetailsPage() {
 
   return (
     <PhoneFrame>
-      <AppHeader title="تفاصيل الرحلة" subtitle={tripRefLabel(request.loadId)} showBack backTo="/tracking">
+      <AppHeader title={fr ? "Détails du trajet" : "تفاصيل الرحلة"} subtitle={tripRefLabel(request.loadId)} showBack backTo="/tracking">
         <ShareTrip compact />
       </AppHeader>
 
       <div className="flex-1 space-y-5 px-5 py-5">
         <section className="overflow-hidden rounded-3xl border-2 border-border bg-card p-2 shadow-soft">
           <div className="flex items-center justify-between px-2 pb-2">
-            <h2 className="font-extrabold">مسار السير</h2>
+            <h2 className="font-extrabold">{fr ? "Itinéraire" : "مسار السير"}</h2>
             {!done && remainingKm !== null ? (
-              <LiveBadge label={`باقي ${remainingKm.toFixed(0)} كلم`} />
+              <LiveBadge label={fr ? `${remainingKm.toFixed(0)} km restants` : `باقي ${remainingKm.toFixed(0)} كلم`} />
             ) : done ? (
               <span className="rounded-full bg-primary-soft px-3 py-1 text-xs font-extrabold text-accent-foreground">
-                وصلات
+                {fr ? "Arrivé" : "وصلات"}
               </span>
             ) : null}
           </div>
@@ -125,20 +137,20 @@ function TripDetailsPage() {
             </Suspense>
           </ClientOnly>
           <div className="grid grid-cols-3 gap-2 p-2">
-            <Metric label="المسافة الكاملة" value={`${totalKm.toFixed(0)} كلم`} />
-            <Metric label="باقي" value={remainingKm === null ? "غير متوفر" : `${remainingKm.toFixed(0)} كلم`} />
-            <Metric label="الثمن" value={`${request.price} درهم`} />
+            <Metric label={fr ? "Distance totale" : "المسافة الكاملة"} value={`${totalKm.toFixed(0)} ${fr ? "km" : "كلم"}`} />
+            <Metric label={fr ? "Restant" : "باقي"} value={remainingKm === null ? (fr ? "Indisponible" : "غير متوفر") : `${remainingKm.toFixed(0)} ${fr ? "km" : "كلم"}`} />
+            <Metric label={fr ? "Prix" : "الثمن"} value={`${request.price} ${fr ? "MAD" : "درهم"}`} />
           </div>
         </section>
 
         <section className="space-y-2 rounded-3xl border-2 border-border bg-card p-4">
           <p className="flex items-center gap-2 text-sm font-extrabold">
             <MapPin className="size-4 text-primary" />
-            {request.pickup || "نقطة التحميل"}
+            {request.pickup || (fr ? "Point de chargement" : "نقطة التحميل")}
           </p>
           <p className="flex items-center gap-2 text-sm font-extrabold">
             <Navigation className="size-4 text-primary" />
-            {request.destination || "الوجهة"}
+            {request.destination || (fr ? "Destination" : "الوجهة")}
           </p>
           <div className="border-t-2 border-dashed border-border pt-3">
             <div className="mb-3 flex items-center gap-3">
@@ -163,10 +175,10 @@ function TripDetailsPage() {
           <div className="mb-4 flex items-center justify-between">
             <h2 className="flex items-center gap-2 font-extrabold">
               <Radio className="size-5 text-primary" />
-              تحديثات لحظة بلحظة
+              {fr ? "Mises à jour en direct" : "تحديثات لحظة بلحظة"}
             </h2>
             {!driverPoint && (
-              <span className="text-xs font-extrabold text-muted-foreground">في انتظار تحديث السائق</span>
+              <span className="text-xs font-extrabold text-muted-foreground">{fr ? "En attente de mise à jour chauffeur" : "في انتظار تحديث السائق"}</span>
             )}
           </div>
 
@@ -190,7 +202,7 @@ function TripDetailsPage() {
                   {i === 0 && !done ? <Clock className="size-4" /> : <Check className="size-4" />}
                 </span>
                 <div className="flex-1">
-                  <p className="text-sm font-extrabold">{e.label}</p>
+                  <p className="text-sm font-extrabold">{stepLabel(e.label, fr)}</p>
                   <p className="text-[11px] font-semibold text-muted-foreground">{e.time}</p>
                 </div>
               </li>
@@ -218,7 +230,7 @@ function TripDetailsPage() {
           className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-primary text-lg font-extrabold text-primary-foreground active:scale-95"
         >
           <MessageCircle className="size-6" />
-          الرجوع للمحادثة
+          {fr ? "Retour au chat" : "الرجوع للمحادثة"}
         </Link>
       </div>
     </PhoneFrame>

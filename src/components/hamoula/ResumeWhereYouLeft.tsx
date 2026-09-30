@@ -10,6 +10,7 @@ import {
   routeLabel,
   saveLastRoute,
 } from "@/lib/last-route";
+import { useAppLanguage } from "@/lib/app-language";
 
 /** Saves the current screen on every navigation (and before the tab closes). */
 export function LastRouteTracker() {
@@ -35,6 +36,7 @@ export function LastRouteTracker() {
  */
 export function ResumeWhereYouLeft() {
   const router = useRouter();
+  const fr = useAppLanguage() === "fr";
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { account, profile } = useHamoula();
   const role = (account?.role ?? profile.role) === "driver" ? "driver" : "shipper";
@@ -57,11 +59,11 @@ export function ResumeWhereYouLeft() {
         className="flex min-h-14 flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-base font-extrabold text-primary-foreground shadow-soft transition-transform active:scale-95"
       >
         <PlayCircle className="size-6" />
-        متابعة من حيث توقفت · {routeLabel(saved)}
+        {fr ? "Reprendre là où vous vous êtes arrêté" : "متابعة من حيث توقفت"} · {routeLabel(saved)}
       </button>
       <button
         type="button"
-        aria-label="إخفاء"
+        aria-label={fr ? "Masquer" : "إخفاء"}
         onClick={() => {
           clearLastRoute();
           setDismissed(true);

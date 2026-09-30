@@ -423,3 +423,50 @@ _آخر تحديث: 30 سبتمبر 2026 بواسطة Abacus AI Agent_
 1. تطبيق SQL kit على قاعدة Supabase المستهدفة (خصوصاً `trip_locations`).
 2. إدخال secrets الإنتاج (Bird/Vonage/VAPID) في بيئة التشغيل.
 3. اعتماد مزود VoIP النهائي.
+
+
+
+---
+
+## تحديث استكمال الأشغال الممكنة — features/phase1-review (2026-09-30)
+
+### DONE ✅
+- تم الالتزام بقاعدة **عدم إعادة العمل** قبل أي تعديل:
+  - مراجعة `docs/ABACUS_PROGRESS.md`.
+  - مراجعة `docs/PROJECT_MEMORY.md`.
+  - مراجعة `git status` و`git diff` قبل التنفيذ.
+- `RegisterScreen.tsx`:
+  - إكمال ترجمة النصوص المتبقية المطلوبة للفرنسية (منها: **اختر نوع الحساب**، **الرقم تأكد بال SMS**، **الاسم والنسب**، ورسائل OTP/errors/labels/aria).
+  - توحيد رسائل الخطأ الديناميكية (send/verify/demo) لتدعم العربية/الفرنسية.
+  - تحسين بعض نصوص الحالة (GPS/voice status) مع fallback عربي.
+- `TripRating.tsx`:
+  - تصحيح النص من: **"ما تسناش التقييم"** إلى **"ما تسجّلش التقييم"**.
+- `ContactActions`:
+  - التحقق من الاستعمال الفعلي عبر الاستيرادات داخل المشروع.
+  - النتيجة: النسخة المستعملة هي `src/components/hamoula/ContactActions.tsx` فقط، ولم يتم العثور على ملف duplicate باسم `ContactActions(1).tsx` داخل `src/components/hamoula/`.
+- TODO/FIXME:
+  - فحص `src/` بالكامل والنتيجة: لا توجد `TODO`/`FIXME` متبقية قابلة للتنفيذ بدون Secrets.
+- استكمال ترجمة فرنسية إضافية مؤثرة في تجربة السائق/الصوت:
+  - `DriverDashboard.tsx` (أزرار/رسائل/حالات loading/errors/toasts/labels الأساسية).
+  - `Voice.tsx` (VoiceBanner + VoiceNotePlayer + VoiceRecorderSheet: نصوص الإرشاد/التأكيد/الإلغاء/الإرسال/التحليل + aria + placeholders).
+
+### REVIEWED 🔍
+- مراجعة منطق OTP على مستوى الكود: الإرسال/التحقق + مسار demo.
+- مراجعة demo safety: استمرار الاعتماد على `import.meta.env.DEV` لمسار demo (بدون تمكين production).
+- مراجعة مسارات `chat/tracking/location` و`ratings` و`push` على مستوى الكود الحالي مع الحفاظ على server-first patterns السابقة.
+- مراجعة حالات `errors/loading/disabled` في شاشات التسجيل/لوحة السائق/الصوت بعد التعديلات.
+
+### TESTED 🧪
+- `bun run typecheck` ✅
+- `bun run test` ✅ (17/17)
+- `bun run build` ✅
+
+### BLOCKED ⛔
+- تطبيق SQL kit على Supabase Production: يحتاج صلاحيات/اتصال قاعدة الإنتاج.
+- إدخال Secrets الإنتاج (OTP/Push/Maps/AI): خارج نطاق هذه الجولة وبدون مشاركة أسرار.
+- اختيار VoIP production النهائي: قرار مالك المنتج.
+
+### NEED FROM OWNER 📋
+1. توفير صلاحية تنفيذ SQL batches على قاعدة Supabase المستهدفة (Production/Staging).
+2. إدخال Secrets الإنتاج في بيئة النشر (Bird/Vonage/VAPID/OpenAI/Maps).
+3. اعتماد مزود VoIP النهائي قبل أي ربط إنتاجي.

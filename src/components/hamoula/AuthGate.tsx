@@ -3,12 +3,12 @@ import { useEffect, useRef, type ReactNode } from "react";
 import { toast } from "sonner";
 import { RegisterScreen } from "@/components/hamoula/RegisterScreen";
 import { useHamoula } from "@/lib/hamoula-store";
+import { useAppLanguage } from "@/lib/app-language";
 
 /** Routes only a driver account may open. */
 const driverOnly = ["/driver", "/loads", "/my-bids", "/my-trips"];
 /** Routes only a shipper account may open (the cargo request flow). */
 const shipperOnly = ["/", "/request", "/offers", "/my-requests"];
-
 
 export const driverHome = "/driver";
 export const shipperHome = "/";
@@ -21,6 +21,8 @@ function matches(list: string[], pathname: string) {
 /** Registration is the first mandatory screen: nothing renders until an account exists. */
 export function AuthGate({ children }: { children: ReactNode }) {
   const { account, ready } = useHamoula();
+  const lang = useAppLanguage();
+  const fr = lang === "fr";
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const warned = useRef("");
@@ -38,10 +40,12 @@ export function AuthGate({ children }: { children: ReactNode }) {
     if (!ready || !role || !blocked) return;
     if (warned.current !== pathname) {
       warned.current = pathname;
-      toast("هاد الصفحة ماشي ديال الحساب ديالك", { description: "رجعناك للوحة ديالك" });
+      toast(fr ? "Cette page ne correspond pas à votre compte" : "هاد الصفحة ماشي ديال الحساب ديالك", {
+        description: fr ? "Retour à votre tableau" : "رجعناك للوحة ديالك",
+      });
     }
     navigate({ to: role === "driver" ? driverHome : shipperHome, replace: true });
-  }, [ready, role, blocked, pathname, navigate]);
+  }, [ready, role, blocked, pathname, navigate, fr]);
 
   if (!ready) return null;
 

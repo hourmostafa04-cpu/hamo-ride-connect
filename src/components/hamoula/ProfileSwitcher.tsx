@@ -2,11 +2,13 @@ import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Bell, ChevronDown, LogOut, UserRound } from "lucide-react";
 import { useHamoula } from "@/lib/hamoula-store";
+import { useAppLanguage } from "@/lib/app-language";
 
 export function ProfileSwitcher() {
   const { profile, account, signOut } = useHamoula();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const fr = useAppLanguage() === "fr";
 
   return (
     <div className="relative">
@@ -28,7 +30,7 @@ export function ProfileSwitcher() {
         <>
           <button
             className="fixed inset-0 z-10 cursor-default"
-            aria-label="إغلاق"
+            aria-label={fr ? "Fermer" : "إغلاق"}
             onClick={() => setOpen(false)}
           />
           <div className="absolute end-0 z-20 mt-2 w-64 overflow-hidden rounded-2xl border border-border bg-card text-foreground shadow-soft">
@@ -40,7 +42,7 @@ export function ProfileSwitcher() {
               className="flex w-full items-center gap-3 border-t border-border px-4 py-3 text-right text-sm font-bold transition-colors hover:bg-primary-soft"
             >
               <UserRound className="size-4 text-primary" />
-              حسابي
+              {fr ? "Mon compte" : "حسابي"}
             </button>
             <button
               onClick={() => {
@@ -50,14 +52,14 @@ export function ProfileSwitcher() {
               className="flex w-full items-center gap-3 border-t border-border px-4 py-3 text-right text-sm font-bold transition-colors hover:bg-primary-soft"
             >
               <Bell className="size-4 text-primary" />
-              إعدادات الإشعارات
+              {fr ? "Paramètres de notifications" : "إعدادات الإشعارات"}
             </button>
 
             <div className="border-t border-border px-4 py-3">
               {account ? (
                 <>
                   <p className="text-[11px] text-muted-foreground">
-                    مسجل بالرقم{" "}
+                    {fr ? "Connecté avec" : "مسجل بالرقم"}{" "}
                     <span dir="ltr" className="font-bold text-foreground">
                       {account.phone}
                     </span>
@@ -71,7 +73,7 @@ export function ProfileSwitcher() {
                     className="mt-2 flex items-center gap-2 text-xs font-bold text-destructive"
                   >
                     <LogOut className="size-4" />
-                    خروج
+                    {fr ? "Se déconnecter" : "خروج"}
                   </button>
                 </>
               ) : (
@@ -82,7 +84,7 @@ export function ProfileSwitcher() {
                   }}
                   className="text-xs font-bold text-primary"
                 >
-                  دخول برقم الهاتف
+                  {fr ? "Connexion par téléphone" : "دخول برقم الهاتف"}
                 </button>
               )}
             </div>

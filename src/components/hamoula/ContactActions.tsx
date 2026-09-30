@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { Phone, MessageCircle, Copy, Check, Link as LinkIcon } from "lucide-react";
+import { useAppLanguage } from "@/lib/app-language";
 import { driverPhone, formatPhone, openDialer, openExternal, telHref, whatsappHref } from "@/lib/hamoula-contact";
 import { ChatButton } from "@/components/hamoula/ChatButton";
 
@@ -12,12 +13,10 @@ export function ContactActions({
   compact = false,
   chatLoadId,
 }: {
-  /** Stable id used to derive the mock number when no real phone exists. */
   seed: string;
   phone?: string;
   name?: string;
   compact?: boolean;
-  /** When set, shows the in-app chat button for that request. */
   chatLoadId?: string;
 }) {
   const number = driverPhone(seed, phone);
@@ -25,15 +24,16 @@ export function ContactActions({
   const waUrl = whatsappHref(number);
   const [copied, setCopied] = useState(false);
   const [waCopied, setWaCopied] = useState(false);
+  const fr = useAppLanguage() === "fr";
 
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(pretty);
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
-      toast.success("تنسخ الرقم", { description: pretty });
+      toast.success(fr ? "Numéro copié" : "تنسخ الرقم", { description: pretty });
     } catch {
-      toast.error("ما قدرناش ننسخو الرقم");
+      toast.error(fr ? "Impossible de copier le numéro" : "ما قدرناش ننسخو الرقم");
     }
   };
 
@@ -42,9 +42,11 @@ export function ContactActions({
       await navigator.clipboard.writeText(waUrl);
       setWaCopied(true);
       setTimeout(() => setWaCopied(false), 1800);
-      toast.success("تنسخ رابط الواتساب", { description: "لصقو فالمتصفح ديالك" });
+      toast.success(fr ? "Lien WhatsApp copié" : "تنسخ رابط الواتساب", {
+        description: fr ? "Collez-le dans votre navigateur" : "لصقو فالمتصفح ديالك",
+      });
     } catch {
-      toast.error("ما قدرناش ننسخو الرابط");
+      toast.error(fr ? "Impossible de copier le lien" : "ما قدرناش ننسخو الرابط");
     }
   };
 
@@ -62,7 +64,7 @@ export function ContactActions({
           className="flex shrink-0 items-center gap-1 rounded-lg border-2 border-border bg-card px-2.5 py-2 text-xs font-extrabold text-primary"
         >
           {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-          {copied ? "تنسخ" : "نسخ الرقم"}
+          {copied ? (fr ? "Copié" : "تنسخ") : (fr ? "Copier le numéro" : "نسخ الرقم")}
         </button>
       </div>
 
@@ -71,7 +73,6 @@ export function ContactActions({
       <div className="flex gap-2">
         <a
           href={telHref(number)}
-
           onClick={(e) => {
             e.preventDefault();
             openDialer(number);
@@ -79,7 +80,7 @@ export function ContactActions({
           className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-call py-3 text-sm font-extrabold text-call-foreground active:opacity-90"
         >
           <Phone className="size-4" />
-          اتصال الآن
+          {fr ? "Appeler maintenant" : "اتصال الآن"}
         </a>
         <a
           href={waUrl}
@@ -92,7 +93,7 @@ export function ContactActions({
           className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-whatsapp py-3 text-sm font-extrabold text-whatsapp-foreground active:opacity-90"
         >
           <MessageCircle className="size-4" />
-          مراسلة عبر واتساب
+          {fr ? "WhatsApp" : "مراسلة عبر واتساب"}
         </a>
       </div>
 
@@ -102,7 +103,9 @@ export function ContactActions({
         className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-border bg-card py-2.5 text-xs font-extrabold text-muted-foreground active:scale-95"
       >
         {waCopied ? <Check className="size-3.5 text-primary" /> : <LinkIcon className="size-3.5" />}
-        {waCopied ? "تنسخ رابط الواتساب" : "نسخ رابط الواتساب"}
+        {waCopied
+          ? (fr ? "Lien WhatsApp copié" : "تنسخ رابط الواتساب")
+          : (fr ? "Copier le lien WhatsApp" : "نسخ رابط الواتساب")}
       </button>
     </div>
   );
