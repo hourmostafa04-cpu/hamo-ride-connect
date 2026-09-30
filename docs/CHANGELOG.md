@@ -516,3 +516,29 @@ _آخر تحديث: 30 سبتمبر 2026 بواسطة Abacus AI Agent_
 
 ### ملاحظات/قيود
 - الأعمال التي تتطلب Production access أو Secrets بقيت خارج التنفيذ المباشر بهذه الجولة (SQL apply / runtime secrets / VoIP decision) وتم توثيقها كـ BLOCKED.
+
+
+
+---
+
+## 2026-09-30 — تدقيق نهائي إضافي (بدون Secrets/Production)
+
+### تغييرات منجزة
+- `src/components/hamoula/TripMap.tsx`
+  - إضافة دعم ترجمة الوسوم داخل الخريطة (`التحميل/الوجهة` ↔ `Chargement/Destination`).
+  - تحديث فوري للوسوم عند تبديل اللغة العربية/الفرنسية.
+- `src/routes/__root.tsx`
+  - ترجمة واجهتي `404` و`Error boundary` إلى عربي/فرنسي بدل الإنجليزية الثابتة.
+- `src/lib/hamoula-ratings.ts`
+  - تعديل رسالة الخطأ العربية من: `ما تسناش التقييم` إلى: `ما تسجّلش التقييم`.
+
+### تحقق
+- `bun run typecheck` ✅
+- `bun run test` ✅ (17/17)
+- `bun run build` ✅
+- `bun run phase1:preflight` ✅ (مع بقاء متطلبات الإنتاج كـ blockers موثقة).
+
+### Blockers مستمرة (خارج نطاق هذه الجولة)
+- تطبيق SQL kit على قاعدة Supabase Production.
+- إدخال Secrets الإنتاج (Bird/Vonage/VAPID/OpenAI/Maps).
+- اعتماد قرار VoIP النهائي من المالك.

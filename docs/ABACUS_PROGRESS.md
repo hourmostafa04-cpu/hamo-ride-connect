@@ -470,3 +470,41 @@ _آخر تحديث: 30 سبتمبر 2026 بواسطة Abacus AI Agent_
 1. توفير صلاحية تنفيذ SQL batches على قاعدة Supabase المستهدفة (Production/Staging).
 2. إدخال Secrets الإنتاج في بيئة النشر (Bird/Vonage/VAPID/OpenAI/Maps).
 3. اعتماد مزود VoIP النهائي قبل أي ربط إنتاجي.
+
+
+
+---
+
+## تحديث تدقيق نهائي إضافي — features/phase1-review (2026-09-30)
+
+### DONE ✅
+- تم تنفيذ تدقيق إضافي بدون إعادة الميزات المنجزة مسبقاً (اعتماداً على `ABACUS_PROGRESS` + `PROJECT_MEMORY` + حالة git).
+- `src/components/hamoula/TripMap.tsx`:
+  - إضافة دعم فرنسي فعلي لوسوم الخريطة:
+    - `التحميل` ↔ `Chargement`
+    - `الوجهة` ↔ `Destination`
+  - تحديث الوسوم مباشرة عند تبديل اللغة (بدون كسر map state).
+- `src/routes/__root.tsx`:
+  - ترجمة شاشة `404` وشاشة `Error boundary` للعربية/الفرنسية بدل النص الإنجليزي الثابت.
+- `src/lib/hamoula-ratings.ts`:
+  - تصحيح رسالة الخطأ العربية إلى: **"ما تسجّلش التقييم، عاود المحاولة"**.
+
+### FIXED 🛠️
+- تغطية فجوة i18n كانت ظاهرة في وسوم `TripMap` (بقات عربية فقط قبل هذا التحديث).
+- إزالة النصوص الإنجليزية الثابتة من مسارات الخطأ العامة (`NotFound` و`ErrorComponent`) لضمان اتساق الواجهة الثنائية اللغة.
+
+### TESTED 🧪
+- `bun run typecheck` ✅
+- `bun run test` ✅ (17/17)
+- `bun run build` ✅
+- `bun run phase1:preflight` ✅ (التحقق المحلي نجح مع إظهار المتطلبات الناقصة للإنتاج كـ gates واضحة).
+
+### BLOCKED ⛔
+- تطبيق SQL kit على Supabase Production (يتطلب DB access وصلاحية تنفيذ).
+- إدخال Secrets الإنتاج (Bird/Vonage/VAPID/OpenAI/Maps) في بيئة التشغيل.
+- قرار مزود VoIP النهائي قبل الربط الإنتاجي.
+
+### NEED FROM OWNER 📋
+1. صلاحية/تنفيذ SQL batches على قاعدة Supabase المستهدفة.
+2. إدخال أسرار الإنتاج في بيئة النشر (بدون مشاركتها في Git/Logs).
+3. اعتماد مزود VoIP النهائي.
