@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { distanceKm, type LatLng } from "@/lib/hamoula-geo";
+import { useAppLanguage } from "@/lib/app-language";
 
 function dot(color: string, label: string) {
   return L.divIcon({
@@ -37,8 +38,12 @@ export default function TripMap({
   bearing?: number;
   follow?: boolean;
 }) {
+  const fr = useAppLanguage() === "fr";
+  const t = (ar: string, frText: string) => (fr ? frText : ar);
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
+  const pickupMarker = useRef<L.Marker | null>(null);
+  const destinationMarker = useRef<L.Marker | null>(null);
   const truck = useRef<L.Marker | null>(null);
   const trail = useRef<L.Polyline | null>(null);
   const lastTrail = useRef<LatLng>(pickup);
@@ -51,8 +56,12 @@ export default function TripMap({
       maxZoom: 19,
     }).addTo(m);
 
-    L.marker([pickup.lat, pickup.lng], { icon: dot("#0f172a", "التحميل") }).addTo(m);
-    L.marker([destination.lat, destination.lng], { icon: dot("#0f172a", "الوجهة") }).addTo(m);
+    pickupMarker.current = L.marker([pickup.lat, pickup.lng], {
+      icon: dot("#0f172a", t("التحميل", "Chargement")),
+    }).addTo(m);
+    destinationMarker.current = L.marker([destination.lat, destination.lng], {
+      icon: dot("#0f172a", t("الوجهة", "Destination")),
+    }).addTo(m);
     L.polyline(
       [
         [pickup.lat, pickup.lng],
@@ -83,9 +92,18 @@ export default function TripMap({
       window.clearTimeout(sizeTimer);
       m.remove();
       map.current = null;
+      pickupMarker.current = null;
+      destinationMarker.current = null;
+      truck.current = null;
+      trail.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    pickupMarker.current?.setIcon(dot("#0f172a", t("التحميل", "Chargement")));
+    destinationMarker.current?.setIcon(dot("#0f172a", t("الوجهة", "Destination")));
+  }, [fr]);
 
   // Marker follows every animated frame; the trail only records real movement.
   useEffect(() => {
