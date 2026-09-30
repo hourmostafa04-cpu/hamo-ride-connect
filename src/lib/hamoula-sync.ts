@@ -241,9 +241,10 @@ export async function saveDraft(phone: string, data: Partial<TripRequest>) {
   if (!phone) return;
   const userId = await currentUserId();
   if (!userId) return;
-  await supabase
+  const { error } = await supabase
     .from("drafts")
     .upsert({ phone, user_id: userId, data: data as never, updated_at: new Date().toISOString() } as never);
+  if (error) throw new Error(`فشل حفظ المسودة: ${error.message}`);
 }
 
 export async function fetchDraft(phone: string): Promise<Partial<TripRequest> | null> {
@@ -254,5 +255,6 @@ export async function fetchDraft(phone: string): Promise<Partial<TripRequest> | 
 
 export async function clearDraft(phone: string) {
   if (!phone) return;
-  await supabase.from("drafts").delete().eq("phone", phone);
+  const { error } = await supabase.from("drafts").delete().eq("phone", phone);
+  if (error) throw new Error(`فشل حذف المسودة: ${error.message}`);
 }

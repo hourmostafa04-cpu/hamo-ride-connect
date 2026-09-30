@@ -65,6 +65,8 @@ function TrackingPage() {
   const current = Math.max(0, statusByStep.indexOf(request.status));
   const canUpdateTrip = account?.role === "driver";
   const setLive = (fn: (l: boolean) => boolean) => setTripLive(fn(tripLive));
+  // TODO(phase1): هاد الدردشة حالياً local state فقط داخل الصفحة.
+  // خاص الربط الكامل مع chat_messages (Supabase) باش الرسائل تبقى محفوظة بين الأجهزة.
   const [messages, setMessages] = useState<
     { id: number; from: "me" | "driver"; text: string; time: string; voice?: number }[]
   >([]);
@@ -94,6 +96,8 @@ function TrackingPage() {
     done,
   });
   const realDriverPoint = account?.role === "driver" ? myLocation : null;
+  // TODO(phase1): التتبع الحي معروض فقط من state محلي/GPS مباشر.
+  // خاص إضافة persistence لتحديث موقع السائق في DB (table/RPC) باش يشوفو الطرفين نفس المسار عبر الأجهزة.
   const driverPoint = SIMULATED_GPS_ENABLED ? simulatedDriverPoint : realDriverPoint;
   const locationAvailable = driverPoint !== null;
   const live = tripLive && locationAvailable;

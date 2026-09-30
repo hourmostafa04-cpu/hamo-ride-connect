@@ -394,6 +394,8 @@ $$;
 -- 7) RPC: current_user_role (فرض الأدوار فالقاعدة)
 -- كيرجع الدور ديال المستخدم المصادق من app_users.
 -- SECURITY DEFINER باش ما كيتعرضش لـ RLS ديال app_users.
+-- ملاحظة: ما كنوفروش set_user_role للمستخدم النهائي؛ تغيير role خاصو يبقى
+-- عملية إدارية/سيرفر فقط خارج صلاحيات authenticated.
 -- -------------------------------------------------
 CREATE OR REPLACE FUNCTION public.current_user_role()
 RETURNS text

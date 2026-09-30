@@ -139,16 +139,20 @@ FOR UPDATE TO authenticated
 USING (user_id = auth.uid())
 WITH CHECK (user_id = auth.uid());
 
+-- منع تعديل الدور role مباشرة من العميل؛ أي تغيير دور لازم يكون بسيرفر/RPC مخصص.
+REVOKE UPDATE(role) ON public.app_users FROM authenticated;
+
 -- -------------------------------------------------
 -- 8) chat_messages
 -- القراءة للطرفين الشرعيين فقط (مالك الحمل أو السائق المقبول)
--- الإدراج مسموح للمشارك فقط وبمعرفه الحقيقي
+-- الإدراج المباشر من authenticated ممنوع: الإرسال فقط عبر Server Function/RPC
 -- منع تعديل/حذف الرسائل من العميل
 -- -------------------------------------------------
 CREATE POLICY chat_select_party ON public.chat_messages
 FOR SELECT TO authenticated
 USING (public.is_chat_party(load_id));
 
+-- policy كمرجع أمني في حال استعمال service role / RPC داخلي فقط.
 CREATE POLICY chat_insert_party ON public.chat_messages
 FOR INSERT TO authenticated
 WITH CHECK (
@@ -156,7 +160,7 @@ WITH CHECK (
   AND public.is_chat_party(load_id)
 );
 
-REVOKE UPDATE, DELETE ON public.chat_messages FROM authenticated;
+REVOKE INSERT, UPDATE, DELETE ON public.chat_messages FROM authenticated;
 
 -- -------------------------------------------------
 -- 9) push_subscriptions (ملكية كاملة)
@@ -187,7 +191,7 @@ CREATE POLICY trip_ratings_insert_participant ON public.trip_ratings
 FOR INSERT TO authenticated
 WITH CHECK (
   user_id = auth.uid()
-  AND (public.owns_load(load_id) OR public.has_bid_on_load(load_id))
+  AND public.can_access_chat_load(load_id)
 );
 
 CREATE POLICY trip_ratings_select_participant ON public.trip_ratings

@@ -51,7 +51,7 @@ export async function saveAccount(account: Account): Promise<void> {
   if (!key) return;
   const userId = await currentUserId();
   if (!userId) return;
-  await supabase.from("app_users").upsert(
+  const { error } = await supabase.from("app_users").upsert(
     {
       phone: key,
       user_id: userId,
@@ -69,6 +69,9 @@ export async function saveAccount(account: Account): Promise<void> {
     } as never,
     { onConflict: "phone" },
   );
+  if (error) {
+    throw new Error(`تعذر حفظ الحساب: ${error.message}`);
+  }
 }
 
 /** One-time upload of accounts previously registered on this device only. */

@@ -30,8 +30,10 @@
    - تعطيل/إسقاط السياسات المفتوحة القديمة.
    - سياسات آمنة لـ `storage.objects` الخاصة بـ `chat-voice`.
 
-6. `verify_after_each_batch.sql`
-   - استعلامات تحقق بعد كل دفعة (أعمدة، جداول، دوال، سياسات، صلاحيات).
+6. `verify_batch1.sql` + `verify_batch2.sql` + `verify_batch3.sql` + `verify_batch4.sql`
+   - بوابات تحقق صارمة بعد كل دفعة (ترمي EXCEPTION عند أي نقص).
+7. `verify_after_each_batch.sql`
+   - ملف مرجعي قديم للقراءة فقط (لا يُعتمد عليه كـ gate تنفيذي).
 
 ---
 
@@ -41,13 +43,13 @@
 
 1. نفّذ `backup_instructions.md` بالكامل.
 2. نفّذ `batch1_columns.sql`.
-3. نفّذ قسم التحقق الخاص بالدفعة 1 من `verify_after_each_batch.sql`.
+3. نفّذ `verify_batch1.sql`.
 4. نفّذ `batch2_tables.sql`.
-5. نفّذ قسم التحقق الخاص بالدفعة 2.
+5. نفّذ `verify_batch2.sql`.
 6. نفّذ `batch3_functions.sql`.
-7. نفّذ قسم التحقق الخاص بالدفعة 3.
+7. نفّذ `verify_batch3.sql`.
 8. نفّذ `batch4_rls.sql`.
-9. نفّذ قسم التحقق الخاص بالدفعة 4.
+9. نفّذ `verify_batch4.sql`.
 
 ---
 
