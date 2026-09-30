@@ -758,3 +758,42 @@ _آخر تحديث: 30 سبتمبر 2026 بواسطة Abacus AI Agent_
 1. فتح/تنفيذ فحص مباشر داخل Lovable Secret Manager لتحديد الموجود فعلاً.
 2. توفير مسار آمن لإدخال VAPID pair الجديد (private/public) داخل secret manager.
 3. توفير Supabase production access للانتقال من التحضير إلى التنفيذ الفعلي لـ Phase 1.
+
+
+
+---
+
+## تحديث تنفيذي 2026-09-30 (جولة 3: Phase 1 مطبق على Lovable Cloud + Security Scan)
+
+### DONE ✅
+
+* **Phase 1 مطبق بالكامل على قاعدة بيانات Lovable Cloud** (عبر Cloud → SQL Editor، بلا DATABASE_URL خارجي):
+  * Batch 1: تحقق مضغوط → **PASS** (الأعمدة والفهارس موجودة، ما تعاودش التنفيذ).
+  * Batch 2: التحقق الأول بيّن نقص فعلي (كل الجداول الجديدة غايبين) → تنفذ `batch2_tables.sql` كاملاً → إعادة تحقق **PASS** (chat_messages, push_subscriptions, trip_ratings, trip_locations + التريغرز + Realtime).
+  * Batch 3: تنفذ `batch3_functions.sql` (440 سطر) بلا أخطاء → تحقق **PASS** (11 دالة RPC + صلاحيات EXECUTE).
+  * Batch 4: تنفذ `batch4_rls.sql` (284 سطر) بلا أخطاء → تحقق **PASS** (RLS على 8 جداول، 9 سياسات أساسية، 2 سياسات storage، bucket chat-voice، UPDATE منزوع من authenticated على loads/bids، وكتابة chat/trip_locations منزوعة من العميل).
+  * التقرير الكامل: `/home/ubuntu/PHASE1_LOVABLE_SQL_REPORT.md`.
+
+* **Security Audit على القاعدة** (3 استعلامات):
+  * 23 سياسة — كلها لـ `authenticated` فقط، صفر سياسات لـ `anon`.
+  * RLS = true على الجداول الثمانية.
+  * 48 صف صلاحيات — كلها `authenticated`، ما كاين حتى صف لـ `anon`.
+
+* **Security Scan على الكود** (توافق مع RLS الجديد):
+  * إصلاح تدفق الدخول التجريبي فـ `src/components/hamoula/RegisterScreen.tsx` (طلب الجلسة حسب الدور المختار فعلياً بدل shipper افتراضي).
+  * تقوية `src/lib/demo-auth.functions.ts` (فحص صريح لأخطاء upsert).
+  * تأكيد أن كل الكتابات الحساسة (chat_messages, trip_locations) كتمّر من Server Functions، وكل UPDATE/DELETE على loads/bids كتمّر من RPC.
+  * `bun run typecheck` ✅ | `bun run test` ✅ (17/17) | `bun run build` ✅.
+  * Commit محلي: `14be8cc` — `security: harden demo auth flow for Phase1 RLS compliance`.
+
+### BLOCKED ⛔
+
+* **تفعيل OTP الحقيقي** (Bird WhatsApp أساسي + Vonage SMS fallback): محتاج Secrets غايبين فـ Lovable Secret Manager: `BIRD_API_KEY`, `VONAGE_API_KEY`, `VONAGE_API_SECRET`, `SEND_SMS_HOOK_SECRET` + ربط Supabase Auth Hook بعنوان الـ endpoint المنشور.
+* **E2E الكامل** (الطلبات، العروض، Chat، Push، Tracking، Ratings): محتاج OTP حقيقي (فوق) + مزامنة الكود المصلح (RLS-compliant) إلى تطبيق Lovable المنشور.
+* **git push** ديال commit `14be8cc`: فشل بسبب قيود auth فالجلسة السابقة — غادي يتعاد المحاولة.
+
+### NEED FROM OWNER 📋
+
+1. إدخال Secrets OTP فـ Lovable Secret Manager: `BIRD_API_KEY`, `VONAGE_API_KEY`, `VONAGE_API_SECRET`, `SEND_SMS_HOOK_SECRET` (و`VONAGE_SMS_FROM` اختياري).
+2. مزامنة كود الريبو (الفرع `features/phase1-review`) إلى تطبيق Lovable المنشور باش الكود يمتثل لـ RLS الجديد.
+3. بعدها: تفعيل Auth Hook + اختبار تسجيل/دخول حقيقيين + E2E كامل.

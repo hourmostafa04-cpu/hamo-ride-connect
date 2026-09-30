@@ -587,3 +587,36 @@ _آخر تحديث: 30 سبتمبر 2026 بواسطة Abacus AI Agent_
 
 ### Blocked
 - Phase 1 apply على Supabase مازال محجوب لغياب production DB access (`DATABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` أو Access Token).
+
+
+
+---
+
+## 2026-09-30 — جولة 3: Phase 1 مطبق على Lovable Cloud + Security Scan
+
+### Added
+- **Phase 1 مطبق بالكامل على قاعدة بيانات Lovable Cloud** عبر SQL Editor:
+  - Batch 1: تحقق PASS (بلا إعادة تنفيذ).
+  - Batch 2: التحقق بيّن نقص → تنفذ `batch2_tables.sql` → PASS.
+  - Batch 3: `batch3_functions.sql` (11 دالة RPC) → PASS.
+  - Batch 4: `batch4_rls.sql` (RLS + سياسات + bucket chat-voice) → PASS.
+- تقرير التنفيذ: `/home/ubuntu/PHASE1_LOVABLE_SQL_REPORT.md`.
+
+### Security
+- Security Audit: 23 سياسة كلها لـ authenticated، RLS على 8 جداول، صفر صلاحيات لـ anon.
+- Security Scan على الكود: إصلاح تدفق الدخول التجريبي ليتوافق مع RLS (`RegisterScreen.tsx`, `demo-auth.functions.ts`).
+- Commit محلي: `14be8cc` — `security: harden demo auth flow for Phase1 RLS compliance`.
+
+### Changed
+- `src/components/hamoula/RegisterScreen.tsx`: طلب جلسة الدخول التجريبي حسب الدور المختار.
+- `src/lib/demo-auth.functions.ts`: فحص صريح لأخطاء upsert.
+
+### Verified
+- `bun run typecheck` ✅
+- `bun run test` ✅ (17/17)
+- `bun run build` ✅
+
+### Blocked
+- تفعيل OTP الحقيقي: محتاج `BIRD_API_KEY`, `VONAGE_API_KEY`, `VONAGE_API_SECRET`, `SEND_SMS_HOOK_SECRET` فـ Lovable Secret Manager.
+- E2E الكامل: محتاج OTP + مزامنة الكود المصلح إلى Lovable المنشور.
+- git push ديال `14be8cc`: فشل بسبب auth — غادي يتعاد.
