@@ -297,3 +297,71 @@ hourmostafa04-cpu <316719197+hourmostafa04-cpu@users.noreply.github.com>
 - ⏳ **Phase 1 apply**: محجوب حتى يتوفر DATABASE_URL + SUPABASE_SERVICE_ROLE_KEY + مفاتيح OTP.
 
 _آخر تحديث: 30 سبتمبر 2026 بواسطة Abacus AI Agent_
+
+
+---
+
+## تحديث تنفيذ مراجعة Phase 1 (2026-09-30)
+
+### DONE ✅
+- فحص المستودع والفرع والملفات الأساسية المرتبطة بـ Phase 1.
+- التحقق من OTP route: Bird WhatsApp أساسي + Vonage SMS fallback موجود ومفعل برمجياً.
+- التحقق من Demo mode:
+  - `demo-login.ts` مرتبط بـ `import.meta.env.DEV`.
+  - OTP `123456` مسموح فقط في DEV.
+  - production ممنوع.
+- مراجعة push:
+  - `push.functions.ts` يعيد `VAPID_PUBLIC_KEY`.
+  - `push-client.ts` + `public/sw.js` مسار registration واضح.
+- مراجعة ratings:
+  - الربط مع `trip_ratings` موجود في `hamoula-ratings.ts`.
+- مراجعة اللغة والمدن:
+  - `app-language.ts` يضبط `html.lang` و `html.dir` بشكل صحيح.
+  - قائمة المدن تغطي المدن المغربية الرئيسية عبر `voice-order.ts` + `hamoula-cities.ts`.
+- إنشاء الوثائق المطلوبة:
+  - `docs/PROJECT_MEMORY.md`
+  - `docs/E2E_TEST_PLAN.md`
+  - `docs/VOIP_OPTIONS.md`
+  - `docs/CHANGELOG.md`
+
+### FIXED 🔧
+- `.gitignore`:
+  - إضافة `/backups/`.
+  - تأكيد وجود: `.env`, `.env.*`, `!.env.example`, `*.log`, `.output/`, `.wrangler/`, `.nitro/`.
+- إضافة `.env.example` جديد بدون أي أسرار.
+- `src/lib/hamoula-accounts.ts`:
+  - `saveAccount` أصبح يتحقق من خطأ Supabase ويرمي `throw` واضح.
+- `src/lib/hamoula-sync.ts`:
+  - `saveDraft` أصبح يتحقق من الخطأ ويرمي `throw`.
+  - `clearDraft` أصبح يتحقق من الخطأ ويرمي `throw`.
+- `supabase/phase1_execution_kit/batch4_rls.sql`:
+  - `REVOKE UPDATE(role) ON public.app_users FROM authenticated`.
+  - `REVOKE INSERT, UPDATE, DELETE ON public.chat_messages FROM authenticated` (server-only write).
+  - سياسة `trip_ratings_insert_participant` تعتمد `can_access_chat_load(load_id)`.
+- `supabase/phase1_execution_kit/batch3_functions.sql`:
+  - إضافة توثيق صريح أن تغيير role ليس متاحاً مباشرة للمستخدم النهائي.
+- `supabase/phase1_execution_kit/README.md`:
+  - تحديث مسار التحقق إلى `verify_batch1..4.sql` بدل الاعتماد التنفيذي على `verify_after_each_batch.sql`.
+- `src/routes/tracking.tsx`:
+  - إضافة TODO بالعربية بخصوص:
+    - نقل الشات المحلي إلى `chat_messages`.
+    - حفظ تحديث الموقع في DB عبر table/RPC.
+
+### TESTED 🧪
+- تم فحص الشيفرة والملفات المستهدفة يدوياً للتطابق مع متطلبات المراجعة.
+- التحقق من وجود الدوال والسياسات الحساسة المطلوبة في batch3/batch4.
+- التحقق من مسارات OTP وDemo وPush وRatings وLanguage/Cities على مستوى الكود.
+
+### BLOCKED ⛔
+- تفعيل Push فعلياً في بيئة التشغيل يحتاج وجود `VAPID_PUBLIC_KEY` في runtime environment.
+- اختبار OTP الحقيقي end-to-end يحتاج secrets فعليّة:
+  - `BIRD_API_KEY`
+  - `VONAGE_API_KEY`
+  - `VONAGE_API_SECRET`
+  - (وكذلك secret توقيع webhook)
+- تنفيذ فعلي لدفعات SQL على قاعدة Supabase الإنتاجية يحتاج صلاحيات/اتصال DB مناسب.
+
+### NEED FROM OWNER 📋
+1. توفير/تأكيد secrets الإنتاج (OTP + VAPID) في بيئة النشر.
+2. منح/تأكيد صلاحية تنفيذ migration على قاعدة Supabase المستهدفة.
+3. اعتماد خيار VoIP النهائي (Daily/Agora/Twilio/WebRTC) قبل أي ربط إنتاجي.
