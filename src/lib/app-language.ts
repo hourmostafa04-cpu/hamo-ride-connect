@@ -1,6 +1,9 @@
+import { useEffect, useState } from "react";
+
 export type AppLanguage = "ar" | "fr";
 
 const KEY = "hamoula.lang.v1";
+export const APP_LANGUAGE_CHANGED_EVENT = "hamoula:language-changed";
 
 export function getDefaultLanguage(): AppLanguage {
   return "ar";
@@ -16,6 +19,7 @@ export function writeLanguage(lang: AppLanguage) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(KEY, lang);
   applyLanguage(lang);
+  window.dispatchEvent(new CustomEvent<AppLanguage>(APP_LANGUAGE_CHANGED_EVENT, { detail: lang }));
 }
 
 export function dirOf(lang: AppLanguage): "rtl" | "ltr" {
@@ -27,5 +31,30 @@ export function applyLanguage(lang: AppLanguage) {
   const html = document.documentElement;
   html.lang = lang;
   html.dir = dirOf(lang);
-  // TODO(i18n-phase1): التبديل بين ar/fr شغال، لكن ترجمة المحتوى الفرنسي عبر كل الشاشات مازال غير مكتملة.
+}
+
+/** Reactive helper for screens that need instant language updates. */
+export function useAppLanguage() {
+  const [lang, setLang] = useState<AppLanguage>(() => readLanguage());
+
+  useEffect(() => {
+    const sync = () => setLang(readLanguage());
+    const onChange = (event: Event) => {
+      const custom = event as CustomEvent<AppLanguage>;
+      if (custom.detail === "ar" || custom.detail === "fr") {
+        setLang(custom.detail);
+        return;
+      }
+      sync();
+    };
+
+    window.addEventListener("storage", sync);
+    window.addEventListener(APP_LANGUAGE_CHANGED_EVENT, onChange as EventListener);
+    return () => {
+      window.removeEventListener("storage", sync);
+      window.removeEventListener(APP_LANGUAGE_CHANGED_EVENT, onChange as EventListener);
+    };
+  }, []);
+
+  return lang;
 }

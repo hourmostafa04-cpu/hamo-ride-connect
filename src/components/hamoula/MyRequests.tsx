@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { PhoneFrame, AppHeader } from "@/components/hamoula/PhoneFrame";
 import { statusLabels, useHamoula, type Bid, type Load, type TripStatus } from "@/lib/hamoula-store";
 import { ChatButton } from "@/components/hamoula/ChatButton";
+import { useAppLanguage } from "@/lib/app-language";
 
 const ACTIVE: TripStatus[] = ["searching", "matched", "enroute", "loaded"];
 
@@ -146,6 +147,8 @@ function RequestCard({
 
 
 export function MyRequests() {
+  const lang = useAppLanguage();
+  const fr = lang === "fr";
   const {
     myLoads,
     bids,
@@ -220,11 +223,16 @@ export function MyRequests() {
 
   return (
     <PhoneFrame>
-      <AppHeader title="طلباتي" subtitle="كل الطلبات ديالك محفوظة" showBack backTo="/" />
+      <AppHeader
+        title={fr ? "Mes demandes" : "طلباتي"}
+        subtitle={fr ? "Toutes vos demandes sauvegardées" : "كل الطلبات ديالك محفوظة"}
+        showBack
+        backTo="/"
+      />
       <div className="flex-1 space-y-6 px-5 py-6">
         {boardLoading && (
           <p className="rounded-2xl border-2 border-dashed border-border p-3 text-center text-sm font-bold text-muted-foreground">
-            كنحدثو الطلبات والعروض…
+            {fr ? "Mise à jour des demandes et offres…" : "كنحدثو الطلبات والعروض…"}
           </p>
         )}
         {boardError && !boardLoading && (
@@ -235,15 +243,15 @@ export function MyRequests() {
               onClick={() => void refreshBoard().catch(() => {})}
               className="min-h-10 w-full rounded-xl border-2 border-destructive px-4 text-sm font-extrabold"
             >
-              عاود المحاولة
+              {fr ? "Réessayer" : "عاود المحاولة"}
             </button>
           </div>
         )}
         <section className="space-y-3">
-          <h2 className="text-sm font-extrabold">طلبات نشيطة</h2>
+          <h2 className="text-sm font-extrabold">{fr ? "Demandes actives" : "طلبات نشيطة"}</h2>
           {active.length === 0 ? (
             <p className="rounded-2xl border-2 border-dashed border-border p-4 text-sm text-muted-foreground">
-              ما عندك حتى طلب نشيط دابا.
+              {fr ? "Aucune demande active actuellement." : "ما عندك حتى طلب نشيط دابا."}
             </p>
           ) : (
             active.map((l) => (
@@ -262,10 +270,10 @@ export function MyRequests() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-sm font-extrabold">السجل</h2>
+          <h2 className="text-sm font-extrabold">{fr ? "Historique" : "السجل"}</h2>
           {history.length === 0 ? (
             <p className="rounded-2xl border-2 border-dashed border-border p-4 text-sm text-muted-foreground">
-              السجل خاوي.
+              {fr ? "Historique vide." : "السجل خاوي."}
             </p>
           ) : (
             history.map((l) => (

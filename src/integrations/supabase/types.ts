@@ -283,6 +283,50 @@ export type Database = {
         }
         Relationships: []
       }
+      trip_locations: {
+        Row: {
+          bearing: number | null
+          created_at: string
+          lat: number
+          lng: number
+          load_id: string
+          source: string
+          speed_kmh: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bearing?: number | null
+          created_at?: string
+          lat: number
+          lng: number
+          load_id: string
+          source?: string
+          speed_kmh?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bearing?: number | null
+          created_at?: string
+          lat?: number
+          lng?: number
+          load_id?: string
+          source?: string
+          speed_kmh?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_locations_load_id_fkey"
+            columns: ["load_id"]
+            isOneToOne: true
+            referencedRelation: "loads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trip_ratings: {
         Row: {
           comment: string

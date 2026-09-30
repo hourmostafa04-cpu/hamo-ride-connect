@@ -24,6 +24,7 @@ import { ContactActions } from "@/components/hamoula/ContactActions";
 import { distanceKm, roadDistanceKm, type LatLng } from "@/lib/hamoula-geo";
 import { distanceFilters, distanceLabel, kmText } from "@/lib/hamoula-location";
 import { HUB_CHIPS } from "@/lib/hamoula-cities";
+import { useAppLanguage } from "@/lib/app-language";
 
 
 const AVAIL_KEY = "hamoula-driver-available";
@@ -48,6 +49,8 @@ function truckSize(id: string): TruckSize {
   return "large";
 }
 export function DriverDashboard() {
+  const lang = useAppLanguage();
+  const fr = lang === "fr";
   const {
     loads,
     myBids,
@@ -134,7 +137,7 @@ export function DriverDashboard() {
   return (
     <div className="mol-brand">
       <PhoneFrame>
-      <AppHeader title="لوحة صاحب الشاحنة" subtitle={profile.name} showBack backTo="/">
+      <AppHeader title={fr ? "Tableau chauffeur" : "لوحة صاحب الشاحنة"} subtitle={profile.name} showBack backTo="/">
         <GpsChip />
       </AppHeader>
       <ResumeWhereYouLeft />

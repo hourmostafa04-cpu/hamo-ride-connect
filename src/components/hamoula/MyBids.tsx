@@ -21,6 +21,7 @@ import { VoiceNotePlayer } from "@/components/hamoula/Voice";
 import { useHamoula, type Bid, type Load } from "@/lib/hamoula-store";
 import { playSfx } from "@/lib/sfx";
 import { buildRows, downloadCsv, printPdf } from "@/lib/bids-export";
+import { useAppLanguage } from "@/lib/app-language";
 
 type TabId = "all" | "pending" | "accepted" | "declined";
 
@@ -59,6 +60,8 @@ function formatDate(ts: number) {
 }
 
 export function MyBids() {
+  const lang = useAppLanguage();
+  const fr = lang === "fr";
   const { myBids, loads, profile } = useHamoula();
   const [tab, setTab] = useState<TabId>("all");
   const [sort, setSort] = useState<SortId>("newest");
@@ -103,12 +106,12 @@ export function MyBids() {
 
   return (
     <PhoneFrame>
-      <AppHeader title="سجل العروض ديالي" subtitle={profile.name} showBack backTo="/driver" />
+      <AppHeader title={fr ? "Mes offres" : "سجل العروض ديالي"} subtitle={profile.name} showBack backTo="/driver" />
       <div className="flex-1 space-y-4 px-5 py-5">
         <div className="grid grid-cols-3 gap-2">
-          <Stat label="مقبولة" value={counts.accepted} tone="primary" />
-          <Stat label="قيد المراجعة" value={counts.pending} tone="accent" />
-          <Stat label="مرفوضة" value={counts.declined} tone="muted" />
+          <Stat label={fr ? "Acceptées" : "مقبولة"} value={counts.accepted} tone="primary" />
+          <Stat label={fr ? "En attente" : "قيد المراجعة"} value={counts.pending} tone="accent" />
+          <Stat label={fr ? "Refusées" : "مرفوضة"} value={counts.declined} tone="muted" />
         </div>
 
         <div className="scroll-row -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
@@ -144,7 +147,7 @@ export function MyBids() {
             className="flex min-h-12 items-center justify-center gap-2 rounded-2xl border-2 border-border bg-card text-sm font-extrabold disabled:opacity-50"
           >
             <Download className="size-4" />
-            تنزيل CSV
+            {fr ? "Télécharger CSV" : "تنزيل CSV"}
           </button>
           <button
             type="button"
@@ -157,7 +160,7 @@ export function MyBids() {
             className="flex min-h-12 items-center justify-center gap-2 rounded-2xl border-2 border-primary bg-primary-soft text-sm font-extrabold text-accent-foreground disabled:opacity-50"
           >
             <FileDown className="size-4" />
-            تنزيل PDF
+            {fr ? "Télécharger PDF" : "تنزيل PDF"}
           </button>
         </div>
 

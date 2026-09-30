@@ -16,6 +16,7 @@ ALTER TABLE public.drafts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.chat_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.push_subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.trip_ratings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.trip_locations ENABLE ROW LEVEL SECURITY;
 
 -- -------------------------------------------------
 -- 2) سحب صلاحيات anon العامة على الجداول الحساسة
@@ -27,6 +28,7 @@ REVOKE ALL ON public.drafts FROM anon;
 REVOKE ALL ON public.chat_messages FROM anon;
 REVOKE ALL ON public.push_subscriptions FROM anon;
 REVOKE ALL ON public.trip_ratings FROM anon;
+REVOKE ALL ON public.trip_locations FROM anon;
 
 -- -------------------------------------------------
 -- 3) تنظيف السياسات المفتوحة/القديمة (إن وجدت)
@@ -61,6 +63,9 @@ DROP POLICY IF EXISTS push_subscriptions_delete_own ON public.push_subscriptions
 DROP POLICY IF EXISTS trip_ratings_select_authenticated ON public.trip_ratings;
 DROP POLICY IF EXISTS trip_ratings_select_participant ON public.trip_ratings;
 DROP POLICY IF EXISTS trip_ratings_insert_participant ON public.trip_ratings;
+DROP POLICY IF EXISTS trip_locations_select_party ON public.trip_locations;
+DROP POLICY IF EXISTS trip_locations_insert_driver ON public.trip_locations;
+DROP POLICY IF EXISTS trip_locations_update_driver ON public.trip_locations;
 
 -- -------------------------------------------------
 -- 4) loads
@@ -204,7 +209,46 @@ USING (
 );
 
 -- -------------------------------------------------
--- 11) سياسات Storage للصوت (chat-voice) للمشاركين فقط
+-- 11) trip_locations
+-- القراءة: طرفا الرحلة فقط
+-- الكتابة المباشرة: ممنوعة من authenticated (Server Function فقط)
+-- -------------------------------------------------
+CREATE POLICY trip_locations_select_party ON public.trip_locations
+FOR SELECT TO authenticated
+USING (public.can_access_chat_load(load_id));
+
+-- مرجعية أمنية فقط، الكتابة الفعلية تمر من السيرفر.
+CREATE POLICY trip_locations_insert_driver ON public.trip_locations
+FOR INSERT TO authenticated
+WITH CHECK (
+  user_id = auth.uid()
+  AND EXISTS (
+    SELECT 1
+    FROM public.bids b
+    WHERE b.load_id = trip_locations.load_id
+      AND b.user_id = auth.uid()
+      AND b.status = 'accepted'
+  )
+);
+
+CREATE POLICY trip_locations_update_driver ON public.trip_locations
+FOR UPDATE TO authenticated
+USING (user_id = auth.uid())
+WITH CHECK (
+  user_id = auth.uid()
+  AND EXISTS (
+    SELECT 1
+    FROM public.bids b
+    WHERE b.load_id = trip_locations.load_id
+      AND b.user_id = auth.uid()
+      AND b.status = 'accepted'
+  )
+);
+
+REVOKE INSERT, UPDATE, DELETE ON public.trip_locations FROM authenticated;
+
+-- -------------------------------------------------
+-- 12) سياسات Storage للصوت (chat-voice) للمشاركين فقط
 -- -------------------------------------------------
 -- إنشاء bucket chat-voice بأمان إذا لم يكن موجوداً (خاصة + غير عام)
 INSERT INTO storage.buckets (id, name, public)

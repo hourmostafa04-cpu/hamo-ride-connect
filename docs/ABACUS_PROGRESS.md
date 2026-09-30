@@ -369,3 +369,57 @@ _آخر تحديث: 30 سبتمبر 2026 بواسطة Abacus AI Agent_
 1. توفير/تأكيد secrets الإنتاج (OTP + VAPID) في بيئة النشر.
 2. منح/تأكيد صلاحية تنفيذ migration على قاعدة Supabase المستهدفة.
 3. اعتماد خيار VoIP النهائي (Daily/Agora/Twilio/WebRTC) قبل أي ربط إنتاجي.
+
+
+
+---
+
+## تحديث تكميلي بدون Secrets/Production (2026-09-30)
+
+### DONE ✅
+- ربط شاشة `tracking` بالشات الحقيقي (`chat_messages`) بدل الـlocal chat:
+  - تحميل الرسائل من Supabase
+  - اشتراك Realtime للرسائل الجديدة
+  - إرسال نص/صوت عبر Server Function (`sendChatMessage`) فقط
+- تنفيذ مزامنة موقع السائق بشكل server-first:
+  - ملف جديد: `src/lib/tracking.functions.ts` (Server Function آمن)
+  - ملف جديد: `src/lib/hamoula-trip-location.ts` (fetch/subscribe/persist)
+  - في `tracking.tsx`: حفظ الموقع دورياً في DB عبر السيرفر + عرض آخر موقع محفوظ للطرفين
+- إزالة TODO/FIXME من `src/` بعد تنفيذ ما يمكن تنفيذه محلياً.
+
+### FIXED 🔧
+- تحديث `src/routes/tracking.tsx`:
+  - إزالة الشات المحلي التجريبي وتعويضه بقراءة/إرسال حقيقي عبر `chat_messages`.
+  - إضافة مزامنة `trip_locations` وربطها بالخريطة.
+  - منع نجاح UI الوهمي عند فشل الإرسال/المزامنة (server-first).
+- تحديث kit ديال SQL باش يدعم مزامنة الموقع بشكل idempotent:
+  - `batch2_tables.sql`: إضافة جدول `trip_locations` + trigger + realtime publication.
+  - `batch4_rls.sql`: سياسات RLS للقراءة لطرفي الرحلة، مع منع الكتابة المباشرة من authenticated.
+  - `verify_batch2.sql` و `verify_batch4.sql`: إضافة gates للتحقق من `trip_locations`.
+- تحديث `src/integrations/supabase/types.ts` بإضافة `trip_locations`.
+- تحسين i18n runtime:
+  - `app-language.ts` أصبح فيه event موحد `hamoula:language-changed` + hook `useAppLanguage()`.
+- بدء ترجمة فرنسية فعلية على الشاشات الرئيسية الأكثر استعمالاً:
+  - `tracking.tsx`
+  - `chat.tsx`
+  - `MyRequests.tsx`
+  - `MyBids.tsx`
+  - `DriverDashboard.tsx` (العناوين الأساسية)
+
+### TESTED 🧪
+- `bun run typecheck` ✅
+- `bun run test` ✅ (17/17)
+- `bun run build` ✅ (client + SSR + Nitro)
+- اختبار محلي stubbed-flow على مستوى الكود:
+  - tracking chat load/send flow
+  - tracking location persistence flow
+
+### BLOCKED ⛔
+- تفعيل فعلي end-to-end لمزامنة `trip_locations` في بيئة الإنتاج يحتاج تطبيق SQL batches على قاعدة Supabase المستهدفة.
+- OTP الحقيقي وPush الحقيقي مازالان مرتبطين بوجود secrets في runtime.
+- قرار VoIP النهائي مازال يحتاج اختيار المالك.
+
+### NEED FROM OWNER 📋
+1. تطبيق SQL kit على قاعدة Supabase المستهدفة (خصوصاً `trip_locations`).
+2. إدخال secrets الإنتاج (Bird/Vonage/VAPID) في بيئة التشغيل.
+3. اعتماد مزود VoIP النهائي.

@@ -7,7 +7,7 @@ DO $$
 DECLARE
   missing text := '';
 BEGIN
-  -- A) الجداول الثلاثة الجديدة
+  -- A) الجداول الجديدة
   IF to_regclass('public.chat_messages') IS NULL THEN
     missing := missing || E'\n- table chat_messages';
   END IF;
@@ -16,6 +16,9 @@ BEGIN
   END IF;
   IF to_regclass('public.trip_ratings') IS NULL THEN
     missing := missing || E'\n- table trip_ratings';
+  END IF;
+  IF to_regclass('public.trip_locations') IS NULL THEN
+    missing := missing || E'\n- table trip_locations';
   END IF;
 
   -- B) أعمدة chat_messages الأساسية
@@ -43,11 +46,21 @@ BEGIN
     WHERE trigger_schema = 'public' AND trigger_name = 'update_trip_ratings_updated_at'
   ) THEN missing := missing || E'\n- trigger update_trip_ratings_updated_at'; END IF;
 
-  -- D) Realtime publication لـ chat_messages
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.triggers
+    WHERE trigger_schema = 'public' AND trigger_name = 'update_trip_locations_updated_at'
+  ) THEN missing := missing || E'\n- trigger update_trip_locations_updated_at'; END IF;
+
+  -- D) Realtime publication لـ chat_messages + trip_locations
   IF NOT EXISTS (
     SELECT 1 FROM pg_publication_tables
     WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'chat_messages'
   ) THEN missing := missing || E'\n- realtime publication chat_messages'; END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'trip_locations'
+  ) THEN missing := missing || E'\n- realtime publication trip_locations'; END IF;
 
   IF missing <> '' THEN
     RAISE EXCEPTION 'BATCH2 VERIFY FAILED — missing:%', missing;

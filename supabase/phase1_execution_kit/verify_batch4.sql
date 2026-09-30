@@ -9,7 +9,7 @@ DECLARE
   t text;
   tables text[] := ARRAY[
     'loads', 'bids', 'app_users', 'drafts',
-    'chat_messages', 'push_subscriptions', 'trip_ratings'
+    'chat_messages', 'push_subscriptions', 'trip_ratings', 'trip_locations'
   ];
 BEGIN
   -- A) RLS مفعّل على كل الجداول المستهدفة
@@ -31,6 +31,7 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='chat_messages' AND policyname='chat_insert_party') THEN missing := missing || E'\n- policy chat_insert_party'; END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='push_subscriptions' AND policyname='push_subscriptions_select_own') THEN missing := missing || E'\n- policy push_subscriptions_select_own'; END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='trip_ratings' AND policyname='trip_ratings_insert_participant') THEN missing := missing || E'\n- policy trip_ratings_insert_participant'; END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='trip_locations' AND policyname='trip_locations_select_party') THEN missing := missing || E'\n- policy trip_locations_select_party'; END IF;
 
   -- C) سياسات storage للصوت
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='storage' AND tablename='objects' AND policyname='chat_voice_insert_participants') THEN missing := missing || E'\n- storage policy chat_voice_insert_participants'; END IF;
@@ -54,8 +55,13 @@ BEGIN
 
   IF EXISTS (
     SELECT 1 FROM information_schema.role_table_grants
-    WHERE table_schema='public' AND table_name='chat_messages' AND grantee='authenticated' AND privilege_type IN ('UPDATE','DELETE')
-  ) THEN missing := missing || E'\n- UPDATE/DELETE still granted on chat_messages'; END IF;
+    WHERE table_schema='public' AND table_name='chat_messages' AND grantee='authenticated' AND privilege_type IN ('INSERT','UPDATE','DELETE')
+  ) THEN missing := missing || E'\n- INSERT/UPDATE/DELETE still granted on chat_messages'; END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM information_schema.role_table_grants
+    WHERE table_schema='public' AND table_name='trip_locations' AND grantee='authenticated' AND privilege_type IN ('INSERT','UPDATE','DELETE')
+  ) THEN missing := missing || E'\n- INSERT/UPDATE/DELETE still granted on trip_locations'; END IF;
 
   IF missing <> '' THEN
     RAISE EXCEPTION 'BATCH4 VERIFY FAILED — missing:%', missing;

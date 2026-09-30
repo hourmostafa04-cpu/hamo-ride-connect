@@ -14,6 +14,7 @@ import {
   uploadVoice,
   type ChatMessage,
 } from "@/lib/hamoula-chat";
+import { useAppLanguage } from "@/lib/app-language";
 
 export const Route = createFileRoute("/chat")({
   head: () => ({
@@ -45,6 +46,8 @@ function timeText(ts: number) {
 }
 
 function ChatPage() {
+  const lang = useAppLanguage();
+  const fr = lang === "fr";
   const { load: loadId } = Route.useSearch();
   const { account, loads, bids, ready } = useHamoula();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -70,7 +73,9 @@ function ChatPage() {
     Boolean(myPhone) && account?.role === "driver" && acceptedBid?.driverId === driverKey;
   const allowed = Boolean(load) && (isShipper || isDriver);
 
-  const counterpart = isShipper ? (acceptedBid?.driver ?? "السائق") : (load?.shipper ?? "صاحب البضاعة");
+  const counterpart = isShipper
+    ? (acceptedBid?.driver ?? (fr ? "Chauffeur" : "السائق"))
+    : (load?.shipper ?? (fr ? "Client" : "صاحب البضاعة"));
 
   useEffect(() => {
     if (!allowed || !loadId) return;
@@ -81,7 +86,7 @@ function ChatPage() {
         setMessages(m);
         markRead(loadId);
       })
-      .catch(() => toast.error("ما قدرناش نجيبو الرسائل"));
+      .catch(() => toast.error(fr ? "Impossible de charger les messages" : "ما قدرناش نجيبو الرسائل"));
     const off = subscribeMessages(loadId, (m) => {
       setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
       markRead(loadId);
@@ -90,7 +95,7 @@ function ChatPage() {
       alive = false;
       off();
     };
-  }, [allowed, loadId]);
+  }, [allowed, loadId, fr]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -105,7 +110,7 @@ function ChatPage() {
 
         markRead(loadId);
       } catch {
-        toast.error("ما تبعتاتش الرسالة — عاود المحاولة");
+        toast.error(fr ? "Message non envoyé" : "ما تبعتاتش الرسالة — عاود المحاولة");
       } finally {
         setSending(false);
       }
@@ -123,7 +128,7 @@ function ChatPage() {
   if (!ready) {
     return (
       <PhoneFrame>
-        <AppHeader title="المحادثة" showBack />
+        <AppHeader title={fr ? "Chat" : "المحادثة"} showBack />
         <main className="flex-1 p-5" />
       </PhoneFrame>
     );
@@ -132,10 +137,12 @@ function ChatPage() {
   if (!allowed) {
     return (
       <PhoneFrame>
-        <AppHeader title="المحادثة" showBack />
+        <AppHeader title={fr ? "Chat" : "المحادثة"} showBack />
         <main className="flex-1 p-5">
           <p className="rounded-2xl border-2 border-destructive/40 bg-destructive/10 p-4 text-center text-sm font-extrabold text-destructive">
-            هاد المحادثة ماشي ديالك — كتقدر تفتح غير المحادثات ديال الطلبات ديالك.
+            {fr
+              ? "Ce chat ne vous appartient pas."
+              : "هاد المحادثة ماشي ديالك — كتقدر تفتح غير المحادثات ديال الطلبات ديالك."}
           </p>
         </main>
       </PhoneFrame>
@@ -184,7 +191,7 @@ function ChatPage() {
             <button
               type="button"
               onClick={() => setRecording(true)}
-              aria-label="رسالة صوتية"
+              aria-label={fr ? "Message vocal" : "رسالة صوتية"}
               className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-secondary text-primary active:scale-95"
             >
               <Mic className="size-6" />
@@ -195,14 +202,14 @@ function ChatPage() {
               onKeyDown={(e) => {
                 if (e.key === "Enter") void submit();
               }}
-              placeholder="كتب رسالة…"
+              placeholder={fr ? "Écrire un message…" : "كتب رسالة…"}
               className="min-h-12 flex-1 rounded-2xl border-2 border-border bg-card px-3 text-base font-bold outline-none focus:border-primary"
             />
             <button
               type="button"
               onClick={() => void submit()}
               disabled={sending || !text.trim()}
-              aria-label="إرسال"
+              aria-label={fr ? "Envoyer" : "إرسال"}
               className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground disabled:opacity-40 active:scale-95"
             >
               <Send className="size-6" />
@@ -214,14 +221,14 @@ function ChatPage() {
       <VoiceRecorderSheet
         open={recording}
         onClose={() => setRecording(false)}
-        title="رسالة صوتية"
-        hint="قول رسالتك ونحبسو وحدنا منين تسالي"
-        transcript="رسالة صوتية"
+        title={fr ? "Message vocal" : "رسالة صوتية"}
+        hint={fr ? "Parlez et nous l'envoyons automatiquement" : "قول رسالتك ونحبسو وحدنا منين تسالي"}
+        transcript={fr ? "Message vocal" : "رسالة صوتية"}
         onSend={(note) => {
           setRecording(false);
           void (async () => {
             if (!note.audioUrl || !loadId) {
-              toast.error("ما كاين حتى تسجيل");
+              toast.error(fr ? "Aucun enregistrement" : "ما كاين حتى تسجيل");
               return;
             }
             try {
@@ -233,7 +240,7 @@ function ChatPage() {
                 ...(note.transcript ? { transcript: note.transcript } : {}),
               });
             } catch {
-              toast.error("ما تبعتاتش الرسالة الصوتية");
+              toast.error(fr ? "Message vocal non envoyé" : "ما تبعتاتش الرسالة الصوتية");
             }
           })();
         }}
