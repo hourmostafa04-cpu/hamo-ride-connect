@@ -620,3 +620,29 @@ _آخر تحديث: 30 سبتمبر 2026 بواسطة Abacus AI Agent_
 - تفعيل OTP الحقيقي: محتاج `BIRD_API_KEY`, `VONAGE_API_KEY`, `VONAGE_API_SECRET`, `SEND_SMS_HOOK_SECRET` فـ Lovable Secret Manager.
 - E2E الكامل: محتاج OTP + مزامنة الكود المصلح إلى Lovable المنشور.
 - git push ديال `14be8cc`: فشل بسبب auth — غادي يتعاد.
+
+
+
+---
+
+## 2026-10-01 — Security Audit 3 Hardening (بدون إعادة Batch)
+
+**Branch**: `features/phase1-review`
+
+### Security
+- مراجعة مباشرة لـ Security Audit 3 على Lovable Cloud SQL Editor.
+- قبل hardening كانو كاينين grants من نوع `REFERENCES` و `TRIGGER` للـ `authenticated`.
+- تطبيق revoke شامل:
+  - `REVOKE TRUNCATE, TRIGGER, REFERENCES ON ALL TABLES IN SCHEMA public FROM anon, authenticated`
+  - `ALTER DEFAULT PRIVILEGES ... REVOKE TRUNCATE, TRIGGER, REFERENCES ...`
+
+### Re-Audit (بعد التصحيح)
+- `anon_policy_rows = 0`
+- `public_tables_without_rls = 0`
+- `risky_priv_rows = 0`
+- grants المتبقية للـ `authenticated`: `DELETE, INSERT, SELECT, UPDATE` فقط (24 rows)
+- `anon` grants: 0
+
+### Git
+- تأكيد commit `14be8cc` موجود ومرفوع فعلياً على GitHub ضمن branch `features/phase1-review`.
+- رأس الفرع على origin: `4706f0f`.

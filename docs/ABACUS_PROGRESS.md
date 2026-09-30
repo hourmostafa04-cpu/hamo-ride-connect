@@ -797,3 +797,38 @@ _آخر تحديث: 30 سبتمبر 2026 بواسطة Abacus AI Agent_
 1. إدخال Secrets OTP فـ Lovable Secret Manager: `BIRD_API_KEY`, `VONAGE_API_KEY`, `VONAGE_API_SECRET`, `SEND_SMS_HOOK_SECRET` (و`VONAGE_SMS_FROM` اختياري).
 2. مزامنة كود الريبو (الفرع `features/phase1-review`) إلى تطبيق Lovable المنشور باش الكود يمتثل لـ RLS الجديد.
 3. بعدها: تفعيل Auth Hook + اختبار تسجيل/دخول حقيقيين + E2E كامل.
+
+
+
+---
+
+## تحديث تنفيذي 2026-10-01 (Post-Phase1 Hardening: Security Audit 3)
+
+**Branch**: `features/phase1-review`
+
+### المطلوب المنجز ✅
+- تمت مراجعة **Security Audit 3** داخل **Lovable Cloud → SQL editor** بلا إعادة أي Batch.
+- تم رصد صلاحيات زايدة للـ `authenticated` من النوع:
+  - `REFERENCES`
+  - `TRIGGER`
+- تم تطبيق hardening مباشر على قاعدة Lovable:
+  - `REVOKE TRUNCATE, TRIGGER, REFERENCES ON ALL TABLES IN SCHEMA public FROM anon, authenticated`
+  - `ALTER DEFAULT PRIVILEGES ... REVOKE TRUNCATE, TRIGGER, REFERENCES ...`
+
+### نتيجة إعادة التدقيق (Re-Audit) ✅
+- `anon_policy_rows = 0`
+- `public_tables_without_rls = 0`
+- `risky_priv_rows = 0`  (TRUNCATE/TRIGGER/REFERENCES)
+- توزيع الصلاحيات الجدولية بعد hardening:
+  - `authenticated`: 24 grant rows
+  - `privilege_types`: `DELETE, INSERT, SELECT, UPDATE`
+  - `anon`: 0 rows
+
+### Git / Sync ✅
+- تأكيد أن commit `14be8cc` مرفوع فعلياً على GitHub (داخل تاريخ الفرع).
+- `refs/heads/features/phase1-review` على origin كيشير لـ `4706f0f`، وداك الـHEAD فيه `14be8cc` ضمن السلسلة.
+- من داخل Lovable (Cloud/Workspace) المشروع باقٍ مربوط بنفس repo/branch workflow ديال GitHub publishing.
+
+### ملاحظات
+- ما تعاود حتى Batch من Batch1..Batch4.
+- ما تبدل حتى Secret فهاد الجولة.
