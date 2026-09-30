@@ -27,4 +27,5 @@ export function applyLanguage(lang: AppLanguage) {
   const html = document.documentElement;
   html.lang = lang;
   html.dir = dirOf(lang);
+  // TODO(i18n-phase1): التبديل بين ar/fr شغال، لكن ترجمة المحتوى الفرنسي عبر كل الشاشات مازال غير مكتملة.
 }

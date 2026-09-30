@@ -351,6 +351,10 @@ _آخر تحديث: 30 سبتمبر 2026 بواسطة Abacus AI Agent_
 - تم فحص الشيفرة والملفات المستهدفة يدوياً للتطابق مع متطلبات المراجعة.
 - التحقق من وجود الدوال والسياسات الحساسة المطلوبة في batch3/batch4.
 - التحقق من مسارات OTP وDemo وPush وRatings وLanguage/Cities على مستوى الكود.
+- تشغيل أوامر التحقق بنجاح:
+  - `bun run typecheck` ✅
+  - `bun run test` (17/17) ✅
+  - `bun run build` ✅
 
 ### BLOCKED ⛔
 - تفعيل Push فعلياً في بيئة التشغيل يحتاج وجود `VAPID_PUBLIC_KEY` في runtime environment.
