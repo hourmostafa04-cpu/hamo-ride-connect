@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createHmac, timingSafeEqual } from "crypto";
+import { normalizeMoroccoE164, verifyStandardWebhookSignature } from "@/lib/auth-sms-hook";
 
 // Supabase "Send SMS" Auth Hook.
 // Supabase generates the OTP; this endpoint only DELIVERS the same OTP:
@@ -10,47 +10,19 @@ import { createHmac, timingSafeEqual } from "crypto";
 const BIRD_URL = "https://eu1.platform.bird.com/v1/whatsapp/messages";
 const BIRD_TEMPLATE = "bird_otp";
 const BIRD_LANGUAGE = "ar";
-const SIGNATURE_TOLERANCE_SECONDS = 5 * 60;
 const BIRD_TIMEOUT_MS = 2_500;
 const VONAGE_TIMEOUT_MS = 2_000;
 
 type HookPayload = {
   user?: { phone?: string };
-  sms?: { otp?: string };
+  sms?: { otp?: string | number };
 };
 
 /** Standard-Webhooks signature check (Supabase auth hook secret: v1,whsec_<base64>). */
 function verifySignature(rawBody: string, headers: Headers): boolean {
   const secret = process.env["SEND_SMS_HOOK_SECRET"];
   if (!secret) return false;
-  const id = headers.get("webhook-id");
-  const timestamp = headers.get("webhook-timestamp");
-  const signatureHeader = headers.get("webhook-signature");
-  if (!id || !timestamp || !signatureHeader) return false;
-
-  const timestampSeconds = Number(timestamp);
-  if (!Number.isFinite(timestampSeconds)) return false;
-  const ageSeconds = Math.abs(Date.now() / 1_000 - timestampSeconds);
-  if (ageSeconds > SIGNATURE_TOLERANCE_SECONDS) return false;
-
-  const base64Secret = secret.replace(/^v1,?/, "").replace(/^whsec_/, "");
-  if (!base64Secret) return false;
-  const expected = createHmac("sha256", Buffer.from(base64Secret, "base64"))
-    .update(`${id}.${timestamp}.${rawBody}`)
-    .digest("base64");
-
-  return signatureHeader.split(" ").some((part) => {
-    const [version, value = ""] = part.split(",");
-    if (version !== "v1" || !value) return false;
-    const a = Buffer.from(value);
-    const b = Buffer.from(expected);
-    return a.length === b.length && timingSafeEqual(a, b);
-  });
-}
-
-function toE164(raw: string): string {
-  const digits = raw.replace(/[^\d]/g, "");
-  return `+${digits}`;
+  return verifyStandardWebhookSignature({ rawBody, headers, secret });
 }
 
 async function sendViaBird(phone: string, otp: string) {
@@ -137,7 +109,7 @@ export const Route = createFileRoute("/api/public/auth-send-sms")({
         }
 
         const phoneRaw = payload.user?.phone ?? "";
-        const otp = payload.sms?.otp ?? "";
+        const otp = String(payload.sms?.otp ?? "").trim();
         if (!phoneRaw || !otp) {
           return new Response(JSON.stringify({ error: { http_code: 400, message: "missing phone or otp" } }), {
             status: 400,
@@ -145,7 +117,14 @@ export const Route = createFileRoute("/api/public/auth-send-sms")({
           });
         }
 
-        const phone = toE164(phoneRaw);
+        const phone = normalizeMoroccoE164(phoneRaw);
+        if (!phone) {
+          return new Response(JSON.stringify({ error: { http_code: 400, message: "invalid moroccan phone format" } }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
         const bird = await sendViaBird(phone, otp);
         if (bird.ok) {
           return new Response(JSON.stringify({}), {
