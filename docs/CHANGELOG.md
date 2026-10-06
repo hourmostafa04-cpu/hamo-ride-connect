@@ -4,6 +4,37 @@
 
 ---
 
+## 2026-10-07 — Production OTP switched to Bird Verify (no Vonage)
+
+**Branch**: `features/phase1-review`
+
+### Changed
+- Added new server endpoints for production OTP:
+  - `src/routes/api/public/auth-verify-request.ts`
+  - `src/routes/api/public/auth-verify-check.ts`
+- Added shared Bird verify + session helper module:
+  - `src/lib/bird-verify.ts`
+  - `src/lib/bird-verify.test.ts`
+- Updated `src/components/hamoula/RegisterScreen.tsx` production path:
+  - replaced `supabase.auth.signInWithOtp()` with `/api/public/auth-verify-request`
+  - replaced direct `supabase.auth.verifyOtp()` with `/api/public/auth-verify-check` + `supabase.auth.setSession()`
+- Preserved demo login branch unchanged (DEV-only behavior intact).
+- Kept `src/routes/api/public/auth-send-sms.ts` as legacy/orphaned route (not used by current production auth flow).
+
+### Security / Runtime
+- Bird key remains server-only (`process.env.BIRD_API_KEY`), never exposed to frontend.
+- Added/confirmed server env placeholders in `.env.example`:
+  - `SUPABASE_PUBLISHABLE_KEY`
+  - `VITE_SUPABASE_PUBLISHABLE_KEY`
+  - `SUPABASE_SERVICE_ROLE_KEY`
+
+### Validation
+- `bun run test` ✅
+- `bun run typecheck` ✅
+- `bun run build` ✅
+
+---
+
 ## 2026-09-30 — جولة 2: الوصول المباشر لـ Lovable + إدخال VAPID
 
 **Branch**: `features/phase1-review`

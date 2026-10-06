@@ -4,6 +4,31 @@
 
 ---
 
+## OTP Production Fix — 2026-10-07 (Bird Verify + real Supabase session)
+
+**Branch**: `features/phase1-review`
+
+### DONE ✅
+- Replaced production OTP API flow with **Bird Verify server endpoints**:
+  - `POST /api/public/auth-verify-request`
+  - `POST /api/public/auth-verify-check`
+- Reused Moroccan phone normalization from `src/lib/auth-sms-hook.ts` (no duplicated phone rules).
+- Removed production dependency on Supabase Send SMS Hook path and **removed Vonage from the production OTP execution path**.
+- Added server-side Supabase session establishment after successful Bird OTP verification:
+  - find-or-create Auth user by phone
+  - enforce `phone_confirm: true`
+  - mint real session via server-side password sign-in
+  - return access/refresh tokens for frontend `supabase.auth.setSession(...)`
+- Kept demo login behavior untouched (DEV-only branch remains intact).
+- Added hermetic unit tests for Bird verify integration logic (`src/lib/bird-verify.test.ts`).
+- Updated `.env.example` with `SUPABASE_PUBLISHABLE_KEY` / `VITE_SUPABASE_PUBLISHABLE_KEY` placeholders.
+
+### NOTES
+- Supabase JS version in this repo does not support `admin.generateLink({ type: 'sms' })` typings; implemented a supported server-only session minting flow after Bird check.
+- Live Bird delivery was **not** executed locally (no runtime production secrets in local shell).
+
+---
+
 ## تحديث تنفيذي 2026-09-30 (جولة 2: الوصول المباشر لـ Lovable)
 
 **Branch**: `features/phase1-review` (آخر commit: `b85a59c`)

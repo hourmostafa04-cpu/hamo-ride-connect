@@ -24,6 +24,8 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as TrackingRouteImport } from './routes/tracking'
 import { Route as TripDetailsRouteImport } from './routes/trip-details'
 import { Route as ApiPublicAuthSendSmsRouteImport } from './routes/api/public/auth-send-sms'
+import { Route as ApiPublicAuthVerifyCheckRouteImport } from './routes/api/public/auth-verify-check'
+import { Route as ApiPublicAuthVerifyRequestRouteImport } from './routes/api/public/auth-verify-request'
 import { Route as ApiPublicVonageMessagesInboundRouteImport } from './routes/api/public/vonage-messages-inbound'
 import { Route as ApiPublicVonageMessagesStatusRouteImport } from './routes/api/public/vonage-messages-status'
 
@@ -102,6 +104,18 @@ const ApiPublicAuthSendSmsRoute = ApiPublicAuthSendSmsRouteImport.update({
   path: '/api/public/auth-send-sms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAuthVerifyCheckRoute =
+  ApiPublicAuthVerifyCheckRouteImport.update({
+    id: '/api/public/auth-verify-check',
+    path: '/api/public/auth-verify-check',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicAuthVerifyRequestRoute =
+  ApiPublicAuthVerifyRequestRouteImport.update({
+    id: '/api/public/auth-verify-request',
+    path: '/api/public/auth-verify-request',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicVonageMessagesInboundRoute =
   ApiPublicVonageMessagesInboundRouteImport.update({
     id: '/api/public/vonage-messages-inbound',
@@ -131,6 +145,8 @@ export interface FileRoutesByFullPath {
   '/tracking': typeof TrackingRoute
   '/trip-details': typeof TripDetailsRoute
   '/api/public/auth-send-sms': typeof ApiPublicAuthSendSmsRoute
+  '/api/public/auth-verify-check': typeof ApiPublicAuthVerifyCheckRoute
+  '/api/public/auth-verify-request': typeof ApiPublicAuthVerifyRequestRoute
   '/api/public/vonage-messages-inbound': typeof ApiPublicVonageMessagesInboundRoute
   '/api/public/vonage-messages-status': typeof ApiPublicVonageMessagesStatusRoute
 }
@@ -150,6 +166,8 @@ export interface FileRoutesByTo {
   '/tracking': typeof TrackingRoute
   '/trip-details': typeof TripDetailsRoute
   '/api/public/auth-send-sms': typeof ApiPublicAuthSendSmsRoute
+  '/api/public/auth-verify-check': typeof ApiPublicAuthVerifyCheckRoute
+  '/api/public/auth-verify-request': typeof ApiPublicAuthVerifyRequestRoute
   '/api/public/vonage-messages-inbound': typeof ApiPublicVonageMessagesInboundRoute
   '/api/public/vonage-messages-status': typeof ApiPublicVonageMessagesStatusRoute
 }
@@ -170,6 +188,8 @@ export interface FileRoutesById {
   '/tracking': typeof TrackingRoute
   '/trip-details': typeof TripDetailsRoute
   '/api/public/auth-send-sms': typeof ApiPublicAuthSendSmsRoute
+  '/api/public/auth-verify-check': typeof ApiPublicAuthVerifyCheckRoute
+  '/api/public/auth-verify-request': typeof ApiPublicAuthVerifyRequestRoute
   '/api/public/vonage-messages-inbound': typeof ApiPublicVonageMessagesInboundRoute
   '/api/public/vonage-messages-status': typeof ApiPublicVonageMessagesStatusRoute
 }
@@ -191,6 +211,8 @@ export interface FileRouteTypes {
     | '/tracking'
     | '/trip-details'
     | '/api/public/auth-send-sms'
+    | '/api/public/auth-verify-check'
+    | '/api/public/auth-verify-request'
     | '/api/public/vonage-messages-inbound'
     | '/api/public/vonage-messages-status'
   fileRoutesByTo: FileRoutesByTo
@@ -210,6 +232,8 @@ export interface FileRouteTypes {
     | '/tracking'
     | '/trip-details'
     | '/api/public/auth-send-sms'
+    | '/api/public/auth-verify-check'
+    | '/api/public/auth-verify-request'
     | '/api/public/vonage-messages-inbound'
     | '/api/public/vonage-messages-status'
   id:
@@ -229,6 +253,8 @@ export interface FileRouteTypes {
     | '/tracking'
     | '/trip-details'
     | '/api/public/auth-send-sms'
+    | '/api/public/auth-verify-check'
+    | '/api/public/auth-verify-request'
     | '/api/public/vonage-messages-inbound'
     | '/api/public/vonage-messages-status'
   fileRoutesById: FileRoutesById
@@ -249,6 +275,8 @@ export interface RootRouteChildren {
   TrackingRoute: typeof TrackingRoute
   TripDetailsRoute: typeof TripDetailsRoute
   ApiPublicAuthSendSmsRoute: typeof ApiPublicAuthSendSmsRoute
+  ApiPublicAuthVerifyCheckRoute: typeof ApiPublicAuthVerifyCheckRoute
+  ApiPublicAuthVerifyRequestRoute: typeof ApiPublicAuthVerifyRequestRoute
   ApiPublicVonageMessagesInboundRoute: typeof ApiPublicVonageMessagesInboundRoute
   ApiPublicVonageMessagesStatusRoute: typeof ApiPublicVonageMessagesStatusRoute
 }
@@ -360,6 +388,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAuthSendSmsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/auth-verify-check': {
+      id: '/api/public/auth-verify-check'
+      path: '/api/public/auth-verify-check'
+      fullPath: '/api/public/auth-verify-check'
+      preLoaderRoute: typeof ApiPublicAuthVerifyCheckRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/auth-verify-request': {
+      id: '/api/public/auth-verify-request'
+      path: '/api/public/auth-verify-request'
+      fullPath: '/api/public/auth-verify-request'
+      preLoaderRoute: typeof ApiPublicAuthVerifyRequestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/vonage-messages-inbound': {
       id: '/api/public/vonage-messages-inbound'
       path: '/api/public/vonage-messages-inbound'
@@ -393,6 +435,8 @@ const rootRouteChildren: RootRouteChildren = {
   TrackingRoute: TrackingRoute,
   TripDetailsRoute: TripDetailsRoute,
   ApiPublicAuthSendSmsRoute: ApiPublicAuthSendSmsRoute,
+  ApiPublicAuthVerifyCheckRoute: ApiPublicAuthVerifyCheckRoute,
+  ApiPublicAuthVerifyRequestRoute: ApiPublicAuthVerifyRequestRoute,
   ApiPublicVonageMessagesInboundRoute: ApiPublicVonageMessagesInboundRoute,
   ApiPublicVonageMessagesStatusRoute: ApiPublicVonageMessagesStatusRoute,
 }

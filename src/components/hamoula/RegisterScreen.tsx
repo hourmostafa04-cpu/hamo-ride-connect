@@ -104,6 +104,8 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
   const [otpBusy, setOtpBusy] = useState(false);
   /** E.164 number the current code was sent to. */
   const [otpSentTo, setOtpSentTo] = useState<string | null>(null);
+  /** Bird verification identifier (if returned by provider API). */
+  const [otpVerifyId, setOtpVerifyId] = useState<string | null>(null);
   const [resendIn, setResendIn] = useState(0);
   const [firstName, setFirstName] = useState(account?.name?.split(/\s+/)[0] ?? "");
   const [lastName, setLastName] = useState(
@@ -345,6 +347,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
     const e164 = toE164(normalized);
     // وضع الاختبار (المعاينة فقط): بلا SMS — الرمز التجريبي كيكفي.
     if (DEMO_LOGIN_ENABLED) {
+      setOtpVerifyId(null);
       setOtpSentTo(e164);
       setOtp("");
       setResendIn(0);
@@ -354,19 +357,38 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
       return;
     }
     setOtpBusy(true);
-    const { error: sendError } = await supabase.auth.signInWithOtp({ phone: e164 });
-    setOtpBusy(false);
-    if (sendError) {
+    try {
+      const response = await fetch("/api/public/auth-verify-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: e164 }),
+      });
+      const payload = (await response.json().catch(() => null)) as
+        | { ok?: boolean; verifyId?: string | null; error?: { message?: string } }
+        | null;
+
+      if (!response.ok || !payload?.ok) {
+        const message = payload?.error?.message ?? "OTP send failed";
+        playSfx("error");
+        setError(fr ? `Erreur d'envoi du code : ${message}` : `خطأ فإرسال الرمز: ${message}`);
+        return;
+      }
+
+      setOtpVerifyId(payload.verifyId ?? null);
+      setOtpSentTo(e164);
+      setOtp("");
+      setResendIn(60);
+      setStep("otp");
+      playSfx("success");
+      toast.success(t("تصيفط ليك رمز التحقق بال SMS", "Code SMS envoyé"), { description: formatPhone(normalized) });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "OTP send failed";
       playSfx("error");
-      setError(fr ? `Erreur d'envoi du code : ${sendError.message}` : `خطأ فإرسال الرمز: ${sendError.message}`);
+      setError(fr ? `Erreur d'envoi du code : ${message}` : `خطأ فإرسال الرمز: ${message}`);
       return;
+    } finally {
+      setOtpBusy(false);
     }
-    setOtpSentTo(e164);
-    setOtp("");
-    setResendIn(60);
-    setStep("otp");
-    playSfx("success");
-    toast.success(t("تصيفط ليك رمز التحقق بال SMS", "Code SMS envoyé"), { description: formatPhone(normalized) });
   };
 
   /** Step 2: verify the code, then restore the account or open registration. */
@@ -414,15 +436,47 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
         return;
       }
     } else {
-      const { error: verifyError } = await supabase.auth.verifyOtp({
-        phone: otpSentTo,
-        token: code,
-        type: "sms",
-      });
-      if (verifyError) {
+      try {
+        const response = await fetch("/api/public/auth-verify-check", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone: otpSentTo, verifyId: otpVerifyId, code }),
+        });
+        const payload = (await response.json().catch(() => null)) as
+          | {
+              ok?: boolean;
+              session?: { accessToken?: string; refreshToken?: string };
+              error?: { message?: string };
+            }
+          | null;
+
+        if (!response.ok || !payload?.ok || !payload.session?.accessToken || !payload.session.refreshToken) {
+          const message = payload?.error?.message ?? "OTP verification failed";
+          setOtpBusy(false);
+          playSfx("error");
+          setError(fr ? `Code invalide : ${message}` : `الرمز ماشي صحيح: ${message}`);
+          return;
+        }
+
+        const { error: setSessionError } = await supabase.auth.setSession({
+          access_token: payload.session.accessToken,
+          refresh_token: payload.session.refreshToken,
+        });
+        if (setSessionError) {
+          setOtpBusy(false);
+          playSfx("error");
+          setError(
+            fr
+              ? `Connexion impossible : ${setSessionError.message}`
+              : `تعذر إنشاء الجلسة: ${setSessionError.message}`,
+          );
+          return;
+        }
+      } catch (error) {
         setOtpBusy(false);
         playSfx("error");
-        setError(fr ? `Code invalide : ${verifyError.message}` : `الرمز ماشي صحيح: ${verifyError.message}`);
+        const message = error instanceof Error ? error.message : "OTP verification failed";
+        setError(fr ? `Code invalide : ${message}` : `الرمز ماشي صحيح: ${message}`);
         return;
       }
     }
@@ -460,6 +514,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
   const changeNumber = () => {
     setStep("phone");
     setOtp("");
+    setOtpVerifyId(null);
     setOtpSentTo(null);
     setError(null);
   };
