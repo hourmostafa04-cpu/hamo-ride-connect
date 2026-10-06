@@ -1,10 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   checkBirdOtp,
-  deriveServerPhonePassword,
   mapBirdFailureToOtpError,
+  matchingPhoneCandidates,
+  nextBirdVerificationChannel,
+  normalizeOtpLanguage,
   normalizeOtpPhone,
   requestBirdOtp,
+  resolveAppUserAuthoritativeUserId,
 } from "./bird-verify";
 
 describe("normalizeOtpPhone", () => {
@@ -20,104 +23,271 @@ describe("normalizeOtpPhone", () => {
   });
 });
 
-describe("mapBirdFailureToOtpError", () => {
-  it("maps check invalid code to OTP_INVALID", () => {
-    const result = mapBirdFailureToOtpError({
-      status: 400,
-      payload: { reason: "incorrect_code" },
-      phase: "check",
-    });
-    expect(result.code).toBe("OTP_INVALID");
-  });
-
-  it("maps check attempt exhaustion to OTP_MAX_ATTEMPTS", () => {
-    const result = mapBirdFailureToOtpError({
-      status: 429,
-      payload: { reason: "attempts_exhausted" },
-      phase: "check",
-    });
-    expect(result.code).toBe("OTP_MAX_ATTEMPTS");
-  });
-});
-
-describe("deriveServerPhonePassword", () => {
-  it("is deterministic and user-scoped", () => {
-    const a = deriveServerPhonePassword("u1", "+212612345678", "service-role-a");
-    const b = deriveServerPhonePassword("u1", "+212612345678", "service-role-a");
-    const c = deriveServerPhonePassword("u2", "+212612345678", "service-role-a");
-
-    expect(a).toBe(b);
-    expect(a).not.toBe(c);
-    expect(a.startsWith("Hv1_")).toBe(true);
+describe("normalizeOtpLanguage", () => {
+  it("allows only ar/fr", () => {
+    expect(normalizeOtpLanguage("ar")).toBe("ar");
+    expect(normalizeOtpLanguage("fr")).toBe("fr");
+    expect(normalizeOtpLanguage("en")).toBe("ar");
+    expect(normalizeOtpLanguage(undefined)).toBe("ar");
   });
 });
 
 describe("requestBirdOtp", () => {
-  it("retries with Bearer when AccessKey auth gets rejected", async () => {
-    const fetchImpl = vi
-      .fn<typeof fetch>()
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ error: { message: "unauthorized" } }), {
-          status: 401,
-          headers: { "Content-Type": "application/json" },
+  it("sends Bearer auth with documented body and channel order", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          id: "ver_123",
+          status: "pending",
+          channels: [{ channel: "whatsapp" }, { channel: "sms" }],
+          last_channel: "whatsapp",
+          expires_at: "2030-01-01T00:00:00Z",
         }),
-      )
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ id: "ver_123", channel: "whatsapp" }), {
+        {
           status: 200,
           headers: { "Content-Type": "application/json" },
-        }),
-      );
+        },
+      ),
+    );
 
     const result = await requestBirdOtp({
       phone: "+212612345678",
+      language: "fr",
       apiKey: "bk_eu1_fake",
       fetchImpl,
     });
 
     expect(result.ok).toBe(true);
-    if (result.ok) expect(result.data.verifyId).toBe("ver_123");
+    if (result.ok) {
+      expect(result.data.id).toBe("ver_123");
+      expect(result.data.status).toBe("pending");
+      expect(result.data.channels).toEqual(["whatsapp", "sms"]);
+      expect(result.data.lastChannel).toBe("whatsapp");
+      expect(result.data.expiresAt).toBe("2030-01-01T00:00:00Z");
+    }
 
-    expect(fetchImpl).toHaveBeenCalledTimes(2);
-    const firstHeaders = (fetchImpl.mock.calls[0]?.[1] as RequestInit)?.headers as HeadersInit;
-    const secondHeaders = (fetchImpl.mock.calls[1]?.[1] as RequestInit)?.headers as HeadersInit;
+    const requestUrl = fetchImpl.mock.calls[0]?.[0] as string;
+    const requestInit = fetchImpl.mock.calls[0]?.[1] as RequestInit;
+    expect(requestUrl).toContain("/v1/verify/verifications");
+    expect(new Headers(requestInit.headers).get("Authorization")).toBe("Bearer bk_eu1_fake");
 
-    expect(new Headers(firstHeaders).get("Authorization")).toBe("AccessKey bk_eu1_fake");
-    expect(new Headers(secondHeaders).get("Authorization")).toBe("Bearer bk_eu1_fake");
+    const body = JSON.parse(String(requestInit.body));
+    expect(body).toEqual({
+      to: { phone_number: "+212612345678" },
+      options: {
+        channels: ["whatsapp", "sms"],
+        code_length: 6,
+        language: "fr",
+      },
+    });
+    expect(body.options.channels).toEqual(["whatsapp", "sms"]);
   });
 });
 
 describe("checkBirdOtp", () => {
-  it("falls back from /{id}/check to /check when endpoint is not available", async () => {
-    const fetchImpl = vi
-      .fn<typeof fetch>()
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ reason: "not_found" }), {
-          status: 404,
-          headers: { "Content-Type": "application/json" },
-        }),
-      )
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ success: true }), {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        }),
-      );
+  it("returns success only when success:true", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
 
     const result = await checkBirdOtp({
       phone: "+212612345678",
       code: "123456",
-      verifyId: "ver_123",
       apiKey: "bk_eu1_fake",
       fetchImpl,
     });
 
     expect(result.ok).toBe(true);
-    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
 
-    const firstUrl = fetchImpl.mock.calls[0]?.[0] as string;
-    const secondUrl = fetchImpl.mock.calls[1]?.[0] as string;
-    expect(firstUrl).toContain("/v1/verify/verifications/ver_123/check");
-    expect(secondUrl).toContain("/v1/verify/verifications/check");
+  it("maps 200 success:false incorrect_code", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(JSON.stringify({ success: false, reason: "incorrect_code" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    const result = await checkBirdOtp({
+      phone: "+212612345678",
+      code: "123456",
+      apiKey: "bk_eu1_fake",
+      fetchImpl,
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe("OTP_INVALID");
+  });
+
+  it("maps expired", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(JSON.stringify({ success: false, reason: "expired" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    const result = await checkBirdOtp({
+      phone: "+212612345678",
+      code: "123456",
+      apiKey: "bk_eu1_fake",
+      fetchImpl,
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe("OTP_EXPIRED");
+  });
+
+  it("maps attempts_exhausted", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(JSON.stringify({ success: false, reason: "attempts_exhausted" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    const result = await checkBirdOtp({
+      phone: "+212612345678",
+      code: "123456",
+      apiKey: "bk_eu1_fake",
+      fetchImpl,
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe("OTP_MAX_ATTEMPTS");
+  });
+
+  it("handles 404/422/429 safely", async () => {
+    const cases: Array<{ status: number; expected: string }> = [
+      { status: 404, expected: "OTP_EXPIRED" },
+      { status: 422, expected: "OTP_INVALID" },
+      { status: 429, expected: "OTP_RATE_LIMITED" },
+    ];
+
+    for (const item of cases) {
+      const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
+        new Response(JSON.stringify({ success: false, reason: "unknown" }), {
+          status: item.status,
+          headers: { "Content-Type": "application/json" },
+        }),
+      );
+
+      const result = await checkBirdOtp({
+        phone: "+212612345678",
+        code: "123456",
+        apiKey: "bk_eu1_fake",
+        fetchImpl,
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.error.code).toBe(item.expected);
+    }
+  });
+});
+
+describe("nextBirdVerificationChannel", () => {
+  it("calls next-channel endpoint", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          status: "pending",
+          channels: [{ channel: "whatsapp" }, { channel: "sms" }],
+          last_channel: "sms",
+          expires_at: "2030-01-01T00:00:00Z",
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        },
+      ),
+    );
+
+    const result = await nextBirdVerificationChannel({
+      phone: "+212612345678",
+      apiKey: "bk_eu1_fake",
+      fetchImpl,
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.lastChannel).toBe("sms");
+      expect(result.data.channels).toEqual(["whatsapp", "sms"]);
+    }
+
+    const requestUrl = fetchImpl.mock.calls[0]?.[0] as string;
+    expect(requestUrl).toContain("/v1/verify/verifications/next-channel");
+  });
+
+  it("maps NoNextChannel", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(JSON.stringify({ reason: "NoNextChannel" }), {
+        status: 422,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    const result = await nextBirdVerificationChannel({
+      phone: "+212612345678",
+      apiKey: "bk_eu1_fake",
+      fetchImpl,
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe("OTP_NO_NEXT_CHANNEL");
+  });
+});
+
+describe("identity mapping helpers", () => {
+  it("returns authoritative existing user_id", () => {
+    const result = resolveAppUserAuthoritativeUserId(
+      [
+        { phone: "0612345678", user_id: "uid_1" },
+        { phone: "+212612345678", user_id: "uid_1" },
+      ],
+      "+212612345678",
+    );
+
+    expect(result.authoritativeUserId).toBe("uid_1");
+    expect(result.matchingRows.length).toBe(2);
+  });
+
+  it("rejects conflicting user_id ownership", () => {
+    expect(() =>
+      resolveAppUserAuthoritativeUserId(
+        [
+          { phone: "+212612345678", user_id: "uid_1" },
+          { phone: "0612345678", user_id: "uid_2" },
+        ],
+        "+212612345678",
+      ),
+    ).toThrow("IDENTITY_MISMATCH_CONFLICTING_APP_USERS");
+  });
+
+  it("returns null when user is new", () => {
+    const result = resolveAppUserAuthoritativeUserId([], "+212612345678");
+    expect(result.authoritativeUserId).toBeNull();
+  });
+
+  it("builds matching phone candidates", () => {
+    expect(matchingPhoneCandidates("+212612345678")).toEqual(
+      expect.arrayContaining(["+212612345678", "0612345678", "06 12 34 56 78"]),
+    );
+  });
+});
+
+describe("error mapping safety", () => {
+  it("does not include secrets/details in public error shape", () => {
+    const result = mapBirdFailureToOtpError({
+      status: 429,
+      payload: { error: { message: "token bk_eu1_secret leaked" } },
+      phase: "request",
+    });
+
+    expect(Object.keys(result).sort()).toEqual(["code", "message"]);
+    expect(result.code).toBe("OTP_RATE_LIMITED");
+    expect(result.message.includes("bk_eu1")).toBe(false);
   });
 });

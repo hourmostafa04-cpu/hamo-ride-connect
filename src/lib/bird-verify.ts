@@ -1,4 +1,4 @@
-import { createHmac } from "crypto";
+import { randomBytes } from "crypto";
 import { createClient } from "@supabase/supabase-js";
 import { normalizeMoroccoE164 } from "@/lib/auth-sms-hook";
 import type { Database } from "@/integrations/supabase/types";
@@ -6,27 +6,38 @@ import type { Database } from "@/integrations/supabase/types";
 const DEFAULT_BIRD_BASE_URL = "https://eu1.platform.bird.com";
 const BIRD_TIMEOUT_MS = 8_000;
 
+export type OtpLanguage = "ar" | "fr";
+
 type JsonRecord = Record<string, unknown>;
 
-type BirdAuthMode = "AccessKey" | "Bearer";
+type BirdChannel = "whatsapp" | "sms";
+
+type BirdFailureReason =
+  | "incorrect_code"
+  | "expired"
+  | "attempts_exhausted"
+  | "NoNextChannel"
+  | "rate_limited"
+  | "unknown";
 
 export type OtpApiErrorCode =
   | "MISSING_PHONE"
   | "INVALID_PHONE"
   | "MISSING_CODE"
-  | "MISSING_VERIFY_ID"
   | "SERVER_CONFIG"
   | "OTP_SEND_FAILED"
   | "OTP_INVALID"
   | "OTP_EXPIRED"
   | "OTP_MAX_ATTEMPTS"
+  | "OTP_RATE_LIMITED"
+  | "OTP_NO_NEXT_CHANNEL"
   | "OTP_CHECK_FAILED"
-  | "SUPABASE_AUTH_FAILED";
+  | "SUPABASE_AUTH_FAILED"
+  | "IDENTITY_MISMATCH";
 
 export type OtpApiError = {
   code: OtpApiErrorCode;
   message: string;
-  details?: unknown;
 };
 
 export type OtpApiResult<T> =
@@ -34,91 +45,199 @@ export type OtpApiResult<T> =
   | { ok: false; error: OtpApiError };
 
 export type BirdVerifyRequestResult = {
-  verifyId: string | null;
-  channel: "whatsapp" | "sms" | "unknown";
+  id: string;
+  status: string;
+  channels: BirdChannel[];
+  lastChannel: BirdChannel | null;
+  expiresAt: string | null;
 };
 
 export type BirdVerifyCheckResult = {
-  verifyId: string | null;
+  success: true;
+};
+
+export type BirdNextChannelResult = {
+  status: string;
+  lastChannel: BirdChannel | null;
+  channels: BirdChannel[];
+  expiresAt: string | null;
+};
+
+export type AppUserIdentityRow = {
+  phone: string | null;
+  user_id: string | null;
 };
 
 function asRecord(input: unknown): JsonRecord {
   return input && typeof input === "object" ? (input as JsonRecord) : {};
 }
 
-function readErrorMessage(payload: unknown): string {
-  const p = asRecord(payload);
-  const reason = p["reason"];
-  if (typeof reason === "string" && reason.trim()) return reason;
+function readJsonSafe(response: Response): Promise<JsonRecord> {
+  return response
+    .json()
+    .then((parsed) => asRecord(parsed))
+    .catch(() => ({}));
+}
 
-  const error = asRecord(p["error"]);
-  const nestedMessage = error["message"];
-  if (typeof nestedMessage === "string" && nestedMessage.trim()) return nestedMessage;
+function extractReason(payload: JsonRecord): BirdFailureReason {
+  const reason = payload["reason"];
+  if (reason === "incorrect_code") return "incorrect_code";
+  if (reason === "expired") return "expired";
+  if (reason === "attempts_exhausted") return "attempts_exhausted";
+  if (reason === "NoNextChannel") return "NoNextChannel";
+  if (reason === "rate_limited") return "rate_limited";
 
-  const directMessage = p["message"];
-  if (typeof directMessage === "string" && directMessage.trim()) return directMessage;
+  const error = asRecord(payload["error"]);
+  const code = error["code"];
+  if (code === "NoNextChannel") return "NoNextChannel";
 
-  return "Bird verify request failed";
+  const message = `${String(reason ?? "")} ${String(error["message"] ?? "")}`.toLowerCase();
+  if (message.includes("incorrect")) return "incorrect_code";
+  if (message.includes("expired")) return "expired";
+  if (message.includes("attempt") && message.includes("exhaust")) return "attempts_exhausted";
+  if (message.includes("no next channel")) return "NoNextChannel";
+  if (message.includes("rate") || message.includes("too many")) return "rate_limited";
+
+  return "unknown";
+}
+
+function normalizeChannel(value: unknown): BirdChannel | null {
+  if (value === "whatsapp" || value === "sms") return value;
+  return null;
+}
+
+function parseChannels(payload: JsonRecord): BirdChannel[] {
+  const channelsRaw = payload["channels"];
+  if (!Array.isArray(channelsRaw)) return [];
+
+  const found: BirdChannel[] = [];
+  for (const entry of channelsRaw) {
+    if (typeof entry === "string") {
+      const normalized = normalizeChannel(entry);
+      if (normalized && !found.includes(normalized)) found.push(normalized);
+      continue;
+    }
+    const obj = asRecord(entry);
+    const normalized = normalizeChannel(obj["channel"]);
+    if (normalized && !found.includes(normalized)) found.push(normalized);
+  }
+  return found;
+}
+
+function parseLastChannel(payload: JsonRecord): BirdChannel | null {
+  const direct = normalizeChannel(payload["last_channel"]);
+  if (direct) return direct;
+
+  const channels = parseChannels(payload);
+  return channels.length > 0 ? channels[0]! : null;
+}
+
+function parseVerificationId(payload: JsonRecord): string | null {
+  const id = payload["id"];
+  if (typeof id === "string" && id.trim()) return id;
+  return null;
 }
 
 export function normalizeOtpPhone(phoneRaw: string): string | null {
   return normalizeMoroccoE164(phoneRaw);
 }
 
-export function mapBirdFailureToOtpError(input: { status: number; payload: unknown; phase: "request" | "check" }): OtpApiError {
-  const { status, payload, phase } = input;
-  const msg = readErrorMessage(payload).toLowerCase();
+export function normalizeOtpLanguage(input: unknown): OtpLanguage {
+  return input === "fr" ? "fr" : "ar";
+}
 
-  if (phase === "check") {
-    if (status === 429 || msg.includes("too many") || msg.includes("attempt") || msg.includes("exhaust")) {
-      return {
-        code: "OTP_MAX_ATTEMPTS",
-        message: "Maximum OTP attempts reached. Please request a new code.",
-        details: payload,
-      };
-    }
-    if (status === 410 || msg.includes("expired")) {
-      return {
-        code: "OTP_EXPIRED",
-        message: "OTP expired. Please request a new code.",
-        details: payload,
-      };
-    }
-    if (status === 400 || status === 401 || msg.includes("invalid") || msg.includes("incorrect") || msg.includes("code")) {
-      return {
-        code: "OTP_INVALID",
-        message: "Invalid OTP code.",
-        details: payload,
-      };
-    }
-    return {
-      code: "OTP_CHECK_FAILED",
-      message: "OTP verification failed.",
-      details: payload,
-    };
+export function localPhoneFromE164(phone: string): string | null {
+  if (!/^\+212[5-7]\d{8}$/.test(phone)) return null;
+  return `0${phone.slice(4)}`;
+}
+
+export function formatLocalPhone(localPhone: string): string {
+  return localPhone.replace(/^(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/, "$1 $2 $3 $4 $5");
+}
+
+export function matchingPhoneCandidates(verifiedPhoneE164: string): string[] {
+  const candidates = new Set<string>([verifiedPhoneE164]);
+  const local = localPhoneFromE164(verifiedPhoneE164);
+  if (local) {
+    candidates.add(local);
+    candidates.add(formatLocalPhone(local));
+  }
+  return [...candidates];
+}
+
+export function resolveAppUserAuthoritativeUserId(rows: AppUserIdentityRow[], verifiedPhoneE164: string): {
+  matchingRows: AppUserIdentityRow[];
+  authoritativeUserId: string | null;
+} {
+  const matchingRows = rows.filter((row) => normalizeOtpPhone(row.phone ?? "") === verifiedPhoneE164);
+  const uniqueUserIds = [...new Set(matchingRows.map((row) => row.user_id).filter((v): v is string => Boolean(v)))];
+
+  if (uniqueUserIds.length > 1) {
+    throw new Error("IDENTITY_MISMATCH_CONFLICTING_APP_USERS");
   }
 
   return {
-    code: "OTP_SEND_FAILED",
-    message: "Failed to send OTP.",
-    details: payload,
+    matchingRows,
+    authoritativeUserId: uniqueUserIds[0] ?? null,
   };
 }
 
-export function deriveServerPhonePassword(userId: string, phone: string, serviceRoleKey: string): string {
-  const digest = createHmac("sha256", serviceRoleKey)
-    .update(`hamoula-bird-verify:${userId}:${phone}`)
-    .digest("base64url");
-  return `Hv1_${digest.slice(0, 52)}`;
-}
+export function mapBirdFailureToOtpError(input: {
+  status: number;
+  payload: unknown;
+  phase: "request" | "check" | "next_channel";
+}): OtpApiError {
+  const { status, payload, phase } = input;
+  const body = asRecord(payload);
+  const reason = extractReason(body);
 
-async function readJsonSafe(response: Response): Promise<JsonRecord> {
-  try {
-    const parsed = (await response.json()) as unknown;
-    return asRecord(parsed);
-  } catch {
-    return {};
+  if (status === 429 || reason === "rate_limited") {
+    return {
+      code: "OTP_RATE_LIMITED",
+      message: "محاولات كثيرة بزاف. عاود من بعد شوية.",
+    };
   }
+
+  if (phase === "check") {
+    if (reason === "incorrect_code") {
+      return { code: "OTP_INVALID", message: "الرمز غير صحيح." };
+    }
+    if (reason === "expired") {
+      return { code: "OTP_EXPIRED", message: "انتهت صلاحية الرمز. عاود طلب رمز جديد." };
+    }
+    if (reason === "attempts_exhausted") {
+      return { code: "OTP_MAX_ATTEMPTS", message: "وصلتي للحد الأقصى ديال المحاولات. طلب رمز جديد." };
+    }
+    if (status === 404) {
+      return { code: "OTP_EXPIRED", message: "ما لقيناش تحقق نشيط لهاد الرقم. طلب رمز جديد." };
+    }
+    if (status === 422) {
+      return { code: "OTP_INVALID", message: "صيغة الرمز أو الرقم غير صحيحة." };
+    }
+    return { code: "OTP_CHECK_FAILED", message: "تعذر التحقق من الرمز." };
+  }
+
+  if (phase === "next_channel") {
+    if (reason === "NoNextChannel" || status === 404) {
+      return {
+        code: "OTP_NO_NEXT_CHANNEL",
+        message: "ما كايناش قناة أخرى متاحة حالياً لهاد التحقق.",
+      };
+    }
+    if (status === 422) {
+      return {
+        code: "OTP_SEND_FAILED",
+        message: "تعذر تحويل الإرسال للقناة التالية." ,
+      };
+    }
+    return { code: "OTP_SEND_FAILED", message: "تعذر إعادة إرسال الرمز." };
+  }
+
+  if (status === 422) {
+    return { code: "OTP_SEND_FAILED", message: "صيغة رقم الهاتف غير مدعومة." };
+  }
+
+  return { code: "OTP_SEND_FAILED", message: "تعذر إرسال رمز التحقق." };
 }
 
 async function callBirdApi(args: {
@@ -130,86 +249,65 @@ async function callBirdApi(args: {
 }): Promise<{ status: number; payload: JsonRecord }> {
   const { baseUrl, apiKey, path, body, fetchImpl = fetch } = args;
   const url = `${baseUrl}${path}`;
-  const controller = AbortSignal.timeout(BIRD_TIMEOUT_MS);
 
-  const run = async (mode: BirdAuthMode) => {
-    const res = await fetchImpl(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `${mode} ${apiKey}`,
-      },
-      body: JSON.stringify(body),
-      signal: controller,
-    });
-    return { status: res.status, payload: await readJsonSafe(res) };
+  const response = await fetchImpl(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(BIRD_TIMEOUT_MS),
+  });
+
+  return {
+    status: response.status,
+    payload: await readJsonSafe(response),
   };
-
-  const first = await run("AccessKey");
-  if (first.status !== 401 && first.status !== 403) return first;
-
-  return run("Bearer");
-}
-
-function inferBirdChannel(payload: JsonRecord): "whatsapp" | "sms" | "unknown" {
-  const channel = payload["channel"];
-  if (channel === "whatsapp" || channel === "sms") return channel;
-
-  const channels = payload["channels"];
-  if (Array.isArray(channels)) {
-    if (channels.includes("whatsapp")) return "whatsapp";
-    if (channels.includes("sms")) return "sms";
-  }
-
-  return "unknown";
-}
-
-function extractVerifyId(payload: JsonRecord): string | null {
-  const direct = payload["id"];
-  if (typeof direct === "string" && direct) return direct;
-
-  const verification = asRecord(payload["verification"]);
-  const nested = verification["id"];
-  if (typeof nested === "string" && nested) return nested;
-
-  const requestId = payload["request_id"];
-  if (typeof requestId === "string" && requestId) return requestId;
-
-  return null;
 }
 
 export async function requestBirdOtp(args: {
   phone: string;
+  language: OtpLanguage;
   apiKey: string;
   baseUrl?: string;
   fetchImpl?: typeof fetch;
 }): Promise<OtpApiResult<BirdVerifyRequestResult>> {
-  const { phone, apiKey, baseUrl = DEFAULT_BIRD_BASE_URL, fetchImpl } = args;
-
-  const payload = {
-    to: { phone_number: phone },
-    options: {
-      channels: ["whatsapp", "sms"],
-      code_length: 6,
-      timeout: 300,
-    },
-  } satisfies JsonRecord;
+  const { phone, language, apiKey, baseUrl = DEFAULT_BIRD_BASE_URL, fetchImpl } = args;
 
   try {
     const result = await callBirdApi({
       baseUrl,
       apiKey,
       path: "/v1/verify/verifications",
-      body: payload,
+      body: {
+        to: { phone_number: phone },
+        options: {
+          channels: ["whatsapp", "sms"],
+          code_length: 6,
+          language,
+        },
+      },
       ...(fetchImpl ? { fetchImpl } : {}),
     });
 
     if (result.status >= 200 && result.status < 300) {
+      const id = parseVerificationId(result.payload);
+      if (!id) {
+        return {
+          ok: false,
+          error: { code: "OTP_SEND_FAILED", message: "تعذر بدء عملية التحقق." },
+        };
+      }
+
       return {
         ok: true,
         data: {
-          verifyId: extractVerifyId(result.payload),
-          channel: inferBirdChannel(result.payload),
+          id,
+          status: String(result.payload["status"] ?? "pending"),
+          channels: parseChannels(result.payload),
+          lastChannel: parseLastChannel(result.payload),
+          expiresAt: typeof result.payload["expires_at"] === "string" ? (result.payload["expires_at"] as string) : null,
         },
       };
     }
@@ -218,126 +316,91 @@ export async function requestBirdOtp(args: {
       ok: false,
       error: mapBirdFailureToOtpError({ status: result.status, payload: result.payload, phase: "request" }),
     };
-  } catch (error) {
+  } catch {
     return {
       ok: false,
-      error: {
-        code: "OTP_SEND_FAILED",
-        message: "Failed to send OTP.",
-        details: error instanceof Error ? error.message : "unknown_error",
-      },
+      error: { code: "OTP_SEND_FAILED", message: "تعذر إرسال رمز التحقق." },
     };
   }
-}
-
-async function checkBirdOtpWithId(args: {
-  phone: string;
-  verifyId: string;
-  code: string;
-  apiKey: string;
-  baseUrl: string;
-  fetchImpl?: typeof fetch;
-}): Promise<{ status: number; payload: JsonRecord }> {
-  return callBirdApi({
-    baseUrl: args.baseUrl,
-    apiKey: args.apiKey,
-    path: `/v1/verify/verifications/${encodeURIComponent(args.verifyId)}/check`,
-    body: {
-      token: args.code,
-      code: args.code,
-      to: { phone_number: args.phone },
-    },
-    ...(args.fetchImpl ? { fetchImpl: args.fetchImpl } : {}),
-  });
-}
-
-async function checkBirdOtpWithoutId(args: {
-  phone: string;
-  code: string;
-  apiKey: string;
-  baseUrl: string;
-  fetchImpl?: typeof fetch;
-}): Promise<{ status: number; payload: JsonRecord }> {
-  return callBirdApi({
-    baseUrl: args.baseUrl,
-    apiKey: args.apiKey,
-    path: "/v1/verify/verifications/check",
-    body: {
-      to: { phone_number: args.phone },
-      code: args.code,
-      token: args.code,
-    },
-    ...(args.fetchImpl ? { fetchImpl: args.fetchImpl } : {}),
-  });
 }
 
 export async function checkBirdOtp(args: {
   phone: string;
   code: string;
-  verifyId?: string | null;
   apiKey: string;
   baseUrl?: string;
   fetchImpl?: typeof fetch;
 }): Promise<OtpApiResult<BirdVerifyCheckResult>> {
-  const { phone, code, verifyId, apiKey, baseUrl = DEFAULT_BIRD_BASE_URL, fetchImpl } = args;
+  const { phone, code, apiKey, baseUrl = DEFAULT_BIRD_BASE_URL, fetchImpl } = args;
 
   try {
-    let result: { status: number; payload: JsonRecord };
-
-    if (verifyId) {
-      result = await checkBirdOtpWithId({
-        phone,
-        verifyId,
+    const result = await callBirdApi({
+      baseUrl,
+      apiKey,
+      path: "/v1/verify/verifications/check",
+      body: {
+        to: { phone_number: phone },
         code,
-        apiKey,
-        baseUrl,
-        ...(fetchImpl ? { fetchImpl } : {}),
-      });
-      if (result.status === 404 || result.status === 405) {
-        result = await checkBirdOtpWithoutId({
-          phone,
-          code,
-          apiKey,
-          baseUrl,
-          ...(fetchImpl ? { fetchImpl } : {}),
-        });
-      }
-    } else {
-      result = await checkBirdOtpWithoutId({
-        phone,
-        code,
-        apiKey,
-        baseUrl,
-        ...(fetchImpl ? { fetchImpl } : {}),
-      });
-    }
+      },
+      ...(fetchImpl ? { fetchImpl } : {}),
+    });
 
-    const success =
-      result.status >= 200 &&
-      result.status < 300 &&
-      (result.payload["success"] === true ||
-        String(result.payload["status"] ?? "").toLowerCase() === "verified" ||
-        Object.keys(result.payload).length === 0);
-
-    if (success) {
-      return {
-        ok: true,
-        data: { verifyId: verifyId ?? extractVerifyId(result.payload) },
-      };
+    const isSuccess = result.status === 200 && result.payload["success"] === true;
+    if (isSuccess) {
+      return { ok: true, data: { success: true } };
     }
 
     return {
       ok: false,
       error: mapBirdFailureToOtpError({ status: result.status, payload: result.payload, phase: "check" }),
     };
-  } catch (error) {
+  } catch {
     return {
       ok: false,
-      error: {
-        code: "OTP_CHECK_FAILED",
-        message: "OTP verification failed.",
-        details: error instanceof Error ? error.message : "unknown_error",
+      error: { code: "OTP_CHECK_FAILED", message: "تعذر التحقق من الرمز." },
+    };
+  }
+}
+
+export async function nextBirdVerificationChannel(args: {
+  phone: string;
+  apiKey: string;
+  baseUrl?: string;
+  fetchImpl?: typeof fetch;
+}): Promise<OtpApiResult<BirdNextChannelResult>> {
+  const { phone, apiKey, baseUrl = DEFAULT_BIRD_BASE_URL, fetchImpl } = args;
+
+  try {
+    const result = await callBirdApi({
+      baseUrl,
+      apiKey,
+      path: "/v1/verify/verifications/next-channel",
+      body: {
+        to: { phone_number: phone },
       },
+      ...(fetchImpl ? { fetchImpl } : {}),
+    });
+
+    if (result.status >= 200 && result.status < 300) {
+      return {
+        ok: true,
+        data: {
+          status: String(result.payload["status"] ?? "pending"),
+          channels: parseChannels(result.payload),
+          lastChannel: parseLastChannel(result.payload),
+          expiresAt: typeof result.payload["expires_at"] === "string" ? (result.payload["expires_at"] as string) : null,
+        },
+      };
+    }
+
+    return {
+      ok: false,
+      error: mapBirdFailureToOtpError({ status: result.status, payload: result.payload, phase: "next_channel" }),
+    };
+  } catch {
+    return {
+      ok: false,
+      error: { code: "OTP_SEND_FAILED", message: "تعذر إعادة إرسال الرمز." },
     };
   }
 }
@@ -352,25 +415,28 @@ function createServerPublicSupabaseClient(supabaseUrl: string, publishableKey: s
   });
 }
 
+function generateEphemeralPassword(): string {
+  return `Hv2_${randomBytes(48).toString("base64url")}`;
+}
+
 export async function createSupabaseSessionForVerifiedPhone(args: {
   phone: string;
-  serviceRoleKey: string;
   supabaseUrl: string;
   supabasePublishableKey: string;
   findOrCreateUser: (phone: string) => Promise<{ id: string; phone: string | null }>;
   updateUserPassword: (userId: string, password: string) => Promise<void>;
 }) {
-  const { phone, serviceRoleKey, supabaseUrl, supabasePublishableKey, findOrCreateUser, updateUserPassword } = args;
+  const { phone, supabaseUrl, supabasePublishableKey, findOrCreateUser, updateUserPassword } = args;
 
   const user = await findOrCreateUser(phone);
-  const password = deriveServerPhonePassword(user.id, phone, serviceRoleKey);
-  await updateUserPassword(user.id, password);
+  const oneTimePassword = generateEphemeralPassword();
+  await updateUserPassword(user.id, oneTimePassword);
 
   const supabasePublic = createServerPublicSupabaseClient(supabaseUrl, supabasePublishableKey);
-  const { data, error } = await supabasePublic.auth.signInWithPassword({ phone, password });
+  const { data, error } = await supabasePublic.auth.signInWithPassword({ phone, password: oneTimePassword });
 
-  if (error || !data.session) {
-    throw new Error(error?.message ?? "Supabase session creation failed");
+  if (error || !data.session?.access_token || !data.session.refresh_token) {
+    throw new Error("SUPABASE_SESSION_CREATE_FAILED");
   }
 
   return {

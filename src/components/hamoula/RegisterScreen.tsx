@@ -96,7 +96,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
   const { account, signIn, findAccount, myLocation, geoStatus, requestLocation } = useHamoula();
   const fr = useAppLanguage() === "fr";
   const t = (ar: string, frText: string) => (fr ? frText : ar);
-  /** Role choice first, then phone (verified by SMS), then the account is restored or created. */
+  /** Role choice first, then phone (verified by WhatsApp/SMS), then the account is restored or created. */
   const [step, setStep] = useState<"role" | "phone" | "otp" | "register">(
     account ? "phone" : "role",
   );
@@ -104,8 +104,6 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
   const [otpBusy, setOtpBusy] = useState(false);
   /** E.164 number the current code was sent to. */
   const [otpSentTo, setOtpSentTo] = useState<string | null>(null);
-  /** Bird verification identifier (if returned by provider API). */
-  const [otpVerifyId, setOtpVerifyId] = useState<string | null>(null);
   const [resendIn, setResendIn] = useState(0);
   const [firstName, setFirstName] = useState(account?.name?.split(/\s+/)[0] ?? "");
   const [lastName, setLastName] = useState(
@@ -332,10 +330,11 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
             ? `Il reste ${10 - phoneDigits.length} chiffres — format requis: 06XX XX XX XX`
             : `باقي ${10 - phoneDigits.length} رقم — خاص 10 أرقام بصيغة 06XX XX XX XX`;
 
-  /** Moroccan local 0XXXXXXXXX -> E.164 +212XXXXXXXXX (what the SMS provider needs). */
+  /** Moroccan local 0XXXXXXXXX -> E.164 +212XXXXXXXXX (for Bird Verify). */
   const toE164 = (local: string) => `+212${local.slice(1)}`;
+  const otpLanguage: "ar" | "fr" = fr ? "fr" : "ar";
 
-  /** Step 1: send the 6-digit SMS code to the entered number. */
+  /** Step 1: request a new verification (Bird channels order: WhatsApp -> SMS). */
   const continueWithPhone = async () => {
     const normalized = normalizePhone(phone);
     // الدخول/التسجيل موحد: غير الرقم هو المطلوب هنا — باقي المعلومات غير للحسابات الجديدة.
@@ -345,15 +344,16 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
     }
     setError(null);
     const e164 = toE164(normalized);
-    // وضع الاختبار (المعاينة فقط): بلا SMS — الرمز التجريبي كيكفي.
+    // وضع الاختبار (المعاينة فقط): بلا WhatsApp/SMS — الرمز التجريبي كيكفي.
     if (DEMO_LOGIN_ENABLED) {
-      setOtpVerifyId(null);
       setOtpSentTo(e164);
       setOtp("");
       setResendIn(0);
       setStep("otp");
       playSfx("success");
-      toast.success(t("وضع الاختبار", "Mode test"), { description: fr ? `Saisissez le code ${DEMO_OTP_CODE} sans SMS` : `دخل الرمز ${DEMO_OTP_CODE} بلا SMS` });
+      toast.success(t("وضع الاختبار", "Mode test"), {
+        description: fr ? `Saisissez le code ${DEMO_OTP_CODE} sans WhatsApp/SMS` : `دخل الرمز ${DEMO_OTP_CODE} بلا WhatsApp/SMS`,
+      });
       return;
     }
     setOtpBusy(true);
@@ -361,10 +361,10 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
       const response = await fetch("/api/public/auth-verify-request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: e164 }),
+        body: JSON.stringify({ phone: e164, language: otpLanguage }),
       });
       const payload = (await response.json().catch(() => null)) as
-        | { ok?: boolean; verifyId?: string | null; error?: { message?: string } }
+        | { ok?: boolean; error?: { code?: string; message?: string } }
         | null;
 
       if (!response.ok || !payload?.ok) {
@@ -374,13 +374,15 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
         return;
       }
 
-      setOtpVerifyId(payload.verifyId ?? null);
       setOtpSentTo(e164);
       setOtp("");
       setResendIn(60);
       setStep("otp");
       playSfx("success");
-      toast.success(t("تصيفط ليك رمز التحقق بال SMS", "Code SMS envoyé"), { description: formatPhone(normalized) });
+      toast.success(
+        t("تصيفط ليك رمز التحقق عبر WhatsApp أو SMS", "Code de vérification envoyé via WhatsApp ou SMS"),
+        { description: formatPhone(normalized) },
+      );
     } catch (error) {
       const message = error instanceof Error ? error.message : "OTP send failed";
       playSfx("error");
@@ -440,7 +442,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
         const response = await fetch("/api/public/auth-verify-check", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ phone: otpSentTo, verifyId: otpVerifyId, code }),
+          body: JSON.stringify({ phone: otpSentTo, code }),
         });
         const payload = (await response.json().catch(() => null)) as
           | {
@@ -496,25 +498,69 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
     if (role === "shipper" && name.trim()) {
       signIn({ name: name.trim(), phone: formatPhone(normalized), role: "shipper" });
       playSfx("success");
-      toast.success(t("تأكد الرقم ديالك", "Numéro confirmé"), { description: t("كمل طلب نقل البضاعة", "Complétez votre demande de transport") });
+      toast.success(t("تأكد الرقم ديالك", "Numéro confirmé"), {
+        description: t("كمل طلب نقل البضاعة", "Complétez votre demande de transport"),
+      });
       onDone("shipper");
       return;
     }
     setStep("register");
-    toast(t("حساب جديد", "Nouveau compte"), { description: t("كمل التسجيل مرة وحدة وصافي", "Complétez l'inscription une seule fois") });
+    toast(t("حساب جديد", "Nouveau compte"), {
+      description: t("كمل التسجيل مرة وحدة وصافي", "Complétez l'inscription une seule fois"),
+    });
   };
 
   const resendCode = async () => {
-    if (resendIn > 0 || otpBusy) return;
+    if (resendIn > 0 || otpBusy || !otpSentTo) return;
+
     setOtp("");
-    await continueWithPhone();
+    setError(null);
+    setOtpBusy(true);
+
+    try {
+      const response = await fetch("/api/public/auth-verify-next-channel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: otpSentTo }),
+      });
+
+      const payload = (await response.json().catch(() => null)) as
+        | {
+            ok?: boolean;
+            verification?: { lastChannel?: "whatsapp" | "sms" | null };
+            error?: { code?: string; message?: string };
+          }
+        | null;
+
+      if (response.ok && payload?.ok) {
+        setResendIn(45);
+        const lastChannel = payload.verification?.lastChannel;
+        const channelText = lastChannel === "sms" ? t("SMS", "SMS") : t("WhatsApp", "WhatsApp");
+        toast.success(t("حوّلنا الإرسال للقناة التالية", "Envoi basculé vers le canal suivant"), {
+          description: fr ? `Code envoyé via ${channelText}` : `تم إرسال الرمز عبر ${channelText}`,
+        });
+        return;
+      }
+
+      if (payload?.error?.code === "OTP_NO_NEXT_CHANNEL") {
+        await continueWithPhone();
+        return;
+      }
+
+      const message = payload?.error?.message ?? "OTP resend failed";
+      setError(fr ? `Impossible de renvoyer le code : ${message}` : `تعذر إعادة إرسال الرمز: ${message}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "OTP resend failed";
+      setError(fr ? `Impossible de renvoyer le code : ${message}` : `تعذر إعادة إرسال الرمز: ${message}`);
+    } finally {
+      setOtpBusy(false);
+    }
   };
 
   /** Back from the code screen: a new number needs a new code. */
   const changeNumber = () => {
     setStep("phone");
     setOtp("");
-    setOtpVerifyId(null);
     setOtpSentTo(null);
     setError(null);
   };
@@ -745,7 +791,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
         </h1>
         <p className="mt-2 max-w-xs text-sm leading-relaxed opacity-90">
           {step === "otp"
-            ? t("دخل الكود اللي وصلك ف SMS.", "Saisissez le code reçu par SMS.")
+            ? t("دخل الكود اللي وصلك عبر WhatsApp أو SMS.", "Saisissez le code reçu via WhatsApp ou SMS.")
             : step === "phone"
               ? t(
                   "دخل رقم الهاتف ديالك — إلا عندك حساب غتدخل نيشان، وإلا ما عندكش غتكمل التسجيل من هنا.",
@@ -760,7 +806,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
         {step === "register" && (
           <div className="mb-4 flex items-center justify-between rounded-2xl border-2 border-primary/30 bg-primary-soft px-4 py-3">
             <span className="flex items-center gap-2 text-sm font-bold text-primary">
-              <ShieldCheck className="size-5" /> {t("الرقم تأكد بال SMS", "Numéro confirmé par SMS")}
+              <ShieldCheck className="size-5" /> {t("الرقم تأكد عبر التحقق", "Numéro vérifié")}
             </span>
             <span dir="ltr" className="text-base font-extrabold">
               {formatPhone(normalizePhone(phone) ?? phone)}
@@ -966,7 +1012,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
           <div className="rounded-2xl border-2 border-primary/40 bg-primary-soft p-4">
             <p className="flex items-center gap-2 text-sm font-bold text-primary">
               <ShieldCheck className="size-5" />
-              {t("تصيفط رمز التحقق بال SMS لـ", "Code de vérification SMS envoyé à")}{" "}
+              {t("تصيفط رمز التحقق عبر WhatsApp أو SMS لـ", "Code de vérification envoyé via WhatsApp ou SMS à")}{" "}
               <span dir="ltr" className="font-extrabold">{otpSentTo}</span>
             </p>
             <input
@@ -1126,7 +1172,7 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
                 {t("تأكيد", "Confirmer")}
               </button>
               <p className="text-center text-sm font-bold text-accent-foreground">
-                {t("غادي توصلك رسالة SMS فيها كود التأكيد", "Vous allez recevoir un SMS avec le code de confirmation")}
+                {t("غادي يوصلك رمز التحقق عبر WhatsApp أو SMS", "Vous recevrez le code de vérification via WhatsApp ou SMS")}
               </p>
               <button
                 onClick={() => setStep("role")}
@@ -1177,10 +1223,10 @@ export function RegisterScreen({ onDone }: { onDone: (role: RoleId) => void }) {
 
           <p className="text-center text-xs text-muted-foreground">
             {step === "phone"
-              ? t("غتوصل برمز د 6 أرقام بال SMS باش نأكدو الرقم ديالك.", "Vous recevrez un code SMS à 6 chiffres pour confirmer votre numéro.")
+              ? t("غتوصل برمز د 6 أرقام عبر WhatsApp أو SMS باش نأكدو الرقم ديالك.", "Vous recevrez un code à 6 chiffres via WhatsApp ou SMS pour confirmer votre numéro.")
               : step === "otp"
-                ? t("كتب الرمز اللي وصلك بال SMS — كيتأكد بوحدو ملي تكمل 6 أرقام.", "Saisissez le code reçu par SMS — validation automatique à 6 chiffres.")
-                : t("الرقم تأكد بال SMS — باقي غير المعلومات ديالك.", "Numéro confirmé par SMS — il reste vos informations.")}
+                ? t("كتب الرمز اللي وصلك عبر WhatsApp أو SMS — كيتأكد بوحدو ملي تكمل 6 أرقام.", "Saisissez le code reçu via WhatsApp ou SMS — validation automatique à 6 chiffres.")
+                : t("الرقم تأكد عبر التحقق — باقي غير المعلومات ديالك.", "Numéro vérifié — il reste vos informations.")}
           </p>
         </StickyActions>
 
