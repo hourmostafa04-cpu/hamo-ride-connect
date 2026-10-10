@@ -1,4 +1,4 @@
-import { randomBytes } from "crypto";
+import { createHmac } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { normalizeMoroccoE164 } from "@/lib/auth-sms-hook";
 import type { Database } from "@/integrations/supabase/types";
@@ -415,39 +415,105 @@ function createServerPublicSupabaseClient(supabaseUrl: string, publishableKey: s
   });
 }
 
-function generateEphemeralPassword(): string {
-  return `Hv2_${randomBytes(48).toString("base64url")}`;
+function readBridgeVersion(appMetadata: unknown): number | null {
+  const metadata = asRecord(appMetadata);
+  const value = metadata["bird_bridge_version"];
+  return typeof value === "number" ? value : null;
+}
+
+export function deriveAuthBridgePassword(args: {
+  authBridgeSecret: string;
+  userId: string;
+  phone: string;
+}): string {
+  const { authBridgeSecret, userId, phone } = args;
+  const digestHex = createHmac("sha256", authBridgeSecret)
+    .update(`${userId}:${phone}`)
+    .digest("hex");
+
+  return `Hv2Bridge_v1_${digestHex}`;
 }
 
 export async function createSupabaseSessionForVerifiedPhone(args: {
   phone: string;
   supabaseUrl: string;
   supabasePublishableKey: string;
-  findOrCreateUser: (phone: string) => Promise<{ id: string; phone: string | null }>;
-  updateUserPassword: (userId: string, password: string) => Promise<void>;
+  authBridgeSecret: string;
+  findOrCreateUser: (phone: string) => Promise<{
+    id: string;
+    phone: string | null;
+    appMetadata: Record<string, unknown> | null;
+  }>;
+  initializeBridgeIfNeeded: (input: {
+    userId: string;
+    userPhone: string;
+    derivedBridgePassword: string;
+    appMetadata: Record<string, unknown> | null;
+  }) => Promise<void>;
+  signInWithPassword?: (input: { phone: string; password: string }) => Promise<{
+    session: {
+      access_token: string;
+      refresh_token: string;
+      expires_at?: number | null;
+      expires_in?: number;
+      token_type?: string;
+    } | null;
+    user: {
+      id?: string;
+      phone?: string | null;
+    } | null;
+    error: unknown;
+  }>;
 }) {
-  const { phone, supabaseUrl, supabasePublishableKey, findOrCreateUser, updateUserPassword } = args;
+  const { phone, supabaseUrl, supabasePublishableKey, authBridgeSecret, findOrCreateUser, initializeBridgeIfNeeded, signInWithPassword } = args;
 
   const user = await findOrCreateUser(phone);
-  const oneTimePassword = generateEphemeralPassword();
-  await updateUserPassword(user.id, oneTimePassword);
+  const normalizedUserPhone = user.phone ?? phone;
+  const derivedBridgePassword = deriveAuthBridgePassword({
+    authBridgeSecret,
+    userId: user.id,
+    phone: normalizedUserPhone,
+  });
 
-  const supabasePublic = createServerPublicSupabaseClient(supabaseUrl, supabasePublishableKey);
-  const { data, error } = await supabasePublic.auth.signInWithPassword({ phone, password: oneTimePassword });
+  if (readBridgeVersion(user.appMetadata) !== 1) {
+    await initializeBridgeIfNeeded({
+      userId: user.id,
+      userPhone: normalizedUserPhone,
+      derivedBridgePassword,
+      appMetadata: user.appMetadata,
+    });
+  }
 
-  if (error || !data.session?.access_token || !data.session.refresh_token) {
+  const signIn = signInWithPassword
+    ? async () => signInWithPassword({ phone: normalizedUserPhone, password: derivedBridgePassword })
+    : async () => {
+        const supabasePublic = createServerPublicSupabaseClient(supabaseUrl, supabasePublishableKey);
+        const { data, error } = await supabasePublic.auth.signInWithPassword({
+          phone: normalizedUserPhone,
+          password: derivedBridgePassword,
+        });
+        return {
+          session: data.session,
+          user: data.user,
+          error,
+        };
+      };
+
+  const { session, user: sessionUser, error } = await signIn();
+
+  if (error || !session?.access_token || !session.refresh_token) {
     throw new Error("SUPABASE_SESSION_CREATE_FAILED");
   }
 
   return {
-    userId: data.user?.id ?? user.id,
-    userPhone: data.user?.phone ?? user.phone,
+    userId: sessionUser?.id ?? user.id,
+    userPhone: sessionUser?.phone ?? normalizedUserPhone,
     session: {
-      accessToken: data.session.access_token,
-      refreshToken: data.session.refresh_token,
-      expiresAt: data.session.expires_at ?? null,
-      expiresIn: data.session.expires_in,
-      tokenType: data.session.token_type,
+      accessToken: session.access_token,
+      refreshToken: session.refresh_token,
+      expiresAt: session.expires_at ?? null,
+      expiresIn: session.expires_in,
+      tokenType: session.token_type,
     },
   };
 }

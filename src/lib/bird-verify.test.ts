@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   checkBirdOtp,
+  createSupabaseSessionForVerifiedPhone,
+  deriveAuthBridgePassword,
   mapBirdFailureToOtpError,
   matchingPhoneCandidates,
   nextBirdVerificationChannel,
@@ -289,5 +291,182 @@ describe("error mapping safety", () => {
     expect(Object.keys(result).sort()).toEqual(["code", "message"]);
     expect(result.code).toBe("OTP_RATE_LIMITED");
     expect(result.message.includes("bk_eu1")).toBe(false);
+  });
+});
+
+
+
+describe("AUTH_BRIDGE_SECRET bridge password", () => {
+  it("is deterministic for same secret + userId + phone", () => {
+    const first = deriveAuthBridgePassword({
+      authBridgeSecret: "bridge-secret",
+      userId: "user-1",
+      phone: "+212612345678",
+    });
+    const second = deriveAuthBridgePassword({
+      authBridgeSecret: "bridge-secret",
+      userId: "user-1",
+      phone: "+212612345678",
+    });
+
+    expect(first).toBe(second);
+    expect(first.startsWith("Hv2Bridge_v1_")).toBe(true);
+    expect(first.length).toBeGreaterThan(40);
+  });
+
+  it("changes across different users", () => {
+    const p1 = deriveAuthBridgePassword({
+      authBridgeSecret: "bridge-secret",
+      userId: "user-1",
+      phone: "+212612345678",
+    });
+    const p2 = deriveAuthBridgePassword({
+      authBridgeSecret: "bridge-secret",
+      userId: "user-2",
+      phone: "+212612345678",
+    });
+
+    expect(p1).not.toBe(p2);
+  });
+});
+
+describe("createSupabaseSessionForVerifiedPhone bridge flow", () => {
+  it("does not rotate password when bird_bridge_version is already 1", async () => {
+    const initializeBridgeIfNeeded = vi.fn().mockResolvedValue(undefined);
+    const signInWithPassword = vi.fn().mockResolvedValue({
+      session: {
+        access_token: "atk",
+        refresh_token: "rtk",
+        expires_at: 123,
+        expires_in: 3600,
+        token_type: "bearer",
+      },
+      user: { id: "uid-existing", phone: "+212612345678" },
+      error: null,
+    });
+
+    const result = await createSupabaseSessionForVerifiedPhone({
+      phone: "+212612345678",
+      supabaseUrl: "https://example.supabase.co",
+      supabasePublishableKey: "pk",
+      authBridgeSecret: "bridge-secret",
+      findOrCreateUser: async () => ({
+        id: "uid-existing",
+        phone: "+212612345678",
+        appMetadata: { bird_bridge_version: 1, keep: "x" },
+      }),
+      initializeBridgeIfNeeded,
+      signInWithPassword,
+    });
+
+    expect(initializeBridgeIfNeeded).not.toHaveBeenCalled();
+    expect(result.userId).toBe("uid-existing");
+    expect(result.userPhone).toBe("+212612345678");
+    expect(result.session.accessToken).toBe("atk");
+    expect(result.session.refreshToken).toBe("rtk");
+  });
+
+  it("initializes legacy user exactly once and preserves metadata payload", async () => {
+    const initializeBridgeIfNeeded = vi.fn().mockResolvedValue(undefined);
+    const signInWithPassword = vi.fn().mockResolvedValue({
+      session: {
+        access_token: "atk2",
+        refresh_token: "rtk2",
+        expires_at: 123,
+        expires_in: 3600,
+        token_type: "bearer",
+      },
+      user: { id: "uid-legacy", phone: "+212612345678" },
+      error: null,
+    });
+
+    await createSupabaseSessionForVerifiedPhone({
+      phone: "+212612345678",
+      supabaseUrl: "https://example.supabase.co",
+      supabasePublishableKey: "pk",
+      authBridgeSecret: "bridge-secret",
+      findOrCreateUser: async () => ({
+        id: "uid-legacy",
+        phone: "+212612345678",
+        appMetadata: { phone_verified_via: "bird_verify", legacy: true },
+      }),
+      initializeBridgeIfNeeded,
+      signInWithPassword,
+    });
+
+    expect(initializeBridgeIfNeeded).toHaveBeenCalledTimes(1);
+    expect(initializeBridgeIfNeeded).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "uid-legacy",
+        userPhone: "+212612345678",
+        appMetadata: { phone_verified_via: "bird_verify", legacy: true },
+      }),
+    );
+
+    const bridgePassword = initializeBridgeIfNeeded.mock.calls[0]?.[0]?.derivedBridgePassword;
+    expect(typeof bridgePassword).toBe("string");
+    expect(bridgePassword.length).toBeGreaterThan(30);
+    expect(JSON.stringify(initializeBridgeIfNeeded.mock.calls[0]?.[0]).includes("bridge-secret")).toBe(false);
+  });
+
+  it("throws when sign-in does not return real session tokens", async () => {
+    await expect(
+      createSupabaseSessionForVerifiedPhone({
+        phone: "+212612345678",
+        supabaseUrl: "https://example.supabase.co",
+        supabasePublishableKey: "pk",
+        authBridgeSecret: "bridge-secret",
+        findOrCreateUser: async () => ({
+          id: "uid-existing",
+          phone: "+212612345678",
+          appMetadata: { bird_bridge_version: 1 },
+        }),
+        initializeBridgeIfNeeded: async () => undefined,
+        signInWithPassword: async () => ({
+          session: null,
+          user: null,
+          error: { message: "bad" },
+        }),
+      }),
+    ).rejects.toThrow("SUPABASE_SESSION_CREATE_FAILED");
+  });
+
+  it("does not expose bridge password in returned API payload", async () => {
+    const result = await createSupabaseSessionForVerifiedPhone({
+      phone: "+212612345678",
+      supabaseUrl: "https://example.supabase.co",
+      supabasePublishableKey: "pk",
+      authBridgeSecret: "bridge-secret",
+      findOrCreateUser: async () => ({
+        id: "uid-existing",
+        phone: "+212612345678",
+        appMetadata: { bird_bridge_version: 1 },
+      }),
+      initializeBridgeIfNeeded: async () => undefined,
+      signInWithPassword: async () => ({
+        session: {
+          access_token: "atk",
+          refresh_token: "rtk",
+          expires_at: 123,
+          expires_in: 3600,
+          token_type: "bearer",
+        },
+        user: { id: "uid-existing", phone: "+212612345678" },
+        error: null,
+      }),
+    });
+
+    expect(result).toEqual({
+      userId: "uid-existing",
+      userPhone: "+212612345678",
+      session: {
+        accessToken: "atk",
+        refreshToken: "rtk",
+        expiresAt: 123,
+        expiresIn: 3600,
+        tokenType: "bearer",
+      },
+    });
+    expect(JSON.stringify(result).includes("Hv2Bridge_v1_")).toBe(false);
   });
 });

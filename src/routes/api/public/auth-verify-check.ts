@@ -29,7 +29,25 @@ function serverConfigError() {
   return fail({ code: "SERVER_CONFIG", message: "إعدادات الخادم غير مكتملة لمسار التحقق." }, 500);
 }
 
-async function listAllAuthUsersByPhone(phone: string) {
+type JsonRecord = Record<string, unknown>;
+
+type ResolvedAuthUser = {
+  id: string;
+  phone: string | null;
+  appMetadata: JsonRecord | null;
+};
+
+function asRecord(input: unknown): JsonRecord {
+  return input && typeof input === "object" ? (input as JsonRecord) : {};
+}
+
+function readBridgeVersion(appMetadata: unknown): number | null {
+  const metadata = asRecord(appMetadata);
+  const value = metadata["bird_bridge_version"];
+  return typeof value === "number" ? value : null;
+}
+
+async function listAllAuthUsersByPhone(phone: string): Promise<ResolvedAuthUser | null> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
   let page = 1;
@@ -41,7 +59,11 @@ async function listAllAuthUsersByPhone(phone: string) {
 
     const found = (data?.users ?? []).find((u) => (u.phone ?? "") === phone);
     if (found) {
-      return { id: found.id, phone: found.phone ?? null };
+      return {
+        id: found.id,
+        phone: found.phone ?? null,
+        appMetadata: asRecord(found.app_metadata),
+      };
     }
 
     if (!data?.nextPage || data.nextPage <= page) break;
@@ -91,7 +113,7 @@ async function loadCandidateAppUsers(phone: string): Promise<AppUserIdentityRow[
   return all;
 }
 
-async function resolveOrCreateAuthUserByVerifiedPhone(phone: string) {
+async function resolveOrCreateAuthUserByVerifiedPhone(phone: string): Promise<ResolvedAuthUser> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
   const appRows = await loadCandidateAppUsers(phone);
@@ -131,15 +153,6 @@ async function resolveOrCreateAuthUserByVerifiedPhone(phone: string) {
     authUser = { id: created.user.id, phone: created.user.phone ?? phone };
   }
 
-  const { error: confirmError } = await supabaseAdmin.auth.admin.updateUserById(authUser.id, {
-    phone_confirm: true,
-    user_metadata: { phone_verified_via: "bird_verify" },
-  });
-
-  if (confirmError) {
-    throw new Error("AUTH_USER_CONFIRM_FAILED");
-  }
-
   if (matchingRows.length > 0) {
     for (const row of matchingRows) {
       if (row.user_id && row.user_id !== authUser.id) {
@@ -157,16 +170,64 @@ async function resolveOrCreateAuthUserByVerifiedPhone(phone: string) {
     }
   }
 
-  return authUser;
+  const { data: authData, error: authError } = await supabaseAdmin.auth.admin.getUserById(authUser.id);
+  if (authError || !authData?.user?.id) {
+    throw new Error("AUTH_USER_LOAD_FAILED");
+  }
+
+  const resolvedPhone = authData.user.phone ?? authUser.phone;
+  if (resolvedPhone !== phone) {
+    throw new Error("IDENTITY_MISMATCH_PHONE_CONFLICT");
+  }
+
+  const mergedUserMetadata: JsonRecord = {
+    ...asRecord(authData.user.user_metadata),
+    phone_verified_via: "bird_verify",
+  };
+
+  const { error: confirmError } = await supabaseAdmin.auth.admin.updateUserById(authUser.id, {
+    phone_confirm: true,
+    user_metadata: mergedUserMetadata,
+  });
+
+  if (confirmError) {
+    throw new Error("AUTH_USER_CONFIRM_FAILED");
+  }
+
+  return {
+    id: authData.user.id,
+    phone: resolvedPhone,
+    appMetadata: asRecord(authData.user.app_metadata),
+  };
 }
 
-async function updateAuthUserPassword(userId: string, password: string) {
+async function initializeBridgeIfNeeded(input: {
+  userId: string;
+  userPhone: string;
+  derivedBridgePassword: string;
+  appMetadata: Record<string, unknown> | null;
+}) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { userId, derivedBridgePassword, appMetadata } = input;
+
+  if (readBridgeVersion(appMetadata) === 1) {
+    return;
+  }
+
+  const mergedAppMetadata: JsonRecord = {
+    ...asRecord(appMetadata),
+    bird_bridge_version: 1,
+  };
+
   const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
-    password,
+    password: derivedBridgePassword,
     phone_confirm: true,
+    app_metadata: mergedAppMetadata,
   });
-  if (error) throw new Error("AUTH_PASSWORD_UPDATE_FAILED");
+
+  if (error) {
+    throw new Error("AUTH_BRIDGE_INITIALIZE_FAILED");
+  }
 }
 
 function mapAuthBridgeError(err: unknown): OtpApiError {
@@ -216,8 +277,9 @@ export const Route = createFileRoute("/api/public/auth-verify-check")({
         const supabasePublishableKey =
           process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["VITE_SUPABASE_PUBLISHABLE_KEY"];
         const serviceRoleKey = process.env["SUPABASE_SERVICE_ROLE_KEY"];
+        const authBridgeSecret = process.env["AUTH_BRIDGE_SECRET"];
 
-        if (!birdApiKey || !supabaseUrl || !supabasePublishableKey || !serviceRoleKey) {
+        if (!birdApiKey || !supabaseUrl || !supabasePublishableKey || !serviceRoleKey || !authBridgeSecret) {
           return serverConfigError();
         }
 
@@ -245,8 +307,9 @@ export const Route = createFileRoute("/api/public/auth-verify-check")({
             phone,
             supabaseUrl,
             supabasePublishableKey,
+            authBridgeSecret,
             findOrCreateUser: resolveOrCreateAuthUserByVerifiedPhone,
-            updateUserPassword: updateAuthUserPassword,
+            initializeBridgeIfNeeded,
           });
 
           return json({

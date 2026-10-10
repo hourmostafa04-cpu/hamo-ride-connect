@@ -857,3 +857,25 @@ _آخر تحديث: 30 سبتمبر 2026 بواسطة Abacus AI Agent_
 ### ملاحظات
 - ما تعاود حتى Batch من Batch1..Batch4.
 - ما تبدل حتى Secret فهاد الجولة.
+
+
+
+---
+
+## تحديث تقني 2026-10-10 (Option B: AUTH_BRIDGE_SECRET stable bridge)
+
+**Branch**: `features/phase1-review`
+
+### DONE ✅
+- تم حذف تدوير كلمة المرور في كل تسجيل دخول OTP.
+- تمت إضافة جسر ثابت server-only عبر `AUTH_BRIDGE_SECRET` باستعمال HMAC-SHA256 مبني على: `userId + phone(E.164)`.
+- تم الحفاظ على نفس منطق حل الهوية الحالي (app_users.user_id ثم Auth lookup ثم create/bind عند الحاجة) بدون تغيير المسار.
+- إضافة migration من legacy إلى `app_metadata.bird_bridge_version = 1` مرة واحدة فقط مع الحفاظ على الميتاداتا الموجودة (merge بدون حذف المفاتيح السابقة).
+- بعد نجاح Bird Verify: يتم إنشاء جلسة Supabase حقيقية عبر `signInWithPassword` وإرجاع `access_token` + `refresh_token` فقط داخل `session`.
+- إضافة اختبارات وحدة إضافية للجسر الثابت (deterministic / no-rotation / legacy-init / token-return / no-secret-leak).
+- تحديث `.env.example` بإضافة `AUTH_BRIDGE_SECRET` كمتغير إجباري server-side.
+
+### ملاحظات أمنية
+- `AUTH_BRIDGE_SECRET` خاص بالسيرفر فقط وما كيتعرضش للفرونت.
+- ما كاين لا logging ولا response فيه كلمة المرور المشتقة أو قيم secrets.
+- إذا نقص شي متغير ضروري (ومنهم `AUTH_BRIDGE_SECRET`) كيبقى المسار fail-closed بـ `SERVER_CONFIG`.
